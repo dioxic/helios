@@ -1,4 +1,41 @@
-package uk.dioxic.mgenerate.operator
+package uk.dioxic.mgenerate.operators
+
+import uk.dioxic.mgenerate.annotations.Operator
+import kotlin.random.Random
+
+@Operator
+data class Text(
+    val length: () -> Number,
+    val characterPool: () -> String = { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]" }
+) : () -> String {
+
+    override operator fun invoke(): String {
+        val rnd = Random.Default
+        val sb = StringBuilder()
+        val pool = characterPool()
+
+        repeat(length().toInt()) {
+            sb.append(pool[rnd.nextInt(pool.length)])
+        }
+        return sb.toString()
+    }
+
+    override fun toString(): String {
+        return "Text(length=${length()}, characterPool=${characterPool()})"
+    }
+}
+
+@Operator
+data class Array(
+    val of: () -> Any,
+    val number: () -> Number = { 5 }
+) : () -> List<Any> {
+
+    override operator fun invoke(): List<Any> =
+        generateSequence { of() }
+            .take(number().toInt())
+            .toList()
+}
 
 //fun string(
 //    length: Int,

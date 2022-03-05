@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.operator
+package uk.dioxic.mgenerate.operators
 
 import assertk.all
 import assertk.assertThat
@@ -7,10 +7,9 @@ import assertk.assertions.isFailure
 import assertk.assertions.isSuccess
 import assertk.tableOf
 import org.junit.jupiter.api.Disabled
-import uk.dioxic.mgenerate.Text
+import org.junit.jupiter.api.Test
 import uk.dioxic.mgenerate.extensions.isSubsetOf
 import uk.dioxic.mgenerate.instance
-import kotlin.test.Test
 
 @Disabled
 internal class OperatorFactoryTest {

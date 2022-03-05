@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.operator
+package uk.dioxic.mgenerate.operators
 
 interface OperatorBuilder<T: () -> Any> {
 

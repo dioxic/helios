@@ -8,6 +8,8 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
+import uk.dioxic.mgenerate.exceptions.IncorrectTypeException
+import uk.dioxic.mgenerate.exceptions.MissingArgumentException
 
 class OperatorProcessor(
     private val options: Map<String, String>,
@@ -53,9 +55,9 @@ class OperatorProcessor(
         }
 
         private fun getPropertySpecList(
-            function: KSFunctionDeclaration
+            constructor: KSFunctionDeclaration
         ): List<PropertySpec> =
-            function.parameters
+            constructor.parameters
                 .map { parameter ->
                     val propertyName = parameter.name!!.asString()
                     val typeName = parameter.type.toTypeName()
@@ -77,7 +79,7 @@ class OperatorProcessor(
                 }
 
         private fun getFunctionSpecList(
-            function: KSFunctionDeclaration,
+            constructor: KSFunctionDeclaration,
             packageName: String,
             parentClassName: String,
         ): List<FunSpec> {
@@ -88,11 +90,22 @@ class OperatorProcessor(
 
             // build function
             val primaryConstructor = MemberName("kotlin.reflect.full", "primaryConstructor")
+
+            val validationFun =
+                FunSpec.builder("validate")
+                    .addModifiers(KModifier.PRIVATE)
+                    .addCode(missingArgumentsBlock(constructor.parameters))
+                    .beginControlFlow("if (missingArgs.isNotEmpty())")
+                    .addStatement("throw %T(%L)", MissingArgumentException::class, "missingArgs")
+                    .endControlFlow()
+                    .build()
+
             val buildFun =
                 FunSpec.builder("build")
                     .returns(operatorClass)
                     .addStatement("val cons = %T::class.%M!!", operatorClass, primaryConstructor)
-                    .addCode(valueMapBlock(function.parameters))
+                    .addCode(valueMapBlock(constructor.parameters))
+                    .addStatement("%N()", validationFun)
                     .addCode(
                         """
                         return cons.parameters
@@ -115,10 +128,10 @@ class OperatorProcessor(
                 )
                 .addParameter(
                     "map", Map::class.asClassName()
-                        .parameterizedBy(String::class.asClassName(), Any::class.asClassName())
+                        .parameterizedBy(String::class.asClassName(), Any::class.asClassName().copy(nullable = true))
                 )
 
-            function.parameters.forEach { parameter ->
+            constructor.parameters.forEach { parameter ->
                 val propertyName = parameter.name!!.asString()
                 val parameterType = parameter.type.resolve()
                 val typeName = parameter.type.toTypeName()
@@ -127,43 +140,47 @@ class OperatorProcessor(
                 mapFunSpecBuilder.beginControlFlow("$propertyName = when (it)")
 
                 if (parameterType.isFunctionType) {
-
-                    val argumentTypeName = parameterType.arguments.first().toTypeName()
+                    val argumentTypeName = parameterType.arguments.first().toTypeName() as ClassName
                     val lambdaTypeName = LambdaTypeName.get(returnType = argumentTypeName)
-                    setterSpecs.add(lambdaSetterSpec(propertyName, argumentTypeName))
-                    setterSpecs.add(scalarSetterSpec(propertyName, lambdaTypeName))
-                    mapFunSpecBuilder.addStatement(
-                        "is Function0<*> -> it as %T",
-                        function0Class.parameterizedBy(argumentTypeName)
-                    )
-                    mapFunSpecBuilder.addStatement("is %T -> {{ it }}", argumentTypeName)
+                    setterSpecs.add(scalarSetterSpec(propertyName, argumentTypeName))
+                    setterSpecs.add(lambdaSetterSpec(propertyName, lambdaTypeName))
+
+                    if (argumentTypeName.simpleName == "Any") {
+                        mapFunSpecBuilder.addStatement("is Function0<*> -> it as %T", lambdaTypeName)
+                        mapFunSpecBuilder.addStatement("else -> {{ it }}")
+                    } else {
+                        mapFunSpecBuilder.addStatement(
+                            "is %T -> it",
+                            ClassName("uk.dioxic.mgenerate", "${argumentTypeName.simpleName}Function")
+                        )
+                        mapFunSpecBuilder.addStatement("is %T -> {{ it }}", argumentTypeName)
+                        mapFunSpecBuilder.addCode(invalidArgumentExceptionBlock(propertyName))
+                    }
+
                 } else {
                     mapFunSpecBuilder.addStatement("is %T -> it", typeName)
-                    setterSpecs.add(scalarSetterSpec(propertyName, typeName))
+                    setterSpecs.add(lambdaSetterSpec(propertyName, typeName))
+                    mapFunSpecBuilder.addCode(invalidArgumentExceptionBlock(propertyName))
                 }
 
-                mapFunSpecBuilder.addStatement(
-                    "else -> throw IllegalArgumentException(%P)",
-                    "\${it::class.java} not valid for $propertyName attribute"
-                )
                 mapFunSpecBuilder.endControlFlow()
                 mapFunSpecBuilder.endControlFlow()
             }
             mapFunSpecBuilder.addStatement("return %N()", buildFun)
-            return setterSpecs + mapFunSpecBuilder.build() + buildFun
+            return setterSpecs + mapFunSpecBuilder.build() + buildFun + validationFun
         }
 
-        private fun scalarSetterSpec(propertyName: String, typeName: TypeName) =
+        private fun lambdaSetterSpec(propertyName: String, lambdaTypeName: TypeName) =
             FunSpec.builder(propertyName)
-                .addParameter(propertyName, typeName)
+                .addParameter(propertyName, lambdaTypeName)
                 .beginControlFlow("return apply")
                 .addStatement("this.$propertyName = $propertyName")
                 .endControlFlow()
                 .build()
 
-        private fun lambdaSetterSpec(propertyName: String, typeName: TypeName) =
+        private fun scalarSetterSpec(propertyName: String, scalarTypeName: TypeName) =
             FunSpec.builder(propertyName)
-                .addParameter(propertyName, typeName)
+                .addParameter(propertyName, scalarTypeName)
                 .beginControlFlow("return apply")
                 .addStatement("this.$propertyName = { $propertyName }")
                 .endControlFlow()
@@ -181,5 +198,32 @@ class OperatorProcessor(
                 addStatement(")")
                 build()
             }
+
+        private fun missingArgumentsBlock(parameters: List<KSValueParameter>) =
+            with(CodeBlock.builder()) {
+                beginControlFlow(
+                    "val missingArgs = %T().apply",
+                    ArrayList::class.asClassName().parameterizedBy(String::class.asClassName())
+                )
+                parameters
+                    .filterNot { it.hasDefault }
+                    .forEach {
+                        val propertyName = it.name!!.asString()
+                        beginControlFlow("if (%L == null)", propertyName)
+                        add("add(%S)", propertyName)
+                        endControlFlow()
+                    }
+                endControlFlow()
+                build()
+            }
+
+        private fun invalidArgumentExceptionBlock(propertyName: String) =
+            CodeBlock.builder()
+                .addStatement(
+                    "else -> throw %T(it::class, %S)",
+                    IncorrectTypeException::class,
+                    propertyName
+                )
+                .build()
     }
 }

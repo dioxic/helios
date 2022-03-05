@@ -26,7 +26,7 @@ dependencies {
     implementation(libs.bundles.logging)
 
     testImplementation(libs.junit)
-    testImplementation(libs.kotlin.test)
+//    testImplementation(libs.kotlin.test)
     testImplementation(libs.assertk)
 }
 
