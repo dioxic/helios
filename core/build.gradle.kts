@@ -24,10 +24,6 @@ dependencies {
     implementation(libs.kotlin.poet)
 //    implementation(libs.atomicfu)
     implementation(libs.bundles.logging)
-
-    testImplementation(libs.junit)
-//    testImplementation(libs.kotlin.test)
-    testImplementation(libs.assertk)
 }
 
 kotlin {

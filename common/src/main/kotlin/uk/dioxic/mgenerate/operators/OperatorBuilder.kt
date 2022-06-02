@@ -1,15 +1,17 @@
 package uk.dioxic.mgenerate.operators
 
-interface OperatorBuilder<T: () -> Any> {
+import uk.dioxic.mgenerate.TypedFunction
 
-    fun map(map: Map<String, Any>): OperatorBuilder<T>
+interface OperatorBuilder<T: TypedFunction> {
 
-    fun singleValue(value: Any): OperatorBuilder<T>
+    fun from(map: Map<String, Any?>): T
+
+//    fun singleValue(value: Any): OperatorBuilder<T>
 
     fun build(): T
 
     fun hasDefault(): Boolean
 
-    fun canHandleSingleValue(): Boolean
+//    fun canHandleSingleValue(): Boolean
 
 }

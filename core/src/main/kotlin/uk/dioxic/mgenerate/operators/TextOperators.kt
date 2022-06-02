@@ -1,13 +1,14 @@
 package uk.dioxic.mgenerate.operators
 
+import uk.dioxic.mgenerate.StringFunction
 import uk.dioxic.mgenerate.annotations.Operator
 import kotlin.random.Random
 
 @Operator
-data class Text(
+class Text(
     val length: () -> Number,
     val characterPool: () -> String = { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]" }
-) : () -> String {
+) : StringFunction {
 
     override operator fun invoke(): String {
         val rnd = Random.Default
@@ -19,22 +20,6 @@ data class Text(
         }
         return sb.toString()
     }
-
-    override fun toString(): String {
-        return "Text(length=${length()}, characterPool=${characterPool()})"
-    }
-}
-
-@Operator
-data class Array(
-    val of: () -> Any,
-    val number: () -> Number = { 5 }
-) : () -> List<Any> {
-
-    override operator fun invoke(): List<Any> =
-        generateSequence { of() }
-            .take(number().toInt())
-            .toList()
 }
 
 //fun string(

@@ -12,39 +12,26 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.TestFactory
 import uk.dioxic.mgenerate.exceptions.OperatorArgumentException
 import uk.dioxic.mgenerate.extensions.isSubsetOf
-import uk.dioxic.mgenerate.wrap
 
 internal class OperatorBuilderTest {
 
-    data class ArrayArguments(
-        val of: Any,
-        val number: Number
-    ) {
-        fun toDocument() = Document(mapOf(
-            "of" to of,
-            "number" to number
-        ))
-    }
-
-    data class TextArguments(
-        val length: Number,
-        val characterPool: String?
-    ) {
-        fun toDocument() = Document().apply {
-            put("length", length)
-            characterPool?.let {
-                put("characterPool", it)
-            }
-        }
-    }
-
     @Nested
-    inner class Array {
-        private val operatorData = listOf(
+    @DisplayName("Array Operator")
+    inner class ArrayTests {
+        private val validArgs = listOf(
             ArrayArguments("ABC", 6.0),
+            ArrayArguments(listOf("ABC", "XYZ"), 6.0),
             ArrayArguments(111, 10L),
             ArrayArguments(ObjectId(), 4),
             ArrayArguments(mapOf("name" to "Bob", "age" to 25), 5),
+        )
+
+        private val validFunctionArgs = validArgs
+            .map(ArrayArguments::toFunctionArguments) + listOf(
+            ArrayFunctionArguments(
+                of = Text(length = { 5 }),
+                number = RandomInt(min = { 0 }, max = { 20 })
+            )
         )
 
         private val invalidArgs = listOf(
@@ -57,7 +44,7 @@ internal class OperatorBuilderTest {
 
         @TestFactory
         @DisplayName("Typed inputs")
-        fun typedInputs() = operatorData
+        fun typedInputs() = validArgs
             .map { args ->
                 DynamicTest.dynamicTest("Array operator build with $args is successful") {
                     assertThat {
@@ -66,37 +53,34 @@ internal class OperatorBuilderTest {
                             .number(args.number)
                             .build()
                     }.isSuccess()
-                        .transform { it() }
-                        .check(args)
+                        .checkOperator(args)
                 }
             }
 
         @TestFactory
         @DisplayName("Functional inputs")
-        fun functionalInputs() = operatorData
+        fun functionalInputs() = validFunctionArgs
             .map { args ->
                 DynamicTest.dynamicTest("Array operator build with $args is successful") {
                     assertThat {
                         ArrayBuilder()
-                            .of { args.of }
-                            .number(args.number.wrap())
+                            .of(args.of)
+                            .number(args.number)
                             .build()
                     }.isSuccess()
-                        .transform { it() }
-                        .check(args)
+                        .checkOperator()
                 }
             }
 
         @TestFactory
         @DisplayName("Map input")
-        fun mapInput() = operatorData
+        fun mapInput() = validArgs
             .map { args ->
                 DynamicTest.dynamicTest("Array operator build with $args is successful") {
                     assertThat {
                         ArrayBuilder().from(args.toDocument())
                     }.isSuccess()
-                        .transform { it() }
-                        .check(args)
+                        .checkOperator(args)
                 }
             }
 
@@ -113,13 +97,29 @@ internal class OperatorBuilderTest {
                 }
             }
 
-        private fun Assert<List<Any>>.check(args: ArrayArguments) = all {
-            hasSize(args.number.toInt())
-        }
+        private fun Assert<Array>.checkOperator() =
+            transform("Invoke operator") { it().also { println(it) } }
+                .all {
+                    each {
+                        it.isNotNull()
+                        it.isNotInstanceOf(Function0::class)
+                    }
+                }
+
+        private fun Assert<Array>.checkOperator(args: ArrayArguments) =
+            transform("Invoke operator") { it().also { println(it) } }
+                .all {
+                    each {
+                        it.isNotNull()
+                        it.isNotInstanceOf(Function0::class)
+                    }
+                    hasSize(args.number.toInt())
+                }
     }
 
     @Nested
-    inner class Text {
+    @DisplayName("Text Operator")
+    inner class TextTests {
         private val validArgs = listOf(
             TextArguments(5, "ABC"),
             TextArguments(10L, "XZY"),
@@ -127,10 +127,21 @@ internal class OperatorBuilderTest {
             TextArguments(5, null),
         )
 
+        private val validFunctionArgs = validArgs
+            .map(TextArguments::toFunctionArguments) + listOf(
+            TextFunctionArguments(
+                length = RandomInt(min = { 0 }, max = { 20 })
+            ),
+            TextFunctionArguments(
+                length = RandomInt(min = { 5 }, max = { 10 }),
+                characterPool = { "ABCDEF" }
+            )
+        )
         private val invalidArgs = listOf(
             mapOf("length" to "invalid"),
             mapOf("length" to null),
             mapOf("length" to 5, "characterPool" to 999),
+            mapOf("length" to { "ABC" }),
             mapOf(),
         )
 
@@ -147,26 +158,24 @@ internal class OperatorBuilderTest {
                         builder.length(args.length)
                         builder.build()
                     }.isSuccess()
-                        .transform { it() }
-                        .check(args)
+                        .checkOperator(args)
                 }
             }
 
         @TestFactory
         @DisplayName("Functional inputs")
-        fun functionalInputs() = validArgs
+        fun functionalInputs() = validFunctionArgs
             .map { args ->
                 DynamicTest.dynamicTest("Text operator build with $args is successful") {
                     assertThat {
                         val builder = TextBuilder()
                         args.characterPool?.let {
-                            builder.characterPool { it }
+                            builder.characterPool(it)
                         }
-                        builder.length(args.length.wrap())
+                        builder.length(args.length)
                         builder.build()
                     }.isSuccess()
-                        .transform { it() }
-                        .check(args)
+                        .checkOperator(args)
                 }
             }
 
@@ -179,8 +188,7 @@ internal class OperatorBuilderTest {
                         TextBuilder()
                             .from(args.toDocument())
                     }.isSuccess()
-                        .transform { it() }
-                        .check(args)
+                        .checkOperator(args)
                 }
             }
 
@@ -197,10 +205,74 @@ internal class OperatorBuilderTest {
                 }
             }
 
-        private fun Assert<String>.check(args: TextArguments) = all {
-            hasLength(args.length.toInt())
-            args.characterPool?.let {
-                isSubsetOf(it)
+        private fun Assert<Text>.checkOperator(args: TextFunctionArguments) =
+            transform("Invoke operator") { it().also { println(it) } }
+                .all {
+                    args.characterPool?.let {
+                        isSubsetOf(it())
+                    }
+                }
+
+        private fun Assert<Text>.checkOperator(args: TextArguments) =
+            transform("Invoke operator") { it() }
+                .all {
+                    hasLength(args.length.toInt())
+                    args.characterPool?.let {
+                        isSubsetOf(it)
+                    }
+                }
+    }
+
+    data class ArrayArguments(
+        val of: Any,
+        val number: Number
+    ) {
+        fun toDocument() = Document(
+            mapOf(
+                "of" to of,
+                "number" to number
+            )
+        )
+
+        fun toFunctionArguments() =
+            ArrayFunctionArguments({ of }, { number })
+    }
+
+    data class ArrayFunctionArguments(
+        val of: () -> Any,
+        val number: () -> Number
+    ) {
+        fun toDocument() = Document(
+            mapOf(
+                "of" to of,
+                "number" to number
+            )
+        )
+    }
+
+    data class TextArguments(
+        val length: Number,
+        val characterPool: String? = null
+    ) {
+        fun toDocument() = Document().apply {
+            put("length", length)
+            characterPool?.let {
+                put("characterPool", it)
+            }
+        }
+
+        fun toFunctionArguments() =
+            TextFunctionArguments({ length }, characterPool?.let { { it } })
+    }
+
+    data class TextFunctionArguments(
+        val length: () -> Number,
+        val characterPool: (() -> String)? = null
+    ) {
+        fun toDocument() = Document().apply {
+            put("length", length)
+            characterPool?.let {
+                put("characterPool", it)
             }
         }
     }

@@ -1,7 +1,7 @@
 package uk.dioxic.mgenerate.annotations
 
-@Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
 annotation class Operator(
-    val name: Array<String> = []
+    vararg val aliases: String
 )

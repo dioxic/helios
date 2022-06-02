@@ -22,7 +22,7 @@ kotlin {
         }
     }
     tasks.withType<KotlinJvmCompile> {
-        kotlinOptions.jvmTarget = "11"
+        kotlinOptions.jvmTarget = "17"
         kotlinOptions.languageVersion = "1.6"
     }
 //    tasks.withType<KotlinJvmTest>().configureEach {
