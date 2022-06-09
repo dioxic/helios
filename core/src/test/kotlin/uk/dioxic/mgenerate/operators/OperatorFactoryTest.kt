@@ -21,7 +21,7 @@ internal class OperatorFactoryTest {
             .row(10, "XYZ")
             .forAll { length, pool ->
                 val map = mapOf("length" to { length }, "characterPool" to { pool })
-                assertThat { instance<Text>(map) }
+                assertThat { instance<TextOperator>(map) }
                     .isSuccess()
                     .transform { it() }
                     .all {
@@ -38,14 +38,17 @@ internal class OperatorFactoryTest {
             .row(10, 555)
             .forAll { length, pool ->
                 val map = mapOf("length" to { length }, "characterPool" to { pool })
-                assertThat { instance<Text>(map) }.isFailure()
+                assertThat {
+                    val text = instance<TextOperator>(map)
+                    text.invoke()
+                }.isFailure()
             }
     }
 
     @Test
     fun `Single value with correct type`() {
         listOf(1,2,3,4,5).forEach { length ->
-            assertThat { instance<Text> { length } }
+            assertThat { instance<TextOperator> { {length } }}
                 .isSuccess()
                 .transform { it() }
                 .all {
@@ -57,7 +60,7 @@ internal class OperatorFactoryTest {
     @Test
     fun `Single value with incorrect type`() {
         listOf("1", 2, 3).forEach { length ->
-            assertThat { instance<Text> { length } }
+            assertThat { instance<TextOperator> { length } }
                 .isFailure()
         }
     }

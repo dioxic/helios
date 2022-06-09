@@ -4,22 +4,39 @@ import uk.dioxic.mgenerate.StringFunction
 import uk.dioxic.mgenerate.annotations.Operator
 import kotlin.random.Random
 
+//@Operator
+//class Text(
+//    val length: () -> Number,
+//    val characterPool: () -> String = { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]" }
+//) : StringFunction {
+//
+//    override operator fun invoke(): String {
+//        val rnd = Random.Default
+//        val sb = StringBuilder()
+//        val pool = characterPool()
+//        val len = length().toInt()
+//
+//        repeat(len) {
+//            sb.append(pool[rnd.nextInt(pool.length)])
+//        }
+//        return sb.toString()
+//    }
+//}
+
 @Operator
-class Text(
-    val length: () -> Number,
-    val characterPool: () -> String = { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]" }
-) : StringFunction {
+fun text(
+    length: () -> Number,
+    characterPool: () -> String = { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]" },
+) : String {
+    val rnd = Random.Default
+    val sb = StringBuilder()
+    val pool = characterPool()
+    val len = length().toInt()
 
-    override operator fun invoke(): String {
-        val rnd = Random.Default
-        val sb = StringBuilder()
-        val pool = characterPool()
-
-        repeat(length().toInt()) {
-            sb.append(pool[rnd.nextInt(pool.length)])
-        }
-        return sb.toString()
+    repeat(len) {
+        sb.append(pool[rnd.nextInt(pool.length)])
     }
+    return sb.toString()
 }
 
 //fun string(

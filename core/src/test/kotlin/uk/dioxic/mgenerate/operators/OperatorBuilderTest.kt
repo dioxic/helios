@@ -29,8 +29,8 @@ internal class OperatorBuilderTest {
         private val validFunctionArgs = validArgs
             .map(ArrayArguments::toFunctionArguments) + listOf(
             ArrayFunctionArguments(
-                of = Text(length = { 5 }),
-                number = RandomInt(min = { 0 }, max = { 20 })
+                of = TextOperator(length = { 5 }),
+                number = { randomInt(min = 0, max = 20) }
             )
         )
 
@@ -48,7 +48,7 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Array operator build with $args is successful") {
                     assertThat {
-                        ArrayBuilder()
+                        ArrayOperatorBuilder()
                             .of(args.of)
                             .number(args.number)
                             .build()
@@ -63,7 +63,7 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Array operator build with $args is successful") {
                     assertThat {
-                        ArrayBuilder()
+                        ArrayOperatorBuilder()
                             .of(args.of)
                             .number(args.number)
                             .build()
@@ -78,7 +78,7 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Array operator build with $args is successful") {
                     assertThat {
-                        ArrayBuilder().from(args.toDocument())
+                        ArrayOperatorBuilder().from(args.toDocument())
                     }.isSuccess()
                         .checkOperator(args)
                 }
@@ -90,14 +90,14 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Array operator build fails with $args") {
                     assertThat {
-                        ArrayBuilder().from(args)
+                        ArrayOperatorBuilder().from(args)
                     }
                         .isFailure()
                         .isInstanceOf(OperatorArgumentException::class)
                 }
             }
 
-        private fun Assert<Array>.checkOperator() =
+        private fun Assert<ArrayOperator>.checkOperator() =
             transform("Invoke operator") { it().also { println(it) } }
                 .all {
                     each {
@@ -106,7 +106,7 @@ internal class OperatorBuilderTest {
                     }
                 }
 
-        private fun Assert<Array>.checkOperator(args: ArrayArguments) =
+        private fun Assert<ArrayOperator>.checkOperator(args: ArrayArguments) =
             transform("Invoke operator") { it().also { println(it) } }
                 .all {
                     each {
@@ -130,10 +130,10 @@ internal class OperatorBuilderTest {
         private val validFunctionArgs = validArgs
             .map(TextArguments::toFunctionArguments) + listOf(
             TextFunctionArguments(
-                length = RandomInt(min = { 0 }, max = { 20 })
+                length = RandomIntOperator(min = 0, max = 20)
             ),
             TextFunctionArguments(
-                length = RandomInt(min = { 5 }, max = { 10 }),
+                length = RandomIntOperator(min = 5, max = 10),
                 characterPool = { "ABCDEF" }
             )
         )
@@ -151,7 +151,7 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Text operator build with $args is successful") {
                     assertThat {
-                        val builder = TextBuilder()
+                        val builder = TextOperatorBuilder()
                         args.characterPool?.let {
                             builder.characterPool(it)
                         }
@@ -168,7 +168,7 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Text operator build with $args is successful") {
                     assertThat {
-                        val builder = TextBuilder()
+                        val builder = TextOperatorBuilder()
                         args.characterPool?.let {
                             builder.characterPool(it)
                         }
@@ -185,7 +185,7 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Text operator build with $args is successful") {
                     assertThat {
-                        TextBuilder()
+                        TextOperatorBuilder()
                             .from(args.toDocument())
                     }.isSuccess()
                         .checkOperator(args)
@@ -198,14 +198,14 @@ internal class OperatorBuilderTest {
             .map { args ->
                 DynamicTest.dynamicTest("Text operator build fails with $args") {
                     assertThat {
-                        TextBuilder()
+                        TextOperatorBuilder()
                             .from(args)
                     }.isFailure()
                         .isInstanceOf(OperatorArgumentException::class)
                 }
             }
 
-        private fun Assert<Text>.checkOperator(args: TextFunctionArguments) =
+        private fun Assert<TextOperator>.checkOperator(args: TextFunctionArguments) =
             transform("Invoke operator") { it().also { println(it) } }
                 .all {
                     args.characterPool?.let {
@@ -213,7 +213,7 @@ internal class OperatorBuilderTest {
                     }
                 }
 
-        private fun Assert<Text>.checkOperator(args: TextArguments) =
+        private fun Assert<TextOperator>.checkOperator(args: TextArguments) =
             transform("Invoke operator") { it() }
                 .all {
                     hasLength(args.length.toInt())

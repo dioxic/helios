@@ -1,5 +1,6 @@
 package uk.dioxic.mgenerate
 
+import com.squareup.kotlinpoet.asTypeName
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.reflect
 

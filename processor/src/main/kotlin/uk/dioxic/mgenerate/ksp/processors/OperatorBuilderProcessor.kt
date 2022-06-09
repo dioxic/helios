@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.*
 import uk.dioxic.mgenerate.exceptions.IncorrectTypeException
 import uk.dioxic.mgenerate.exceptions.MissingArgumentException
+import uk.dioxic.mgenerate.ksp.commons.toLambaTypeName
 import uk.dioxic.mgenerate.operators.OperatorBuilder
 
 @OptIn(KotlinPoetKspPreview::class)
@@ -46,7 +47,7 @@ class OperatorBuilderProcessor(
         val builderClassName = "${classDeclaration.simpleName.asString()}Builder"
 
         private fun TypeSpec.Builder.addProperty(valueParameter: KSValueParameter) = apply {
-            val propertyType = valueParameter.type.toTypeName(true).copy(nullable = true)
+            val propertyType = valueParameter.type.toLambaTypeName().copy(nullable = true)
 
             this.addProperty(
                 PropertySpec.builder(valueParameter.name!!.asString(), propertyType)
@@ -76,15 +77,6 @@ class OperatorBuilderProcessor(
                 }
             } else {
                 addFunction(passthroughSetterSpec(propertyName, typeName))
-            }
-        }
-
-        private fun KSTypeReference.toTypeName(preferLambda: Boolean) = let {
-            val element = it.element
-            if (preferLambda && element is KSCallableReference) {
-                LambdaTypeName.get(returnType = element.returnType.toTypeName())
-            } else {
-                toTypeName()
             }
         }
 
