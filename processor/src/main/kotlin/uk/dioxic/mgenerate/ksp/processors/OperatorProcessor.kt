@@ -3,16 +3,14 @@ package uk.dioxic.mgenerate.ksp.processors
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSCallableReference
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
-import uk.dioxic.mgenerate.ListFunction
-import uk.dioxic.mgenerate.MapFunction
-import uk.dioxic.mgenerate.NumberFunction
-import uk.dioxic.mgenerate.StringFunction
+import uk.dioxic.mgenerate.*
 import uk.dioxic.mgenerate.annotations.Operator
 import uk.dioxic.mgenerate.ksp.commons.getDefaultValue
 import uk.dioxic.mgenerate.ksp.commons.toLambaTypeName
@@ -65,11 +63,17 @@ class OperatorProcessor(
 
             parameters.forEach {
                 val name = it.name!!.asString()
-                val type = it.type.toLambaTypeName()
+                val callableType = it.type.element is KSCallableReference
+                val type = it.type.toLambaTypeName(alwaysLambda = true)
 
                 val parameterSpec = with(ParameterSpec.builder(name, type)) {
                     if (it.hasDefault) {
-                        defaultValue("%L", it.getDefaultValue(resolver)!!.code)
+                        val dvCode = it.getDefaultValue(resolver)!!.code
+                        if (callableType) {
+                            defaultValue("%L", dvCode)
+                        } else {
+                            defaultValue("{ %L }", dvCode)
+                        }
                     }
                     build()
                 }
@@ -84,8 +88,25 @@ class OperatorProcessor(
             }
 
             val invokeFunArguments = parameters
-                .map { it.name!!.asString() }
-                .joinToString { "$it = $it" }
+//                .map {param ->
+//                    val callableType = param.type.element is KSCallableReference
+//                    param.name!!.asString().let {
+//                        if (callableType) {
+//                            "$it()"
+//                        }
+//                        else {
+//                            it
+//                        }
+//                    }
+//                }
+                .map { it.name!!.asString() to (it.type.element is KSCallableReference) }
+                .joinToString { (name, callable) ->
+                    if (callable) {
+                        "$name = $name"
+                    } else {
+                        "$name = $name()"
+                    }
+                }
 
             val invokeFunSpec = FunSpec.builder("invoke")
                 .addModifiers(KModifier.OVERRIDE)
@@ -114,6 +135,8 @@ class OperatorProcessor(
                 "String" -> StringFunction::class
                 "List" -> ListFunction::class
                 "Map" -> MapFunction::class
+                "Boolean" -> BooleanFunction::class
+                "Any" -> AnyFunction::class
                 else -> throw IllegalArgumentException("function return type [$returnType] not supported")
             }
 

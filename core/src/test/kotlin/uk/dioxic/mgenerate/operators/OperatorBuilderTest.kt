@@ -130,10 +130,10 @@ internal class OperatorBuilderTest {
         private val validFunctionArgs = validArgs
             .map(TextArguments::toFunctionArguments) + listOf(
             TextFunctionArguments(
-                length = RandomIntOperator(min = 0, max = 20)
+                length = RandomIntOperator(min = { 0 }, max = { 20 })
             ),
             TextFunctionArguments(
-                length = RandomIntOperator(min = 5, max = 10),
+                length = RandomIntOperator(min = { 5 }, max = { 10 }),
                 characterPool = { "ABCDEF" }
             )
         )

@@ -66,10 +66,10 @@ class OperatorBuilderProcessor(
             val typeName = type.toClassName()
 
             if (type.isFunctionType && element is KSCallableReference) {
-                val returnTypeName = element.returnType.toTypeName() as ClassName
+                val returnTypeName = element.returnType.toTypeName()
                 val lambdaTypeName = LambdaTypeName.get(returnType = returnTypeName)
 
-                if (returnTypeName.simpleName == "Any") {
+                if (returnTypeName is ClassName && returnTypeName.simpleName == "Any") {
                     addFunction(anySetterSpec(propertyName))
                 } else {
                     addFunction(wrappedSetterSpec(propertyName, returnTypeName))
@@ -172,23 +172,37 @@ class OperatorBuilderProcessor(
                     val parameterType = it.type.resolve()
                     val typeName = it.type.toTypeName()
                     val element = it.type.element
+                    val castingBlock = CodeBlock.builder()
 
                     beginControlFlow("map[%S]?.let", propertyName)
                     beginControlFlow("$propertyName = when (it)")
                     if (parameterType.isFunctionType && element is KSCallableReference) {
-                        val returnTypeName = element.returnType.toTypeName() as ClassName
+                        val returnTypeName = element.returnType.toTypeName()
                         val lambdaTypeName = LambdaTypeName.get(returnType = returnTypeName)
+                        val simpleName = when (returnTypeName) {
+                            is ClassName -> returnTypeName.simpleName
+                            is ParameterizedTypeName -> returnTypeName.rawType.simpleName
+                            else -> throw IllegalStateException("Can't get name for type ${returnTypeName::class}")
+                        }
 
-                        if (returnTypeName.simpleName == "Any") {
+                        if (simpleName == "Any") {
                             addStatement("is Function0<*> -> it as %T", lambdaTypeName)
                             addStatement("else -> {{ it }}")
                         } else {
                             addStatement(
                                 "is %T -> it",
-                                ClassName("uk.dioxic.mgenerate", "${returnTypeName.simpleName}Function")
+                                ClassName("uk.dioxic.mgenerate", "${simpleName}Function")
                             )
-                            addStatement("is %T -> {{ it }}", returnTypeName)
+                            val wideReturnType = when (returnTypeName) {
+                                is ParameterizedTypeName -> returnTypeName.rawType.parameterizedBy(STAR)
+                                else -> returnTypeName
+                            }
+
+                            addStatement("is %T -> {{ it }}", wideReturnType)
                             addCode(invalidArgumentExceptionBlock(propertyName))
+                        }
+                        if (returnTypeName is ParameterizedTypeName) {
+                            castingBlock.add("as () -> %T", returnTypeName)
                         }
 
                     } else {
@@ -197,6 +211,7 @@ class OperatorBuilderProcessor(
                     }
 
                     endControlFlow()
+                    addCode(castingBlock.build())
                     endControlFlow()
                 }
                 addStatement("return %N()", buildFun)
