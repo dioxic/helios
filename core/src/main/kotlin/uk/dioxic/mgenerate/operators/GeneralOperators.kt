@@ -5,7 +5,7 @@ import uk.dioxic.mgenerate.annotations.Operator
 import uk.dioxic.mgenerate.average
 import kotlin.random.Random
 
-@Operator
+//@Operator
 fun array(
     of: () -> Any,
     number: () -> Number = { 5 }
@@ -37,13 +37,13 @@ fun <T:Any> choose(
     return weightedList[Random.nextInt(weightedList.size)]
 }
 
-@Operator("choose")
-public class ChooseOperator<T:Any>(
-    public val from: () -> List<T>,
-    public val weights: () -> List<Int>,
-) : AnyFunction {
-    public override fun invoke(): T = choose(from = from(), weights = weights())
-}
+//@Operator("choose")
+//public class ChooseOperator<T:Any>(
+//    public val from: () -> List<T>,
+//    public val weights: () -> List<Int>,
+//) : AnyFunction {
+//    public override fun invoke(): T = choose(from = from(), weights = weights())
+//}
 
 @Operator("inc", "increment")
 fun inc(input: Number, step: Number): Number =

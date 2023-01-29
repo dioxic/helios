@@ -11,7 +11,6 @@ import uk.dioxic.mgenerate.exceptions.MissingArgumentException
 import uk.dioxic.mgenerate.ksp.commons.toLambaTypeName
 import uk.dioxic.mgenerate.operators.OperatorBuilder
 
-@OptIn(KotlinPoetKspPreview::class)
 class OperatorBuilderProcessor(
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,

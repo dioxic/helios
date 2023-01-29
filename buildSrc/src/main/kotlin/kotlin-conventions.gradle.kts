@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 import uk.dioxic.gradle.libs
 
@@ -15,16 +14,18 @@ kotlin {
 //                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
 //                optIn("kotlinx.coroutines.FlowPreview")
                 optIn("kotlin.Experimental")
+                optIn("kotlin.RequiresOptIn")
                 optIn("kotlin.time.ExperimentalTime")
-//                optIn("kotlin.reflect.jvm.ExperimentalReflectionOnLambdas")
+                optIn("kotlin.reflect.jvm.ExperimentalReflectionOnLambdas")
 //                optIn("kotlin.time.ExperimentalContracts")
             }
         }
     }
-    tasks.withType<KotlinJvmCompile> {
-        kotlinOptions.jvmTarget = "17"
-        kotlinOptions.languageVersion = "1.6"
-    }
+    jvmToolchain(13)
+//    tasks.withType<KotlinJvmCompile> {
+//        kotlinOptions.jvmTarget = "17"
+//        kotlinOptions.languageVersion = "1.6"
+//    }
 //    tasks.withType<KotlinJvmTest>().configureEach {
 //        useJUnitPlatform()
 //        testLogging {

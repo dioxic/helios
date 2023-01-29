@@ -8,10 +8,8 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.writeTo
 
-@OptIn(KotlinPoetKspPreview::class)
 class OperatorRegistryProcessor(
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,

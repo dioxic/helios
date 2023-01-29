@@ -4,11 +4,9 @@ import com.google.devtools.ksp.symbol.KSCallableReference
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 
-@OptIn(KotlinPoetKspPreview::class)
 fun KSTypeReference.toLambaTypeName(alwaysLambda: Boolean = false) = let {
     val element = it.element
     if (element is KSCallableReference) {

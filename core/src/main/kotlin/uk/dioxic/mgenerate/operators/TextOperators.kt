@@ -23,21 +23,21 @@ import kotlin.random.Random
 //    }
 //}
 
-@Operator
-fun text(
-    length: () -> Number,
-    characterPool: () -> String = { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]" },
-) : String {
-    val rnd = Random.Default
-    val sb = StringBuilder()
-    val pool = characterPool()
-    val len = length().toInt()
-
-    repeat(len) {
-        sb.append(pool[rnd.nextInt(pool.length)])
-    }
-    return sb.toString()
-}
+//@Operator
+//fun text(
+//    length: () -> Number,
+//    characterPool: () -> String = { "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()[]" },
+//) : String {
+//    val rnd = Random.Default
+//    val sb = StringBuilder()
+//    val pool = characterPool()
+//    val len = length().toInt()
+//
+//    repeat(len) {
+//        sb.append(pool[rnd.nextInt(pool.length)])
+//    }
+//    return sb.toString()
+//}
 
 //fun string(
 //    length: Int,

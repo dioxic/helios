@@ -7,7 +7,6 @@ import com.google.devtools.ksp.symbol.KSCallableReference
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import uk.dioxic.mgenerate.*
@@ -16,7 +15,6 @@ import uk.dioxic.mgenerate.ksp.commons.getDefaultValue
 import uk.dioxic.mgenerate.ksp.commons.toLambaTypeName
 import kotlin.reflect.KClass
 
-@OptIn(KotlinPoetKspPreview::class)
 class OperatorProcessor(
     private val logger: KSPLogger,
     private val codeGenerator: CodeGenerator,
@@ -40,7 +38,6 @@ class OperatorProcessor(
         return ret
     }
 
-    @OptIn(KotlinPoetKspPreview::class)
     inner class OperatorPoet(
         private val funDeclaration: KSFunctionDeclaration,
         private val resolver: Resolver

@@ -2,6 +2,7 @@ package uk.dioxic.mgenerate
 
 import com.squareup.kotlinpoet.asTypeName
 import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.reflect
 
 inline fun <reified T : () -> Any> instance(vals: Map<String, () -> Any>): T {
@@ -18,6 +19,7 @@ inline fun <reified T : () -> Any> instance(vals: Map<String, () -> Any>): T {
     return cons.callBy(valmap)
 }
 
+@OptIn(ExperimentalReflectionOnLambdas::class)
 inline fun <reified T : () -> Any> instance(noinline value: () -> Any): T {
     val cons = T::class.primaryConstructor!!
 

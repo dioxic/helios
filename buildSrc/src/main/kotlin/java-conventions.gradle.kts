@@ -9,6 +9,12 @@ dependencies {
     testImplementation(libs.assertj)
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(13))
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
     testLogging {
