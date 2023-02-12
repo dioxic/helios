@@ -1,16 +1,25 @@
 package uk.dioxic.mgenerate.operators
 
-import uk.dioxic.mgenerate.TypedFunction
+import org.bson.Document
+import kotlin.reflect.KClass
 
-interface OperatorBuilder<T: TypedFunction> {
+interface OperatorBuilder<T : Operator<*>> {
 
-    fun from(map: Map<String, Any?>): T
+    fun fromDocument(document: Document): T
+
+    fun fromMap(map: Map<*, *>): T
+
+    fun fromValue(value: Any): T
+
+    fun toDocument(operator: T): Document
 
 //    fun singleValue(value: Any): OperatorBuilder<T>
 
     fun build(): T
 
-    fun hasDefault(): Boolean
+    val operatorClass: KClass<T>
+
+//    fun hasDefault(): Boolean
 
 //    fun canHandleSingleValue(): Boolean
 

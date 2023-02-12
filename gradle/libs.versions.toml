@@ -1,10 +1,10 @@
 [versions]
-kotlin = "1.8.0"
-ksp = "1.8.0-1.0.9"
+kotlin = "1.8.10"
+ksp = "1.8.10-1.0.9"
 kotlinCoroutines = "1.6.0"
 kotlinSerialization = "1.4.1"
 kotlinDatetime = "0.4.0"
-mongodb = "4.8.2"
+mongodb = "4.9.0"
 clikt = "2.8.0"
 statistics = "1.2.1"
 slf4j = "1.7.36"

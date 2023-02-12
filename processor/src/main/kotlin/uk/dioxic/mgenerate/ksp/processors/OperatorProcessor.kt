@@ -10,9 +10,10 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import uk.dioxic.mgenerate.*
-import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.annotations.Alias
 import uk.dioxic.mgenerate.ksp.commons.getDefaultValue
 import uk.dioxic.mgenerate.ksp.commons.toLambaTypeName
+import uk.dioxic.mgenerate.operators.Operator
 import kotlin.reflect.KClass
 
 class OperatorProcessor(
@@ -127,18 +128,19 @@ class OperatorProcessor(
         }
 
         private fun functionClass(returnType: ClassName) =
-            when (returnType.simpleName) {
-                "Number", "Int", "Long", "Double", "Float" -> NumberFunction::class
-                "String" -> StringFunction::class
-                "List" -> ListFunction::class
-                "Map" -> MapFunction::class
-                "Boolean" -> BooleanFunction::class
-                "Any" -> AnyFunction::class
-                else -> throw IllegalArgumentException("function return type [$returnType] not supported")
-            }
+            Operator::class
+//            when (returnType.simpleName) {
+//                "Number", "Int", "Long", "Double", "Float" -> NumberFunction::class
+//                "String" -> StringFunction::class
+//                "List" -> ListFunction::class
+//                "Map" -> MapFunction::class
+//                "Boolean" -> BooleanFunction::class
+//                "Any" -> AnyFunction::class
+//                else -> throw IllegalArgumentException("function return type [$returnType] not supported")
+//            }
 
         private fun operatorAnnotationSpec(annotation: KSAnnotation, funcName: String) =
-            with(AnnotationSpec.builder(Operator::class)) {
+            with(AnnotationSpec.builder(Alias::class)) {
                 val existingAliases = annotation.arguments
                     .first { it.name?.asString() == "aliases" }
                     .value as List<*>

@@ -1,7 +1,6 @@
 package uk.dioxic.mgenerate.operators
 
-import uk.dioxic.mgenerate.AnyFunction
-import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.annotations.Alias
 import uk.dioxic.mgenerate.average
 import kotlin.random.Random
 
@@ -13,11 +12,11 @@ fun array(
     .take(number().toInt())
     .toList()
 
-@Operator("avg", "average")
+@Alias("avg", "average")
 fun avg(input: List<Number>) =
     input.average()
 
-@Operator
+@Alias
 fun boolean() =
     Random.nextBoolean()
 
@@ -45,7 +44,7 @@ fun <T:Any> choose(
 //    public override fun invoke(): T = choose(from = from(), weights = weights())
 //}
 
-@Operator("inc", "increment")
+@Alias("inc", "increment")
 fun inc(input: Number, step: Number): Number =
     when (step) {
         is Double -> input.toDouble() + step

@@ -1,9 +1,5 @@
 package uk.dioxic.mgenerate.operators
 
-import uk.dioxic.mgenerate.StringFunction
-import uk.dioxic.mgenerate.annotations.Operator
-import kotlin.random.Random
-
 //@Operator
 //class Text(
 //    val length: () -> Number,

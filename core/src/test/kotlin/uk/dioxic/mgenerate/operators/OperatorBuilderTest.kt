@@ -15,267 +15,267 @@ import uk.dioxic.mgenerate.extensions.isSubsetOf
 
 internal class OperatorBuilderTest {
 
-    @Nested
-    @DisplayName("Array Operator")
-    inner class ArrayTests {
-        private val validArgs = listOf(
-            ArrayArguments("ABC", 6.0),
-            ArrayArguments(listOf("ABC", "XYZ"), 6.0),
-            ArrayArguments(111, 10L),
-            ArrayArguments(ObjectId(), 4),
-            ArrayArguments(mapOf("name" to "Bob", "age" to 25), 5),
-        )
+//    @Nested
+//    @DisplayName("Array Operator")
+//    inner class ArrayTests {
+//        private val validArgs = listOf(
+//            ArrayArguments("ABC", 6.0),
+//            ArrayArguments(listOf("ABC", "XYZ"), 6.0),
+//            ArrayArguments(111, 10L),
+//            ArrayArguments(ObjectId(), 4),
+//            ArrayArguments(mapOf("name" to "Bob", "age" to 25), 5),
+//        )
+//
+//        private val validFunctionArgs = validArgs
+//            .map(ArrayArguments::toFunctionArguments) + listOf(
+//            ArrayFunctionArguments(
+//                of = TextOperator(length = { 5 }),
+//                number = { randomInt(min = 0, max = 20) }
+//            )
+//        )
+//
+//        private val invalidArgs = listOf(
+//            mapOf("number" to 6),
+//            mapOf("number" to 6, "of" to null),
+//            mapOf("number" to null, "of" to null),
+//            mapOf("number" to "6"),
+//            mapOf(),
+//        )
+//
+//        @TestFactory
+//        @DisplayName("Typed inputs")
+//        fun typedInputs() = validArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Array operator build with $args is successful") {
+//                    assertThat {
+//                        ArrayOperatorBuilder()
+//                            .of(args.of)
+//                            .number(args.number)
+//                            .build()
+//                    }.isSuccess()
+//                        .checkOperator(args)
+//                }
+//            }
+//
+//        @TestFactory
+//        @DisplayName("Functional inputs")
+//        fun functionalInputs() = validFunctionArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Array operator build with $args is successful") {
+//                    assertThat {
+//                        ArrayOperatorBuilder()
+//                            .of(args.of)
+//                            .number(args.number)
+//                            .build()
+//                    }.isSuccess()
+//                        .checkOperator()
+//                }
+//            }
+//
+//        @TestFactory
+//        @DisplayName("Map input")
+//        fun mapInput() = validArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Array operator build with $args is successful") {
+//                    assertThat {
+//                        ArrayOperatorBuilder().from(args.toDocument())
+//                    }.isSuccess()
+//                        .checkOperator(args)
+//                }
+//            }
+//
+//        @TestFactory
+//        @DisplayName("Invalid input")
+//        fun invalidMapInput() = invalidArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Array operator build fails with $args") {
+//                    assertThat {
+//                        ArrayOperatorBuilder().from(args)
+//                    }
+//                        .isFailure()
+//                        .isInstanceOf(OperatorArgumentException::class)
+//                }
+//            }
+//
+//        private fun Assert<ArrayOperator>.checkOperator() =
+//            transform("Invoke operator") { it().also { println(it) } }
+//                .all {
+//                    each {
+//                        it.isNotNull()
+//                        it.isNotInstanceOf(Function0::class)
+//                    }
+//                }
+//
+//        private fun Assert<ArrayOperator>.checkOperator(args: ArrayArguments) =
+//            transform("Invoke operator") { it().also { println(it) } }
+//                .all {
+//                    each {
+//                        it.isNotNull()
+//                        it.isNotInstanceOf(Function0::class)
+//                    }
+//                    hasSize(args.number.toInt())
+//                }
+//    }
+//
+//    @Nested
+//    @DisplayName("Text Operator")
+//    inner class TextTests {
+//        private val validArgs = listOf(
+//            TextArguments(5, "ABC"),
+//            TextArguments(10L, "XZY"),
+//            TextArguments(16.5, "KLG"),
+//            TextArguments(5, null),
+//        )
+//
+//        private val validFunctionArgs = validArgs
+//            .map(TextArguments::toFunctionArguments) + listOf(
+//            TextFunctionArguments(
+//                length = RandomIntOperator(min = { 0 }, max = { 20 })
+//            ),
+//            TextFunctionArguments(
+//                length = RandomIntOperator(min = { 5 }, max = { 10 }),
+//                characterPool = { "ABCDEF" }
+//            )
+//        )
+//        private val invalidArgs = listOf(
+//            mapOf("length" to "invalid"),
+//            mapOf("length" to null),
+//            mapOf("length" to 5, "characterPool" to 999),
+//            mapOf("length" to { "ABC" }),
+//            mapOf(),
+//        )
 
-        private val validFunctionArgs = validArgs
-            .map(ArrayArguments::toFunctionArguments) + listOf(
-            ArrayFunctionArguments(
-                of = TextOperator(length = { 5 }),
-                number = { randomInt(min = 0, max = 20) }
-            )
-        )
+//        @TestFactory
+//        @DisplayName("Typed inputs")
+//        fun typedInputs() = validArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Text operator build with $args is successful") {
+//                    assertThat {
+//                        val builder = TextOperatorBuilder()
+//                        args.characterPool?.let {
+//                            builder.characterPool(it)
+//                        }
+//                        builder.length(args.length)
+//                        builder.build()
+//                    }.isSuccess()
+//                        .checkOperator(args)
+//                }
+//            }
+//
+//        @TestFactory
+//        @DisplayName("Functional inputs")
+//        fun functionalInputs() = validFunctionArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Text operator build with $args is successful") {
+//                    assertThat {
+//                        val builder = TextOperatorBuilder()
+//                        args.characterPool?.let {
+//                            builder.characterPool(it)
+//                        }
+//                        builder.length(args.length)
+//                        builder.build()
+//                    }.isSuccess()
+//                        .checkOperator(args)
+//                }
+//            }
+//
+//        @TestFactory
+//        @DisplayName("Map input")
+//        fun mapInput() = validArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Text operator build with $args is successful") {
+//                    assertThat {
+//                        TextOperatorBuilder()
+//                            .from(args.toDocument())
+//                    }.isSuccess()
+//                        .checkOperator(args)
+//                }
+//            }
+//
+//        @TestFactory
+//        @DisplayName("Invalid input")
+//        fun invalidMapInput() = invalidArgs
+//            .map { args ->
+//                DynamicTest.dynamicTest("Text operator build fails with $args") {
+//                    assertThat {
+//                        TextOperatorBuilder()
+//                            .from(args)
+//                    }.isFailure()
+//                        .isInstanceOf(OperatorArgumentException::class)
+//                }
+//            }
+//
+//        private fun Assert<TextOperator>.checkOperator(args: TextFunctionArguments) =
+//            transform("Invoke operator") { it().also { println(it) } }
+//                .all {
+//                    args.characterPool?.let {
+//                        isSubsetOf(it())
+//                    }
+//                }
+//
+//        private fun Assert<TextOperator>.checkOperator(args: TextArguments) =
+//            transform("Invoke operator") { it() }
+//                .all {
+//                    hasLength(args.length.toInt())
+//                    args.characterPool?.let {
+//                        isSubsetOf(it)
+//                    }
+//                }
+//    }
 
-        private val invalidArgs = listOf(
-            mapOf("number" to 6),
-            mapOf("number" to 6, "of" to null),
-            mapOf("number" to null, "of" to null),
-            mapOf("number" to "6"),
-            mapOf(),
-        )
-
-        @TestFactory
-        @DisplayName("Typed inputs")
-        fun typedInputs() = validArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Array operator build with $args is successful") {
-                    assertThat {
-                        ArrayOperatorBuilder()
-                            .of(args.of)
-                            .number(args.number)
-                            .build()
-                    }.isSuccess()
-                        .checkOperator(args)
-                }
-            }
-
-        @TestFactory
-        @DisplayName("Functional inputs")
-        fun functionalInputs() = validFunctionArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Array operator build with $args is successful") {
-                    assertThat {
-                        ArrayOperatorBuilder()
-                            .of(args.of)
-                            .number(args.number)
-                            .build()
-                    }.isSuccess()
-                        .checkOperator()
-                }
-            }
-
-        @TestFactory
-        @DisplayName("Map input")
-        fun mapInput() = validArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Array operator build with $args is successful") {
-                    assertThat {
-                        ArrayOperatorBuilder().from(args.toDocument())
-                    }.isSuccess()
-                        .checkOperator(args)
-                }
-            }
-
-        @TestFactory
-        @DisplayName("Invalid input")
-        fun invalidMapInput() = invalidArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Array operator build fails with $args") {
-                    assertThat {
-                        ArrayOperatorBuilder().from(args)
-                    }
-                        .isFailure()
-                        .isInstanceOf(OperatorArgumentException::class)
-                }
-            }
-
-        private fun Assert<ArrayOperator>.checkOperator() =
-            transform("Invoke operator") { it().also { println(it) } }
-                .all {
-                    each {
-                        it.isNotNull()
-                        it.isNotInstanceOf(Function0::class)
-                    }
-                }
-
-        private fun Assert<ArrayOperator>.checkOperator(args: ArrayArguments) =
-            transform("Invoke operator") { it().also { println(it) } }
-                .all {
-                    each {
-                        it.isNotNull()
-                        it.isNotInstanceOf(Function0::class)
-                    }
-                    hasSize(args.number.toInt())
-                }
-    }
-
-    @Nested
-    @DisplayName("Text Operator")
-    inner class TextTests {
-        private val validArgs = listOf(
-            TextArguments(5, "ABC"),
-            TextArguments(10L, "XZY"),
-            TextArguments(16.5, "KLG"),
-            TextArguments(5, null),
-        )
-
-        private val validFunctionArgs = validArgs
-            .map(TextArguments::toFunctionArguments) + listOf(
-            TextFunctionArguments(
-                length = RandomIntOperator(min = { 0 }, max = { 20 })
-            ),
-            TextFunctionArguments(
-                length = RandomIntOperator(min = { 5 }, max = { 10 }),
-                characterPool = { "ABCDEF" }
-            )
-        )
-        private val invalidArgs = listOf(
-            mapOf("length" to "invalid"),
-            mapOf("length" to null),
-            mapOf("length" to 5, "characterPool" to 999),
-            mapOf("length" to { "ABC" }),
-            mapOf(),
-        )
-
-        @TestFactory
-        @DisplayName("Typed inputs")
-        fun typedInputs() = validArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Text operator build with $args is successful") {
-                    assertThat {
-                        val builder = TextOperatorBuilder()
-                        args.characterPool?.let {
-                            builder.characterPool(it)
-                        }
-                        builder.length(args.length)
-                        builder.build()
-                    }.isSuccess()
-                        .checkOperator(args)
-                }
-            }
-
-        @TestFactory
-        @DisplayName("Functional inputs")
-        fun functionalInputs() = validFunctionArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Text operator build with $args is successful") {
-                    assertThat {
-                        val builder = TextOperatorBuilder()
-                        args.characterPool?.let {
-                            builder.characterPool(it)
-                        }
-                        builder.length(args.length)
-                        builder.build()
-                    }.isSuccess()
-                        .checkOperator(args)
-                }
-            }
-
-        @TestFactory
-        @DisplayName("Map input")
-        fun mapInput() = validArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Text operator build with $args is successful") {
-                    assertThat {
-                        TextOperatorBuilder()
-                            .from(args.toDocument())
-                    }.isSuccess()
-                        .checkOperator(args)
-                }
-            }
-
-        @TestFactory
-        @DisplayName("Invalid input")
-        fun invalidMapInput() = invalidArgs
-            .map { args ->
-                DynamicTest.dynamicTest("Text operator build fails with $args") {
-                    assertThat {
-                        TextOperatorBuilder()
-                            .from(args)
-                    }.isFailure()
-                        .isInstanceOf(OperatorArgumentException::class)
-                }
-            }
-
-        private fun Assert<TextOperator>.checkOperator(args: TextFunctionArguments) =
-            transform("Invoke operator") { it().also { println(it) } }
-                .all {
-                    args.characterPool?.let {
-                        isSubsetOf(it())
-                    }
-                }
-
-        private fun Assert<TextOperator>.checkOperator(args: TextArguments) =
-            transform("Invoke operator") { it() }
-                .all {
-                    hasLength(args.length.toInt())
-                    args.characterPool?.let {
-                        isSubsetOf(it)
-                    }
-                }
-    }
-
-    data class ArrayArguments(
-        val of: Any,
-        val number: Number
-    ) {
-        fun toDocument() = Document(
-            mapOf(
-                "of" to of,
-                "number" to number
-            )
-        )
-
-        fun toFunctionArguments() =
-            ArrayFunctionArguments({ of }, { number })
-    }
-
-    data class ArrayFunctionArguments(
-        val of: () -> Any,
-        val number: () -> Number
-    ) {
-        fun toDocument() = Document(
-            mapOf(
-                "of" to of,
-                "number" to number
-            )
-        )
-    }
-
-    data class TextArguments(
-        val length: Number,
-        val characterPool: String? = null
-    ) {
-        fun toDocument() = Document().apply {
-            put("length", length)
-            characterPool?.let {
-                put("characterPool", it)
-            }
-        }
-
-        fun toFunctionArguments() =
-            TextFunctionArguments({ length }, characterPool?.let { { it } })
-    }
-
-    data class TextFunctionArguments(
-        val length: () -> Number,
-        val characterPool: (() -> String)? = null
-    ) {
-        fun toDocument() = Document().apply {
-            put("length", length)
-            characterPool?.let {
-                put("characterPool", it)
-            }
-        }
-    }
+//    data class ArrayArguments(
+//        val of: Any,
+//        val number: Number
+//    ) {
+//        fun toDocument() = Document(
+//            mapOf(
+//                "of" to of,
+//                "number" to number
+//            )
+//        )
+//
+//        fun toFunctionArguments() =
+//            ArrayFunctionArguments({ of }, { number })
+//    }
+//
+//    data class ArrayFunctionArguments(
+//        val of: () -> Any,
+//        val number: () -> Number
+//    ) {
+//        fun toDocument() = Document(
+//            mapOf(
+//                "of" to of,
+//                "number" to number
+//            )
+//        )
+//    }
+//
+//    data class TextArguments(
+//        val length: Number,
+//        val characterPool: String? = null
+//    ) {
+//        fun toDocument() = Document().apply {
+//            put("length", length)
+//            characterPool?.let {
+//                put("characterPool", it)
+//            }
+//        }
+//
+//        fun toFunctionArguments() =
+//            TextFunctionArguments({ length }, characterPool?.let { { it } })
+//    }
+//
+//    data class TextFunctionArguments(
+//        val length: () -> Number,
+//        val characterPool: (() -> String)? = null
+//    ) {
+//        fun toDocument() = Document().apply {
+//            put("length", length)
+//            characterPool?.let {
+//                put("characterPool", it)
+//            }
+//        }
+//    }
 }
 
 

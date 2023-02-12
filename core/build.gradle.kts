@@ -1,9 +1,8 @@
 @file:Suppress("UnstableApiUsage")
 
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-//    kotlin("jvm")
     alias(libs.plugins.kotlin.serialization)
-//    alias(libs.plugins.atomicfu)
     alias(libs.plugins.ksp)
     `kotlin-conventions`
     `with-docs`
@@ -22,6 +21,7 @@ dependencies {
     implementation(libs.kotlin.serialization.json)
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlin.poet)
+    implementation(libs.reflections)
 //    implementation(libs.atomicfu)
     implementation(libs.bundles.logging)
 }
