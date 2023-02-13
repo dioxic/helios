@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.blueprint
+package uk.dioxic.mgenerate.blueprint.old
 
 import org.bson.BsonReader
 import org.bson.BsonType

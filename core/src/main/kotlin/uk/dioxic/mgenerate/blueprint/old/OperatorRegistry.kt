@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.blueprint
+package uk.dioxic.mgenerate.blueprint.old
 
 //data class OperatorAlias(
 //    val clazz: Class<out TypedFunction>,

@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.blueprint
+package uk.dioxic.mgenerate.blueprint.operators
 
 import org.bson.Document
 import uk.dioxic.mgenerate.annotations.Alias
@@ -6,37 +6,46 @@ import uk.dioxic.mgenerate.operators.Operator
 import uk.dioxic.mgenerate.operators.OperatorBuilder
 import kotlin.random.Random
 import kotlin.reflect.KClass
+import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.full.valueParameters
 
 @Alias("choose")
-class ChooseOperator(
-    val from: List<Any>,
-    val weights: List<Int>? = null
+data class ChooseOperator(
+    val from: () -> List<Any>,
+    val weights: () -> List<Int>? = { null }
 ) : Operator<Any> {
 
     override fun invoke() =
-        choose(from, weights)
+        choose(from(), weights())
 }
 
-
 object ChooseOperatorBuilder : OperatorBuilder<ChooseOperator> {
+
+    fun somethin(map: Map<*, *>): ChooseOperator {
+        val arguments = mutableListOf<Any?>()
+        ::ChooseOperator.valueParameters.forEach {
+            arguments.add(map[it.name])
+        }
+        return ChooseOperator::class.primaryConstructor!!.call(*arguments.toTypedArray())
+    }
+
     override fun fromDocument(document: Document) = ChooseOperator(
-        from = document.getList("from", Any::class.java, emptyList()),
-        weights = document.getList("weights", Int::class.java)
+        from = { emptyList() },// document.getList("from", Any::class.java, emptyList()),
+        weights = { null } //document.getList("weights", Int::class.java)
     )
 
     @Suppress("UNCHECKED_CAST")
     override fun fromMap(map: Map<*, *>)= ChooseOperator(
-        from = map["from"] as? List<Any> ?: emptyList(),
-        weights = map["weights"] as? List<Int>
+        from = { emptyList() },//map["from"] as? List<Any> ?: emptyList(),
+        weights = { null } //map["weights"] as? List<Int>
     )
 
     override fun fromValue(value: Any): ChooseOperator {
         require(value is List<*>) { "single field must be a list!" }
-        return ChooseOperator(listOf(value), null)
+        return ChooseOperator({listOf(value)}, {null})
     }
 
     override fun toDocument(operator: ChooseOperator): Document {
-        require(operator is ChooseOperator) { "incompatitible operator type" }
         val doc = Document()
         doc["from"] = operator.from
         doc["weights"] = operator.weights

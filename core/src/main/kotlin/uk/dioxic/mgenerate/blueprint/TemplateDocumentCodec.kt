@@ -1,12 +1,13 @@
 package uk.dioxic.mgenerate.blueprint
 
 import org.bson.BsonReader
-import org.bson.BsonType
 import org.bson.Document
 import org.bson.Transformer
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
+import uk.dioxic.mgenerate.blueprint.old.OperatorCodecProvider
+import uk.dioxic.mgenerate.blueprint.old.defaultBsonTypeClassMap
 
 class TemplateDocumentCodec(
     private val registry: CodecRegistry = CodecRegistries.fromProviders(

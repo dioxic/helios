@@ -1,14 +1,11 @@
 package uk.dioxic.mgenerate.blueprint
 
-import org.bson.Document
 import org.reflections.Reflections
 import uk.dioxic.mgenerate.annotations.Alias
+import uk.dioxic.mgenerate.blueprint.operators.GenericOperatorBuilder
 import uk.dioxic.mgenerate.operators.Operator
-import uk.dioxic.mgenerate.operators.OperatorBuilder
+import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSuperclassOf
-
-private typealias OperatorBuilderAnnotation = uk.dioxic.mgenerate.annotations.OperatorBuilder
 
 private fun isOperatorKey(key: String) =
     key.startsWith("\$")
@@ -18,44 +15,46 @@ private fun getOperatorKey(key: String) =
 
 object OperatorFactory {
 
-    private val builderMap: MutableMap<String, OperatorBuilder<*>> = mutableMapOf()
+    private val operatorMap: MutableMap<String, KClass<Operator<*>>> = mutableMapOf()
 
     init {
-        addBuilders("uk.dioxic.mgenerate.blueprint")
+        addOperators("uk.dioxic.mgenerate.blueprint")
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun addBuilders(packageName: String) {
+    fun addOperators(packageName: String) {
         val reflections = Reflections(packageName)
-//        reflections.getTypesAnnotatedWith(OperatorBuilderAnnotation::class.java)
-        reflections.getSubTypesOf(OperatorBuilder::class.java)
-            .map { it.kotlin }
-            .filter { OperatorBuilder::class.isSuperclassOf(it) }
-            .mapNotNull { it.objectInstance }
-            .forEach(::addBuilder)
+        reflections.getSubTypesOf(Operator::class.java)
+            .filter { it.isAnnotationPresent(Alias::class.java) }
+            .map { it.kotlin as KClass<Operator<*>> }
+            .forEach(::addOperator)
     }
 
-    fun addBuilder(builder: OperatorBuilder<*>) {
-        builder.operatorClass.findAnnotation<Alias>()?.aliases?.forEach { alias ->
-            builderMap[alias.lowercase()] = builder
+    fun addOperator(clazz: KClass<Operator<*>>) {
+        clazz.findAnnotation<Alias>()?.aliases?.forEach { alias ->
+            operatorMap[alias] = clazz
         }
     }
 
     fun canHandle(operatorKey: String) =
-        isOperatorKey(operatorKey) && builderMap.containsKey(getOperatorKey(operatorKey))
+        isOperatorKey(operatorKey) && operatorMap.containsKey(getOperatorKey(operatorKey))
 
-    private fun getBuilder(operatorKey: String): OperatorBuilder<*> =
-        builderMap[getOperatorKey(operatorKey)] ?: error("no builder found for $operatorKey")
+    fun create(operatorKey: String, obj: Any): Operator<*> {
+        val operatorClass = getOperatorClass(operatorKey)
 
-    fun create(operatorKey: String, obj: Any): Operator<*> =
-        getBuilder(operatorKey).let { builder ->
-            when (obj) {
-                is Map<*, *> -> builder.fromMap(obj)
-                else -> builder.fromValue(obj)
-            }
+        return when (obj) {
+            is Map<*, *> -> GenericOperatorBuilder.fromMap(operatorClass, obj)
+            else -> GenericOperatorBuilder.fromValue(operatorClass, obj)
         }
+    }
 
     fun create(operatorKey: String): Operator<*> =
-        getBuilder(operatorKey).build()
+        GenericOperatorBuilder.build(getOperatorClass(operatorKey))
+
+    private fun getOperatorClass(operatorKey: String): KClass<Operator<*>> {
+        val clazz = operatorMap[getOperatorKey(operatorKey)]
+        requireNotNull(clazz) { "No operator found for key $operatorKey" }
+        return clazz
+    }
 
 }
