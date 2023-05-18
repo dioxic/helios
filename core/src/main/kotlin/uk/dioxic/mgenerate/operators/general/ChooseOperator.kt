@@ -12,8 +12,7 @@ class ChooseOperator(
 ) : Operator<Any> {
 
     override fun invoke(): Any =
-        Random.nextElement(listOf(1,2,3), listOf(1,2,3))
-//        nextElement(from(), weights())
+        Random.nextElement(from(), weights())
 }
 
 //fun next(list: List<Any>, weights: List<Int>? = null): Any {
