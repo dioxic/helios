@@ -6,8 +6,8 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import org.bson.Document
 import org.junit.jupiter.api.Test
-import uk.dioxic.mgenerate.blueprint.operators.ChooseOperator
-import uk.dioxic.mgenerate.blueprint.operators.ChooseOperatorBuilder
+import uk.dioxic.mgenerate.OperatorTransformer
+import uk.dioxic.mgenerate.operators.general.ChooseOperator
 
 class OperatorTransformerTest {
 
@@ -31,11 +31,6 @@ class OperatorTransformerTest {
             .isNotNull()
             .isIn(*colours.toTypedArray())
 
-    }
-
-    @Test
-    fun tmp() {
-        println(ChooseOperatorBuilder.somethin(mapOf("from" to colours)).invoke())
     }
 
 }

@@ -1,10 +1,10 @@
-@file:Suppress("UnstableApiUsage")
 
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     `kotlin-conventions`
+//    `with-test-fixtures`
     `with-docs`
 }
 
@@ -13,7 +13,7 @@ version = "0.0.1-SNAPSHOT"
 
 dependencies {
     implementation(project(":common"))
-    ksp(project(":processor"))
+//    ksp(project(":processor"))
 
     implementation(libs.kbson)
     implementation(libs.bson)

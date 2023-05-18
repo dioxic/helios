@@ -1,11 +1,47 @@
 package uk.dioxic.mgenerate.blueprint
 
+import assertk.all
+import assertk.assertThat
+import assertk.assertions.isInstanceOf
+import assertk.assertions.key
+import org.bson.Document
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.operators.general.ChooseOperator
+import uk.dioxic.mgenerate.operators.numeric.IntOperator
+import uk.dioxic.mgenerate.test.readResource
 
-class OperatorEncodingTest {
+class OperatorJsonDecode {
+
+    @Test
+    fun decode() {
+        val json = readResource("/test.json")
+        val actual = assertDoesNotThrow { Template.parse(json) }
+
+        println("json: $json")
+        println(actual)
+
+        assertThat(actual, "document")
+            .isInstanceOf(Document::class)
+            .all {
+                key("color").isInstanceOf(ChooseOperator::class)
+                key("height").isInstanceOf(IntOperator::class)
+                key("address")
+                    .isInstanceOf(Document::class)
+                    .key("city").isInstanceOf(ChooseOperator::class)
+            }
+    }
 
     @Test
     fun encodeToJson() {
+        val json = readResource("/test.json")
+        val template = Template.parse(json)
+
+        val actual = template.toJson()
+
+        println("json: $json")
+        println("actual: $actual")
 
     }
 

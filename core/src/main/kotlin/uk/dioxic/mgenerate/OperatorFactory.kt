@@ -1,40 +1,53 @@
 package uk.dioxic.mgenerate
 
-import com.squareup.kotlinpoet.asTypeName
-import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
-import kotlin.reflect.jvm.reflect
+import org.reflections.Reflections
+import uk.dioxic.mgenerate.annotations.Alias
+import uk.dioxic.mgenerate.operators.Operator
+import kotlin.reflect.KClass
+import kotlin.reflect.full.findAnnotation
 
-inline fun <reified T : () -> Any> instance(vals: Map<String, () -> Any>): T {
 
-//    val klas: KClass<Operator<Any>> = Operator::class as KClass<Operator>
-//    val klas:KClass<Operator<*>> = T::class as KClass<Operator<*>>
-//    val klas = T::class
-//    val klass = T::class
-//    klass.primaryConstructor
-    val cons = T::class.primaryConstructor!!
-    val valmap = cons.parameters
-        .associateBy({ it }, { vals[it.name] })
-        .filterNot { it.value == null }
-    return cons.callBy(valmap)
-}
+@Suppress("UNCHECKED_CAST")
+object OperatorFactory {
 
-@OptIn(ExperimentalReflectionOnLambdas::class)
-inline fun <reified T : () -> Any> instance(noinline value: () -> Any): T {
-    val cons = T::class.primaryConstructor!!
+    private val operatorMap: MutableMap<String, KClass<Operator<*>>> = mutableMapOf()
 
-    val mandatoryParameters = cons.parameters
-        .filterNot { it.isOptional }
-
-    val singleParameter = mandatoryParameters[0]
-    val expectedType = singleParameter.type
-    val valueReturnType = value.reflect()?.returnType
-
-    require(expectedType == valueReturnType) {
-        "${T::class.simpleName}.${singleParameter.name} expecting [$expectedType] - cannot accept type [$valueReturnType]"
+    init {
+        val reflections = Reflections("uk.dioxic.mgenerate.operators")
+        reflections.getSubTypesOf(Operator::class.java)
+            .filter { it.isAnnotationPresent(Alias::class.java) }
+            .map { it.kotlin as KClass<Operator<*>> }
+            .forEach(OperatorFactory::addOperator)
     }
 
-    require(mandatoryParameters.count() <= 1) { "${T::class.simpleName} requires parameters $mandatoryParameters" }
+    private fun isOperatorKey(key: String) =
+        key.startsWith("\$")
 
-    return cons.callBy(mapOf(singleParameter to value))
+    private fun getOperatorKey(key: String) =
+        key.substring(1).lowercase()
+
+    private fun addOperator(clazz: KClass<Operator<*>>) {
+        clazz.findAnnotation<Alias>()?.aliases?.forEach { alias ->
+            operatorMap[alias] = clazz
+        }
+    }
+
+    fun canHandle(operatorKey: String) =
+        isOperatorKey(operatorKey) && operatorMap.containsKey(getOperatorKey(operatorKey))
+
+    fun create(operatorKey: String, obj: Any): Operator<*> {
+        val operatorClass = getOperatorClass(operatorKey)
+
+        return when (obj) {
+            is Map<*, *> -> OperatorBuilder.fromMap(operatorClass, obj)
+            else -> OperatorBuilder.fromValue(operatorClass, obj)
+        }
+    }
+
+    fun create(operatorKey: String): Operator<*> =
+        OperatorBuilder.build(getOperatorClass(operatorKey))
+
+    private fun getOperatorClass(operatorKey: String): KClass<Operator<*>> =
+        operatorMap[getOperatorKey(operatorKey)] ?: error("No operator found for key $operatorKey")
+
 }
