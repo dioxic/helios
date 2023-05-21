@@ -2,6 +2,7 @@ package uk.dioxic.mgenerate.operators.general
 
 import uk.dioxic.mgenerate.annotations.Alias
 import uk.dioxic.mgenerate.operators.Operator
+import kotlin.math.max
 
 @Alias("array")
 class ArrayOperator(
@@ -10,7 +11,7 @@ class ArrayOperator(
 ) : Operator<Any> {
 
     override fun invoke() =
-        List(number()) {
+        List(max(number(), 0)) {
             of()
         }
 }

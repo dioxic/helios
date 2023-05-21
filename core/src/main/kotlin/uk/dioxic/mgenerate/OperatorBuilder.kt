@@ -5,15 +5,22 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.*
+import kotlin.reflect.jvm.jvmErasure
 
 object OperatorBuilder {
 
     fun <T : Operator<*>> fromMap(clazz: KClass<T>, map: Map<*, *>): T {
         val args = mutableMapOf<KParameter, Any>()
         clazz.primaryConstructor?.valueParameters?.forEach { parameter ->
-            val desiredType = parameter.type.arguments.first().type
-            map[parameter.name]?.also { value ->
-                args[parameter] = wrap(value, desiredType)
+            if (parameter.type.jvmErasure == Function0::class) {
+                val desiredType = parameter.type.arguments.first().type
+                map[parameter.name]?.also { value ->
+                    args[parameter] = wrap(value, desiredType)
+                }
+            } else {
+                require(parameter.isOptional) {
+                    "The internal parameter '${parameter.name}' is not optional"
+                }
             }
         }
         return clazz.primaryConstructor!!.callBy(args)

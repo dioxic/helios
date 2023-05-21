@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.blueprint
+package uk.dioxic.mgenerate
 
 import assertk.all
 import assertk.assertThat
@@ -36,7 +36,7 @@ class OperatorJsonDecode {
 
     @Test
     fun encodeToJson() {
-        val json = readResource("/test2.json")
+        val json = readResource("/test3.json")
         val template = Template.parse(json)
 
         assertThat(template, "document")

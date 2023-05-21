@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.blueprint
+package uk.dioxic.mgenerate
 
 import assertk.assertThat
 import assertk.assertions.isIn
@@ -6,7 +6,6 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import org.bson.Document
 import org.junit.jupiter.api.Test
-import uk.dioxic.mgenerate.OperatorTransformer
 import uk.dioxic.mgenerate.operators.general.ChooseOperator
 
 class OperatorTransformerTest {

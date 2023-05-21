@@ -22,7 +22,12 @@
         { "k": "type", "v": { "$choose": ["BACS", "CHAPS", "SWIFT", "Cash", "Cheque"]} },
         { "k": "description", "v": "something" }
       ],
-      "quantity": 4
+      "quantity": {
+        "$int": {
+          "min": 1,
+          "max": 4
+        }
+      }
       }
   }
 }

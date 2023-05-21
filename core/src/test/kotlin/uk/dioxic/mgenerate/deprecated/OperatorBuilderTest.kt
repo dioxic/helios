@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.operators
+package uk.dioxic.mgenerate.deprecated
 
 import assertk.Assert
 import assertk.all
@@ -13,6 +13,7 @@ import org.junit.jupiter.api.TestFactory
 import uk.dioxic.mgenerate.exceptions.OperatorArgumentException
 import uk.dioxic.mgenerate.extensions.isSubsetOf
 
+@Deprecated("")
 internal class OperatorBuilderTest {
 
 //    @Nested
