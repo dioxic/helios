@@ -13,15 +13,15 @@ kotlin {
             languageSettings.apply {
 //                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
 //                optIn("kotlinx.coroutines.FlowPreview")
-                optIn("kotlin.Experimental")
-                optIn("kotlin.RequiresOptIn")
-                optIn("kotlin.time.ExperimentalTime")
-                optIn("kotlin.reflect.jvm.ExperimentalReflectionOnLambdas")
+//                optIn("kotlin.Experimental")
+//                optIn("kotlin.RequiresOptIn")
+//                optIn("kotlin.time.ExperimentalTime")
+//                optIn("kotlin.reflect.jvm.ExperimentalReflectionOnLambdas")
 //                optIn("kotlin.time.ExperimentalContracts")
             }
         }
     }
-    jvmToolchain(13)
+    jvmToolchain(17)
 //    tasks.withType<KotlinJvmCompile> {
 //        kotlinOptions.jvmTarget = "17"
 //        kotlinOptions.languageVersion = "1.6"
@@ -36,7 +36,9 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.bundles.logging)
     testImplementation(libs.junit)
+    testImplementation(libs.bundles.kotest)
     testImplementation(libs.assertk)
 }
 

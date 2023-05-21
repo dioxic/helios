@@ -1,3 +1,3 @@
 package uk.dioxic.mgenerate.operators
 
-interface Operator<T: Any>: () -> T
+interface Operator<T: Any?>: () -> T

@@ -8,7 +8,7 @@ import kotlin.reflect.full.*
 
 object OperatorBuilder {
 
-    fun <T : Operator<out Any>> fromMap(clazz: KClass<T>, map: Map<*, *>): T {
+    fun <T : Operator<*>> fromMap(clazz: KClass<T>, map: Map<*, *>): T {
         val args = mutableMapOf<KParameter, Any>()
         clazz.primaryConstructor?.valueParameters?.forEach { parameter ->
             val desiredType = parameter.type.arguments.first().type
@@ -19,7 +19,7 @@ object OperatorBuilder {
         return clazz.primaryConstructor!!.callBy(args)
     }
 
-    fun <T : Operator<out Any>> fromValue(clazz: KClass<T>, value: Any): T {
+    fun <T : Operator<*>> fromValue(clazz: KClass<T>, value: Any): T {
         val primaryArg = clazz.primaryConstructor?.valueParameters?.first { !it.isOptional }
         require(primaryArg != null) { "primary constructor must have at least one non-optional argument" }
         val desiredType = primaryArg.type.arguments.first().type
@@ -48,7 +48,7 @@ object OperatorBuilder {
             }
         }
 
-    fun <T : Operator<out Any>> build(clazz: KClass<T>): T {
+    fun <T : Operator<*>> build(clazz: KClass<T>): T {
         val mandatoryParameters = clazz.primaryConstructor
             ?.valueParameters
             ?.sumOf { if (it.isOptional) 0 as Int else 1 as Int } ?: 0

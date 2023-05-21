@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.operators.general.ChooseOperator
+import uk.dioxic.mgenerate.operators.general.PickSetOperator
 import uk.dioxic.mgenerate.operators.numeric.IntOperator
 import uk.dioxic.mgenerate.test.readResource
 
@@ -35,12 +36,19 @@ class OperatorJsonDecode {
 
     @Test
     fun encodeToJson() {
-        val json = readResource("/test.json")
+        val json = readResource("/test2.json")
         val template = Template.parse(json)
+
+        assertThat(template, "document")
+            .isInstanceOf(Document::class)
+            .all {
+                key("drivers").isInstanceOf(PickSetOperator::class)
+                key("env").isInstanceOf(ChooseOperator::class)
+            }
 
         val actual = template.toJson()
 
-        println("json: $json")
+//        println("json: $json")
         println("actual: $actual")
 
     }

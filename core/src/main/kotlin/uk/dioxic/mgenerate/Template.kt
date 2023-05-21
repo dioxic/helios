@@ -4,6 +4,7 @@ import org.bson.Document
 import org.bson.UuidRepresentation
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistries
+import org.bson.json.JsonMode
 import org.bson.json.JsonReader
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.mgenerate.codecs.OperatorExecutionCodecProvider
@@ -11,11 +12,16 @@ import uk.dioxic.mgenerate.codecs.TemplateDocumentCodec
 
 class Template(map: Map<String, *>) : Document(map) {
 
+    private val defaultJsonWriter = JsonWriterSettings.builder()
+        .indent(true)
+        .outputMode(JsonMode.RELAXED)
+        .build()
+
     override fun toJson(writerSettings: JsonWriterSettings): String =
         super.toJson(writerSettings, defaultCodec)
 
     override fun toJson(): String =
-        super.toJson(defaultCodec)
+        super.toJson(defaultJsonWriter, defaultCodec)
 
     companion object {
         private val defaultRegistry = CodecRegistries.fromProviders(

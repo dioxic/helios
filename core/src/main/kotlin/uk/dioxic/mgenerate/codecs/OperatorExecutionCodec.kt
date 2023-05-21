@@ -10,13 +10,17 @@ import uk.dioxic.mgenerate.operators.Operator
 
 class OperatorExecutionCodec(
     private val registry: CodecRegistry
-): Codec<Operator<*>> {
+) : Codec<Operator<*>> {
 
     @Suppress("UNCHECKED_CAST")
     override fun encode(writer: BsonWriter, value: Operator<*>, encoderContext: EncoderContext) {
-        val unwrappedValue = value()
-        val codec = registry[unwrappedValue::class.java] as Codec<Any>
-        encoderContext.encodeWithChildContext(codec, writer, unwrappedValue)
+        when (val unwrappedValue = value()) {
+            null -> writer.writeNull()
+            else -> {
+                val codec = registry[unwrappedValue::class.java] as Codec<Any>
+                encoderContext.encodeWithChildContext(codec, writer, unwrappedValue)
+            }
+        }
     }
 
     override fun getEncoderClass(): Class<Operator<*>> =

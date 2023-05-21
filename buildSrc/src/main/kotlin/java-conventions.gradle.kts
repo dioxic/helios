@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.bundles.logging)
     testImplementation(libs.junit)
     testImplementation(libs.assertj)
 }

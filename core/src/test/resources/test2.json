@@ -1,0 +1,28 @@
+{
+  "ruleSetName": "myRule",
+  "ruleId": "$intSeq",
+  "version": {
+    "$int": {
+      "min": 0,
+      "max": 5
+    }
+  },
+  "env": {
+    "$choose": {
+      "from": ["prod", "test", "qa", "dev"]
+    }
+  },
+  "drivers": {
+    "$pickSet": {
+      "from": [
+        { "k": "account", "v": { "$int": { "min":  0, "max": 1000}} },
+        { "k": "exchange", "v": { "$choose": ["London", "NYC", "SN", "Tokyo"]} },
+        { "k": "commission", "v": { "$double": { "min":  0, "max": 1000}} },
+        { "k": "bank", "v": { "$choose": ["Barclays", "HSBC", "JPMC", "Credit Suisse"]} },
+        { "k": "type", "v": { "$choose": ["BACS", "CHAPS", "SWIFT", "Cash", "Cheque"]} },
+        { "k": "description", "v": "something" }
+      ],
+      "quantity": 4
+      }
+  }
+}

@@ -24,7 +24,7 @@ object OperatorFactory {
         key.startsWith("\$")
 
     private fun getOperatorKey(key: String) =
-        key.substring(1).lowercase()
+        key.substring(1)
 
     private fun addOperator(clazz: KClass<Operator<*>>) {
         clazz.findAnnotation<Alias>()?.aliases?.forEach { alias ->

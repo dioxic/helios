@@ -9,9 +9,9 @@ import kotlin.random.Random
 class ChooseOperator(
     val from: () -> List<Any>,
     val weights: () -> List<Int>? = { null }
-) : Operator<Any> {
+) : Operator<Any?> {
 
-    override fun invoke(): Any =
+    override fun invoke(): Any? =
         Random.nextElement(from(), weights())
 }
 
