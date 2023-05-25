@@ -1,6 +1,14 @@
 package uk.dioxic.mgenerate.utils
 
+import kotlinx.datetime.UtcOffset
+import uk.dioxic.mgenerate.operators.toUtcLocalDateTime
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.util.Locale
 import kotlin.random.Random
+
+val myLocale: Locale = Locale.ENGLISH
 
 fun Random.Default.nextElement(list: List<Any>, weights: List<Int>? = null): Any? {
     when {
@@ -21,3 +29,9 @@ fun Random.Default.nextElement(list: List<Any>, weights: List<Int>? = null): Any
         else -> return list[nextInt(list.size)]
     }
 }
+
+fun Random.Default.nextDate(from: LocalDateTime, until: LocalDateTime) =
+    nextInstant(from.toInstant(ZoneOffset.UTC), until.toInstant(ZoneOffset.UTC)).toUtcLocalDateTime()
+
+fun Random.Default.nextInstant(from: Instant, until: Instant): Instant =
+    Instant.ofEpochMilli(nextLong(from.toEpochMilli(), until.toEpochMilli()))

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.operators.general.ChooseOperator
 import uk.dioxic.mgenerate.operators.general.PickSetOperator
-import uk.dioxic.mgenerate.operators.numeric.IntOperator
+import uk.dioxic.mgenerate.operators.IntOperator
 import uk.dioxic.mgenerate.test.readResource
 
 class OperatorJsonDecode {

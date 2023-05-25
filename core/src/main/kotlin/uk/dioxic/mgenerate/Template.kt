@@ -4,6 +4,7 @@ import org.bson.Document
 import org.bson.UuidRepresentation
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistries
+import org.bson.codecs.jsr310.Jsr310CodecProvider
 import org.bson.json.JsonMode
 import org.bson.json.JsonReader
 import org.bson.json.JsonWriterSettings
@@ -26,7 +27,7 @@ class Template(map: Map<String, *>) : Document(map) {
     companion object {
         private val defaultRegistry = CodecRegistries.fromProviders(
             listOf(
-                ValueCodecProvider(),
+                ValueCodecProvider(), Jsr310CodecProvider(),
                 CollectionCodecProvider(), IterableCodecProvider(), OperatorExecutionCodecProvider(),
                 BsonValueCodecProvider(), DocumentCodecProvider(OperatorTransformer()), MapCodecProvider()
             )

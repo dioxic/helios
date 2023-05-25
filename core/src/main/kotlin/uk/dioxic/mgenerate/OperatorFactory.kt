@@ -3,40 +3,43 @@ package uk.dioxic.mgenerate
 import org.reflections.Reflections
 import uk.dioxic.mgenerate.annotations.Alias
 import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.operators.noInputOperators
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
-
 
 @Suppress("UNCHECKED_CAST")
 object OperatorFactory {
 
-    private val operatorMap: MutableMap<String, KClass<Operator<*>>> = mutableMapOf()
+    private const val operatorPrefix = "\$"
+    private val classMap: MutableMap<String, KClass<Operator<*>>> = mutableMapOf()
+    private val objectMap: MutableMap<String, Operator<*>> = mutableMapOf()
 
     init {
+        // add operator class definitions with reflection
         val reflections = Reflections("uk.dioxic.mgenerate.operators")
         reflections.getSubTypesOf(Operator::class.java)
             .filter { it.isAnnotationPresent(Alias::class.java) }
             .map { it.kotlin as KClass<Operator<*>> }
             .forEach(OperatorFactory::addOperator)
+
+        // add object operators
+        objectMap.putAll(noInputOperators)
     }
 
-    private fun isOperatorKey(key: String) =
-        key.startsWith("\$")
-
-    private fun getOperatorKey(key: String) =
-        key.substring(1)
+    private fun String.isOperator() =
+        startsWith("\$")
 
     private fun addOperator(clazz: KClass<Operator<*>>) {
         clazz.findAnnotation<Alias>()?.aliases?.forEach { alias ->
-            operatorMap[alias] = clazz
+            classMap["$operatorPrefix$alias"] = clazz
         }
     }
 
-    fun canHandle(operatorKey: String) =
-        isOperatorKey(operatorKey) && operatorMap.containsKey(getOperatorKey(operatorKey))
+    fun canHandle(key: String) = key.isOperator() &&
+            (classMap.containsKey(key) || objectMap.containsKey(key))
 
-    fun create(operatorKey: String, obj: Any): Operator<*> {
-        val operatorClass = getOperatorClass(operatorKey)
+    fun create(key: String, obj: Any): Operator<*> {
+        val operatorClass = getOperatorClass(key)
 
         return when (obj) {
             is Map<*, *> -> OperatorBuilder.fromMap(operatorClass, obj)
@@ -44,10 +47,10 @@ object OperatorFactory {
         }
     }
 
-    fun create(operatorKey: String): Operator<*> =
-        OperatorBuilder.build(getOperatorClass(operatorKey))
+    fun create(key: String): Operator<*> =
+        objectMap[key] ?: OperatorBuilder.build(getOperatorClass(key))
 
-    private fun getOperatorClass(operatorKey: String): KClass<Operator<*>> =
-        operatorMap[getOperatorKey(operatorKey)] ?: error("No operator found for key $operatorKey")
+    private fun getOperatorClass(key: String): KClass<Operator<*>> =
+        classMap[key] ?: error("No operator found for key $key")
 
 }

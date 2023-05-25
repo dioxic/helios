@@ -55,6 +55,7 @@ object OperatorBuilder {
             }
         }
 
+    @Suppress("USELESS_CAST")
     fun <T : Operator<*>> build(clazz: KClass<T>): T {
         val mandatoryParameters = clazz.primaryConstructor
             ?.valueParameters

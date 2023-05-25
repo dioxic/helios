@@ -1,3 +1,4 @@
+import uk.dioxic.gradle.libs
 
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
@@ -15,8 +16,10 @@ dependencies {
 //    ksp(project(":processor"))
 
     implementation(libs.bson)
+    implementation(libs.kotlin.datetime)
     implementation(libs.kotlin.serialization.core)
     implementation(libs.kotlin.serialization.json)
+    implementation(libs.faker)
     implementation(libs.kotlin.reflect)
     implementation(libs.reflections)
     implementation(libs.bundles.logging)

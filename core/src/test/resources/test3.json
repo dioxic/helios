@@ -5,6 +5,7 @@
       "from": ["prod", "test", "qa", "dev"]
     }
   },
+  "date": "$now",
   "drivers": {
     "$pickSet": {
       "from": [

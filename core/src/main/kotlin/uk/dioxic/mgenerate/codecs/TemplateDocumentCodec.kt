@@ -5,13 +5,14 @@ import org.bson.BsonWriter
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
+import org.bson.codecs.jsr310.Jsr310CodecProvider
 import uk.dioxic.mgenerate.OperatorTransformer
 import uk.dioxic.mgenerate.Template
 
 class TemplateDocumentCodec(
     registry: CodecRegistry = CodecRegistries.fromProviders(
         listOf(
-            ValueCodecProvider(),
+            ValueCodecProvider(), Jsr310CodecProvider(),
             CollectionCodecProvider(), IterableCodecProvider(), OperatorExecutionCodecProvider(),
             BsonValueCodecProvider(), DocumentCodecProvider(OperatorTransformer()), MapCodecProvider()
         )
