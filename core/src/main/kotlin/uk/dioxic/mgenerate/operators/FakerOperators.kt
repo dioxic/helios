@@ -1,16 +1,19 @@
 package uk.dioxic.mgenerate.operators
 
 import io.github.serpro69.kfaker.Faker
+import io.github.serpro69.kfaker.FakerConfig
+import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.utils.myLocale
 
 private val faker = Faker()
 
-val noInputOperators = mapOf<String, Operator<*>>(
-    "email" to Operator { faker.internet.email() },
-    "domain" to Operator { faker.internet.domain() },
-    "domainSuffix" to Operator { faker.internet.domainSuffix() },
-    "first" to Operator { faker.name.firstName() },
-    "last" to Operator { faker.name.lastName() },
-    "name" to Operator { faker.name.name() },
-    "maritalStatus" to Operator { faker.demographic.maritalStatus() },
-    "demonym" to Operator { faker.demographic.demonym() },
+val fakerOperators = mapOf<Operator<*>, List<String>>(
+    Operator { faker.internet.email() } to listOf("email"),
+    Operator { faker.internet.domain() } to listOf("domain"),
+    Operator { faker.internet.domainSuffix() } to listOf("domainSuffix"),
+    Operator { faker.name.firstName() } to listOf("first", "firstName"),
+    Operator { faker.name.lastName() } to listOf("last", "lastName"),
+    Operator { faker.name.name() } to listOf("name"),
+    Operator { faker.demographic.maritalStatus() } to listOf("maritalStatus"),
+    Operator { faker.demographic.demonym() } to listOf("demonym"),
 )

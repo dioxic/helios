@@ -1,6 +1,6 @@
 package uk.dioxic.mgenerate.operators.general
 
-import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.annotations.Operator
 import java.util.UUID
 
 class UuidOperator(

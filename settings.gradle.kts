@@ -28,5 +28,3 @@ dependencyResolutionManagement {
     }
 }
 include("core")
-//include("processor")
-include("common")

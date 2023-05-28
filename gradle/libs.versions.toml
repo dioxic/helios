@@ -5,6 +5,7 @@ atomicfu = "0.17.1"
 axionPlugin = "1.13.6"
 clikt = "2.8.0"
 commonsCodec = "1.15"
+commonsMath = "3.6.1"
 dokka = "1.8.10"
 faker = "1.14.0"
 junit = "5.9.3"
@@ -30,6 +31,7 @@ atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu"
 bson = { module = "org.mongodb:bson", version.ref = "mongodb" }
 clikt = { module = "com.github.ajalt:clikt", version.ref = "clikt" }
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commonsCodec" }
+commons-math = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath" }
 faker = { module = "io.github.serpro69:kotlin-faker", version.ref = "faker" }
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 kbson = { module = "com.github.jershell:kbson", version.ref = "kbson" }

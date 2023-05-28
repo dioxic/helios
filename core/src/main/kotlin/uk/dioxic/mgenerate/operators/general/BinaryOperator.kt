@@ -3,7 +3,7 @@ package uk.dioxic.mgenerate.operators.general
 import org.bson.BsonBinary
 import org.bson.BsonBinarySubType
 import uk.dioxic.mgenerate.annotations.Alias
-import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.annotations.Operator
 import kotlin.random.Random
 
 @Alias("bin")

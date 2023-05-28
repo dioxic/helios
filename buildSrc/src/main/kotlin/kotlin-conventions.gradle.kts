@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import uk.dioxic.gradle.libs
 
 plugins {
@@ -41,6 +42,17 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.assertk)
 }
+
+//tasks.withType<KotlinCompile> {
+//    kotlinOptions {
+//        freeCompilerArgs += "-Xcontext-receivers"
+//    }
+//}
+
+project.tasks.withType<KotlinCompile>().forEach {
+    it.kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
+}
+
 
 tasks.test {
     useJUnitPlatform()

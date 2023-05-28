@@ -1,6 +1,6 @@
 package uk.dioxic.mgenerate.operators.general
 
-import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.annotations.Operator
 
 class OptionalOperator(val value: () -> Any) : Operator<Any> {
     override fun invoke(): Any = value()

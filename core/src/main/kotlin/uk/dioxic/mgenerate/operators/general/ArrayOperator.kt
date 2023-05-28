@@ -1,7 +1,7 @@
 package uk.dioxic.mgenerate.operators.general
 
 import uk.dioxic.mgenerate.annotations.Alias
-import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.annotations.Operator
 import kotlin.math.max
 
 @Alias("array")

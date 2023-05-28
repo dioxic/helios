@@ -3,7 +3,7 @@ package uk.dioxic.mgenerate.codecs
 import org.bson.codecs.Codec
 import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
-import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.annotations.Operator
 
 class OperatorExecutionCodecProvider: CodecProvider {
 

@@ -2,12 +2,12 @@ package uk.dioxic.mgenerate
 
 import org.reflections.Reflections
 import uk.dioxic.mgenerate.annotations.Alias
-import uk.dioxic.mgenerate.operators.Operator
-import uk.dioxic.mgenerate.operators.noInputOperators
+import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.operators.fakerOperators
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
-@Suppress("UNCHECKED_CAST")
+@Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
 object OperatorFactory {
 
     private const val operatorPrefix = "\$"
@@ -20,20 +20,25 @@ object OperatorFactory {
         reflections.getSubTypesOf(Operator::class.java)
             .filter { it.isAnnotationPresent(Alias::class.java) }
             .map { it.kotlin as KClass<Operator<*>> }
-            .forEach(OperatorFactory::addOperator)
+            .forEach(::addOperator)
 
         // add object operators
-        objectMap.putAll(noInputOperators)
+        fakerOperators.forEach(::addOperator)
     }
 
     private fun String.isOperator() =
         startsWith("\$")
 
-    private fun addOperator(clazz: KClass<Operator<*>>) {
+    fun addOperator(clazz: KClass<Operator<*>>) {
         clazz.findAnnotation<Alias>()?.aliases?.forEach { alias ->
             classMap["$operatorPrefix$alias"] = clazz
         }
     }
+
+    fun addOperator(operator: Operator<*>, aliases: List<String>) =
+        aliases.forEach { alias ->
+            objectMap["$operatorPrefix$alias"] = operator
+        }
 
     fun canHandle(key: String) = key.isOperator() &&
             (classMap.containsKey(key) || objectMap.containsKey(key))
