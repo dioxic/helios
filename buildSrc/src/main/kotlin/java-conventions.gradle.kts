@@ -5,8 +5,15 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.bundles.logging)
     testImplementation(libs.junit)
     testImplementation(libs.assertj)
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(13))
+    }
 }
 
 tasks.test {

@@ -1,36 +1,33 @@
-@file:Suppress("UnstableApiUsage")
+import uk.dioxic.gradle.libs
 
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-//    kotlin("jvm")
     alias(libs.plugins.kotlin.serialization)
-//    alias(libs.plugins.atomicfu)
-    alias(libs.plugins.ksp)
     `kotlin-conventions`
+//    `with-test-fixtures`
     `with-docs`
 }
 
 group = "uk.dioxic"
 version = "0.0.1-SNAPSHOT"
 
-dependencies {
-    implementation(project(":common"))
-    ksp(project(":processor"))
+//tasks.withType<KotlinCompile> {
+//    kotlinOptions {
+//        freeCompilerArgs += "-Xcontext-receivers"
+//    }
+//}
 
-    implementation(libs.kbson)
+dependencies {
     implementation(libs.bson)
+    implementation(libs.commons.math)
+    implementation(libs.mongodb.sync)
+    implementation(libs.kotlin.datetime)
+    implementation(libs.kotlin.coroutines.core)
     implementation(libs.kotlin.serialization.core)
     implementation(libs.kotlin.serialization.json)
+    implementation(libs.faker)
     implementation(libs.kotlin.reflect)
-    implementation(libs.kotlin.poet)
-//    implementation(libs.atomicfu)
+    implementation(libs.reflections)
     implementation(libs.bundles.logging)
-}
-
-kotlin {
-    sourceSets.main {
-        kotlin.srcDir("build/generated/ksp/main/kotlin")
-    }
-    sourceSets.test {
-        kotlin.srcDir("build/generated/ksp/test/kotlin")
-    }
+    testImplementation(libs.kotlin.coroutines.test)
 }

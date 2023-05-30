@@ -1,38 +1,61 @@
 package uk.dioxic.mgenerate
 
-import com.squareup.kotlinpoet.asTypeName
-import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.jvm.reflect
+import org.reflections.Reflections
+import uk.dioxic.mgenerate.annotations.Alias
+import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.operators.fakerOperators
+import kotlin.reflect.KClass
+import kotlin.reflect.full.findAnnotation
 
-inline fun <reified T : () -> Any> instance(vals: Map<String, () -> Any>): T {
+@Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
+object OperatorFactory {
 
-//    val klas: KClass<Operator<Any>> = Operator::class as KClass<Operator>
-//    val klas:KClass<Operator<*>> = T::class as KClass<Operator<*>>
-//    val klas = T::class
-//    val klass = T::class
-//    klass.primaryConstructor
-    val cons = T::class.primaryConstructor!!
-    val valmap = cons.parameters
-        .associateBy({ it }, { vals[it.name] })
-        .filterNot { it.value == null }
-    return cons.callBy(valmap)
-}
+    private const val operatorPrefix = "\$"
+    private val classMap: MutableMap<String, KClass<Operator<*>>> = mutableMapOf()
+    private val objectMap: MutableMap<String, Operator<*>> = mutableMapOf()
 
-inline fun <reified T : () -> Any> instance(noinline value: () -> Any): T {
-    val cons = T::class.primaryConstructor!!
+    init {
+        // add operator class definitions with reflection
+        val reflections = Reflections("uk.dioxic.mgenerate.operators")
+        reflections.getSubTypesOf(Operator::class.java)
+            .filter { it.isAnnotationPresent(Alias::class.java) }
+            .map { it.kotlin as KClass<Operator<*>> }
+            .forEach(::addOperator)
 
-    val mandatoryParameters = cons.parameters
-        .filterNot { it.isOptional }
-
-    val singleParameter = mandatoryParameters[0]
-    val expectedType = singleParameter.type
-    val valueReturnType = value.reflect()?.returnType
-
-    require(expectedType == valueReturnType) {
-        "${T::class.simpleName}.${singleParameter.name} expecting [$expectedType] - cannot accept type [$valueReturnType]"
+        // add object operators
+        fakerOperators.forEach(::addOperator)
     }
 
-    require(mandatoryParameters.count() <= 1) { "${T::class.simpleName} requires parameters $mandatoryParameters" }
+    private fun String.isOperator() =
+        startsWith("\$")
 
-    return cons.callBy(mapOf(singleParameter to value))
+    fun addOperator(clazz: KClass<Operator<*>>) {
+        clazz.findAnnotation<Alias>()?.aliases?.forEach { alias ->
+            classMap["$operatorPrefix$alias"] = clazz
+        }
+    }
+
+    fun addOperator(operator: Operator<*>, aliases: List<String>) =
+        aliases.forEach { alias ->
+            objectMap["$operatorPrefix$alias"] = operator
+        }
+
+    fun canHandle(key: String) = key.isOperator() &&
+            (classMap.containsKey(key) || objectMap.containsKey(key))
+
+    fun create(key: String, obj: Any): Operator<*> {
+        val operatorClass = getOperatorClass(key)
+
+        return when (obj) {
+            is Map<*, *> -> OperatorBuilder.fromMap(operatorClass, obj)
+            else -> OperatorBuilder.fromValue(operatorClass, obj)
+        }
+    }
+
+    fun create(key: String): Operator<*> =
+        objectMap[key] ?: OperatorBuilder.build(getOperatorClass(key))
+
+    private fun getOperatorClass(key: String): KClass<Operator<*>> =
+        classMap[key] ?: error("No operator found for key $key")
+
 }
