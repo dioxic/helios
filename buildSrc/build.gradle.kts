@@ -1,5 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
-import java.util.Properties
+import java.util.*
 
 plugins {
     `kotlin-dsl`

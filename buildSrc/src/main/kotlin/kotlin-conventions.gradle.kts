@@ -1,5 +1,5 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import uk.dioxic.gradle.libs
 
 plugins {
@@ -14,17 +14,19 @@ kotlin {
             languageSettings.apply {
 //                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
 //                optIn("kotlinx.coroutines.FlowPreview")
-                optIn("kotlin.Experimental")
-                optIn("kotlin.time.ExperimentalTime")
+//                optIn("kotlin.Experimental")
+//                optIn("kotlin.RequiresOptIn")
+//                optIn("kotlin.time.ExperimentalTime")
 //                optIn("kotlin.reflect.jvm.ExperimentalReflectionOnLambdas")
 //                optIn("kotlin.time.ExperimentalContracts")
             }
         }
     }
-    tasks.withType<KotlinJvmCompile> {
-        kotlinOptions.jvmTarget = "17"
-        kotlinOptions.languageVersion = "1.6"
-    }
+    jvmToolchain(17)
+//    tasks.withType<KotlinJvmCompile> {
+//        kotlinOptions.jvmTarget = "17"
+//        kotlinOptions.languageVersion = "1.6"
+//    }
 //    tasks.withType<KotlinJvmTest>().configureEach {
 //        useJUnitPlatform()
 //        testLogging {
@@ -35,9 +37,22 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.bundles.logging)
     testImplementation(libs.junit)
+    testImplementation(libs.bundles.kotest)
     testImplementation(libs.assertk)
 }
+
+//tasks.withType<KotlinCompile> {
+//    kotlinOptions {
+//        freeCompilerArgs += "-Xcontext-receivers"
+//    }
+//}
+
+project.tasks.withType<KotlinCompile>().forEach {
+    it.kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
+}
+
 
 tasks.test {
     useJUnitPlatform()
