@@ -9,9 +9,9 @@ sealed interface OutputResult {
     val workloadName: String
 }
 
-sealed interface SummaryResultMessage
+sealed interface SummarizationMessage
 
-class GetSummarizedResults(val response: CompletableDeferred<List<SummarizedResult>>) : SummaryResultMessage
+class GetSummarizedResults(val response: CompletableDeferred<List<SummarizedResult>>) : SummarizationMessage
 
 context(Workload)
 @OptIn(ExperimentalTime::class)

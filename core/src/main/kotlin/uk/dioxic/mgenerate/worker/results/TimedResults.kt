@@ -2,7 +2,7 @@ package uk.dioxic.mgenerate.worker.results
 
 import kotlin.time.Duration
 
-sealed interface TimedWorkloadResult : SummaryResultMessage, OutputResult {
+sealed interface TimedWorkloadResult : SummarizationMessage, OutputResult {
     val value: WorkloadResult
     val duration: Duration
     override val workloadName: String
