@@ -10,6 +10,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import uk.dioxic.mgenerate.worker.results.OutputResult
 import uk.dioxic.mgenerate.worker.results.SummarizedMessageResult
@@ -42,20 +43,23 @@ class WorkerTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MessageWorkload(name = "workload1", count = 1_000, rate = 1000.tps) { "[$it] hello1" },
+                MessageWorkload(name = "workload1", count = 10_000, rate = 1000.tps) { "[$it] hello1" },
             )
         )
 
         val results = mutableListOf<OutputResult>()
-        executeStages(stage, tick = 100.milliseconds)
-            .toList(results)
+        executeStages(stage, tick = 100.milliseconds).collect {
+            println("${LocalTime.now()} - $it")
+            results.add(it)
+        }
+
+        results
             .shouldBeInstanceOf<List<SummarizedMessageResult>>()
             .should { list ->
                 list.forEach {
-                    println("${LocalTime.now()} - $it")
                     it.workloadName shouldStartWith "workload"
                 }
-                list.sumOf { it.msgCount } shouldBe 1000
+                list.sumOf { it.msgCount } shouldBe stage.workloads.sumOf { it.count }
                 list.map { it.msgCount }.average()
                     .shouldBeGreaterThan(90.0)
                     .shouldBeLessThan(115.0)
