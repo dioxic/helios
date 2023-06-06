@@ -3,8 +3,10 @@
 package uk.dioxic.mgenerate.worker
 
 import com.mongodb.client.MongoClient
-import com.mongodb.client.model.DeleteOptions
+import com.mongodb.client.model.Aggregates.project
 import com.mongodb.client.model.UpdateOptions
+import org.bson.Document
+import org.bson.RawBsonDocument
 import org.bson.conversions.Bson
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.worker.results.CommandResult
@@ -61,7 +63,7 @@ class InsertManyExecutor(
         .getCollection(collection)
 
     override fun invoke(workerId: Int) =
-        mongoCollection.insertMany(List(number) {template}).standardize()
+        mongoCollection.insertMany(List(number) { template }).standardize()
 }
 
 class UpdateOneExecutor(
@@ -128,12 +130,22 @@ class FindExecutor(
     client: MongoClient,
     db: String,
     collection: String,
+    val skip: Int? = null,
+    val limit: Int? = null,
+    val sort: Document? = null,
+    val project: Document? = null,
     val filter: Template,
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
         .getCollection(collection)
+        .withDocumentClass(RawBsonDocument::class.java)
 
     override fun invoke(workerId: Int) =
-        ReadResult(mongoCollection.find(filter).count())
+        ReadResult(mongoCollection.find(filter).apply {
+            if (project != null) project(project)
+            if (limit != null) limit(limit)
+            if (sort != null) sort(sort)
+            if (skip != null) skip(skip)
+        }.count())
 }
