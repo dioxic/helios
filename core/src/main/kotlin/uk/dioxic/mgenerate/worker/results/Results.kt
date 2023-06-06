@@ -12,6 +12,7 @@ sealed interface OutputResult {
 sealed interface SummarizationMessage
 
 class GetSummarizedResults(val response: CompletableDeferred<List<SummarizedResult>>) : SummarizationMessage
+object CloseAfterNextSummarization : SummarizationMessage
 
 context(Workload)
 @OptIn(ExperimentalTime::class)

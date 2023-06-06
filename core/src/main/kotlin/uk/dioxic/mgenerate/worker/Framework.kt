@@ -8,10 +8,8 @@ import kotlinx.coroutines.flow.flow
 import org.apache.logging.log4j.kotlin.logger
 import uk.dioxic.mgenerate.utils.nextElementIndex
 import uk.dioxic.mgenerate.worker.results.*
-import kotlin.concurrent.fixedRateTimer
 import kotlin.random.Random
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 private val logger = logger("uk.dioxic.mgenerate.worker.Framework")
@@ -86,9 +84,8 @@ fun CoroutineScope.executeStage(
     launch(Dispatchers.Default) {
         logger.trace("waiting for processor jobs to finish")
         deferred.joinAll()
-        delay(tick + 100.milliseconds)
         logger.trace("closing results channel")
-        resultChannel.close()
+        resultChannel.send(CloseAfterNextSummarization)
     }
 
     // summarize results and return on a flow
@@ -124,7 +121,7 @@ private suspend fun produceWork(workloads: List<MultiExecutionWorkload>, rate: R
 
     while (isActive && (weights.sum() > 0)) {
         val selection = Random.nextElementIndex(weights, weightSum).let {
-            val count = counts[it]--
+            val count = --counts[it]
             if (count == 0L) {
                 weights[it] = 0
                 weightSum = weights.sum()
@@ -141,6 +138,7 @@ private suspend fun produceWork(workloads: List<MultiExecutionWorkload>, rate: R
 private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>(capacity = 100) {
     logger.trace("Starting result summarizer actor")
     val resultsMap = mutableMapOf<String, MutableList<TimedWorkloadResult>>()
+    var scheduleToClose = false
 
     for (msg in channel) {
         when (msg) {
@@ -154,7 +152,12 @@ private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>
                     v.summarize(k)
                 })
                 resultsMap.clear()
+                if (scheduleToClose) {
+                    channel.close()
+                }
             }
+
+            is CloseAfterNextSummarization -> scheduleToClose = true
         }
     }
 }
