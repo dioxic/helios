@@ -1,12 +1,11 @@
 package uk.dioxic.mgenerate.worker
 
-import com.mongodb.client.MongoClient
-import com.mongodb.client.MongoCollection
-import com.mongodb.client.MongoDatabase
+import com.mongodb.client.*
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.InsertManyResult
 import com.mongodb.client.result.InsertOneResult
 import com.mongodb.client.result.UpdateResult
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
@@ -23,12 +22,15 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.bson.BsonObjectId
 import org.bson.Document
+import org.bson.RawBsonDocument
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.worker.results.TimedCommandResult
 import uk.dioxic.mgenerate.worker.results.TimedMessageResult
+import uk.dioxic.mgenerate.worker.results.TimedReadResult
 import uk.dioxic.mgenerate.worker.results.TimedWriteResult
 
 class ExecutorTests : FunSpec({
+    isolationMode = IsolationMode.InstancePerTest
 
     fun sew(executor: Executor) = SingleExecutionWorkload(
         name = "myWorkload",
@@ -257,6 +259,41 @@ class ExecutorTests : FunSpec({
             verify { client.getDatabase("myDB") }
             verify { database.getCollection("myCollection") }
             verify { collection.deleteMany(any()) }
+        }
+    }
+
+    test("find executor") {
+        checkAll(Arb.int(0..5)) { docCount ->
+            val cursor = mockk<MongoCursor<RawBsonDocument>>()
+
+            every {
+                collection
+                    .withDocumentClass(RawBsonDocument::class.java)
+                    .find(any<Template>())
+                    .iterator()
+            } returns cursor
+
+            every { cursor.next() } returns RawBsonDocument(ByteArray(10))
+            every { cursor.hasNext() } returnsMany List(docCount) { true } + false
+
+            val workload = sew(
+                FindExecutor(
+                    client = client,
+                    db = "myDB",
+                    collection = "myCollection",
+                    filter = Template(mapOf("name" to "Bob"))
+                )
+            )
+
+            workload.invoke(0).apply {
+                shouldBeInstanceOf<TimedReadResult>()
+                workloadName shouldBe workload.name
+                value.docReturned shouldBe docCount
+            }
+
+            verify { client.getDatabase("myDB") }
+            verify { database.getCollection("myCollection") }
+//            verify { collection.find(any<Template>()) }
         }
     }
 
