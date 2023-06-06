@@ -1,6 +1,13 @@
 package uk.dioxic.mgenerate.worker.results
 
+import org.bson.Document
+
 sealed interface Result
+
+class CommandResult(val document: Document): Result {
+    val success: Boolean
+        get() = document["ok"]?.let { it == 1 } ?: false
+}
 
 data class WriteResult(
     val insertCount: Long = 0,
@@ -17,4 +24,4 @@ data class ReadResult(
 
 data class MessageResult(
     val msg: String
-): Result
+) : Result

@@ -26,7 +26,7 @@ class WorkerTests : FunSpec({
         val workloadName = "workload"
         val stage = SingleStage(
             name = stageName,
-            workload = SingleExecutionWorkload("workload", CommandExecutor)
+            workload = SingleExecutionWorkload("workload", MessageExecutor { "[$it] hello" })
         )
 
         executeStages(stage, tick = 500.milliseconds).collect {
@@ -124,7 +124,7 @@ class WorkerTests : FunSpec({
         val stages = arrayOf(
             SingleStage(
                 "singleStage",
-                workload = SingleExecutionWorkload("single", CommandExecutor)
+                workload = SingleExecutionWorkload("single", MessageExecutor { "[$it] hello" })
             ), MultiExecutionStage(
                 name = "testStage",
                 timeout = 1.seconds,

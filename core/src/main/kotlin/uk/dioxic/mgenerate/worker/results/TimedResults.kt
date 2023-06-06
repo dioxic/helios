@@ -8,6 +8,12 @@ sealed interface TimedResult : SummarizationMessage, OutputResult {
     override val workloadName: String
 }
 
+data class TimedCommandResult(
+    override val value: CommandResult,
+    override val duration: Duration,
+    override val workloadName: String
+): TimedResult
+
 data class TimedWriteResult(
     override val value: WriteResult,
     override val duration: Duration,

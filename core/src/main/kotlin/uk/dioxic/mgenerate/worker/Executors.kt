@@ -1,7 +1,11 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package uk.dioxic.mgenerate.worker
 
 import com.mongodb.client.MongoClient
+import org.bson.conversions.Bson
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.worker.results.CommandResult
 import uk.dioxic.mgenerate.worker.results.MessageResult
 import uk.dioxic.mgenerate.worker.results.Result
 
@@ -9,8 +13,16 @@ fun interface Executor {
     fun invoke(workerId: Int): Result
 }
 
-object CommandExecutor : Executor {
-    override fun invoke(workerId: Int) = MessageResult("hello")
+class CommandExecutor(
+    client: MongoClient,
+    val command: Bson
+) : Executor {
+    private val database = client.getDatabase("admin")
+
+    override fun invoke(workerId: Int) = CommandResult(
+        database.runCommand(command)
+    )
+
 }
 
 class MessageExecutor(

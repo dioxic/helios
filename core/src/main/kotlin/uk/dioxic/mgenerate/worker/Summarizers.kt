@@ -38,10 +38,21 @@ fun List<TimedMessageResult>.summarize(workloadName: String) =
         )
     )
 
+fun List<TimedCommandResult>.summarize(workloadName: String) =
+    SummarizedCommandResult(
+        workloadName = workloadName,
+        successes = count { it.value.success },
+        failures = count { !it.value.success },
+        latencyPercentiles = listOf(
+            "p50" to map { it.duration }.percentile(0.5)
+        )
+    )
+
 @Suppress("UNCHECKED_CAST")
 fun List<TimedResult>.summarize(workloadName: String): SummarizedResult =
     when (first()) {
         is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(workloadName)
         is TimedReadResult -> (this as List<TimedReadResult>).summarize(workloadName)
         is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(workloadName)
+        is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(workloadName)
     }
