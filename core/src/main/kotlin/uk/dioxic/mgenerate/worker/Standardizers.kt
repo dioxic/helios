@@ -10,6 +10,7 @@ import uk.dioxic.mgenerate.worker.results.WriteResult
 fun UpdateResult.standardize() = WriteResult(
     matchedCount = matchedCount,
     modifiedCount = modifiedCount,
+    upsertedCount = if (upsertedId == null) 0 else 1
 )
 
 fun DeleteResult.standardize() = WriteResult(

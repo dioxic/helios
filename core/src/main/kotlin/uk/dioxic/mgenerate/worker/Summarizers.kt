@@ -23,7 +23,7 @@ fun List<TimedReadResult>.summarize(workloadName: String) =
     SummarizedReadResult(
         workloadName = workloadName,
         docReturned = sumOf { it.value.docReturned },
-        queryCount = sumOf { it.value.queryCount },
+        queryCount = size,
         latencyPercentiles = listOf(
             "p50" to map { it.duration }.percentile(0.5)
         )

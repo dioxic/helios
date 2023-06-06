@@ -1,5 +1,7 @@
 package uk.dioxic.mgenerate.worker
 
+import com.mongodb.client.MongoClient
+import com.mongodb.client.MongoDatabase
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.comparables.shouldBeLessThan
@@ -8,9 +10,13 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.bson.Document
 import uk.dioxic.mgenerate.worker.results.OutputResult
 import uk.dioxic.mgenerate.worker.results.SummarizedMessageResult
-import uk.dioxic.mgenerate.worker.results.TimedMessageResult
+import uk.dioxic.mgenerate.worker.results.TimedCommandResult
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -19,23 +25,36 @@ import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
 @OptIn(ExperimentalTime::class)
-class WorkerTests : FunSpec({
+class FrameworkTests : FunSpec({
 
     test("single stage workload") {
-        val stageName = "single"
+        val client = mockk<MongoClient>()
+        val database = mockk<MongoDatabase>()
+        val helloCommand = Document("hello", 1)
+
+        every { client.getDatabase(any()) } returns database
+        every { database.runCommand(any()) } returns Document("ok", 1)
+
         val workloadName = "workload"
         val stage = SingleStage(
-            name = stageName,
-            workload = SingleExecutionWorkload("workload", MessageExecutor { "[$it] hello" })
+            name = "single",
+            workload = SingleExecutionWorkload(workloadName, CommandExecutor(
+                client = client,
+                command = helloCommand,
+                database = "test"
+            ))
         )
 
         executeStages(stage, tick = 500.milliseconds).collect {
-            it.shouldBeInstanceOf<TimedMessageResult>()
+            it.shouldBeInstanceOf<TimedCommandResult>()
             it.workloadName shouldBe workloadName
-            it.value.msg shouldBe "hello"
+            it.value.success shouldBe true
             it.duration shouldBeLessThan 100.milliseconds
             println(it)
         }
+
+        verify { client.getDatabase("test") }
+        verify { database.runCommand(any()) }
     }
 
     test("workload summarization count") {

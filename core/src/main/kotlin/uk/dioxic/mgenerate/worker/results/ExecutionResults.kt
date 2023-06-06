@@ -1,10 +1,12 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package uk.dioxic.mgenerate.worker.results
 
 import org.bson.Document
 
 sealed interface Result
 
-class CommandResult(val document: Document): Result {
+data class CommandResult(val document: Document): Result {
     val success: Boolean
         get() = document["ok"]?.let { it == 1 } ?: false
 }
@@ -19,7 +21,6 @@ data class WriteResult(
 
 data class ReadResult(
     val docReturned: Int = 0,
-    val queryCount: Int = 0
 ) : Result
 
 data class MessageResult(
