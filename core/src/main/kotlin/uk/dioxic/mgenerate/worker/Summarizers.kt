@@ -39,7 +39,7 @@ fun List<TimedMessageResult>.summarize(workloadName: String) =
     )
 
 @Suppress("UNCHECKED_CAST")
-fun List<TimedWorkloadResult>.summarize(workloadName: String): SummarizedResult =
+fun List<TimedResult>.summarize(workloadName: String): SummarizedResult =
     when (first()) {
         is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(workloadName)
         is TimedReadResult -> (this as List<TimedReadResult>).summarize(workloadName)

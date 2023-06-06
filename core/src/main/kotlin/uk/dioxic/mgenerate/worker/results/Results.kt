@@ -14,9 +14,8 @@ sealed interface SummarizationMessage
 class GetSummarizedResults(val response: CompletableDeferred<List<SummarizedResult>>) : SummarizationMessage
 object CloseAfterNextSummarization : SummarizationMessage
 
-context(Workload)
 @OptIn(ExperimentalTime::class)
-inline fun measureTimedWorkloadValue(block: () -> WorkloadResult): TimedWorkloadResult {
+inline fun Workload.measureTimedResult(block: () -> Result): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
     return when (val value = block()) {
         is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), name)

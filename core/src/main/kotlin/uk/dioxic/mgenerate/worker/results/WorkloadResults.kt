@@ -1,6 +1,6 @@
 package uk.dioxic.mgenerate.worker.results
 
-sealed interface WorkloadResult
+sealed interface Result
 
 data class WriteResult(
     val insertCount: Long = 0,
@@ -8,13 +8,13 @@ data class WriteResult(
     val modifiedCount: Long = 0,
     val deletedCount: Long = 0,
     val upsertedCount: Long = 0,
-) : WorkloadResult
+) : Result
 
 data class ReadResult(
     val docReturned: Int = 0,
     val queryCount: Int = 0
-) : WorkloadResult
+) : Result
 
 data class MessageResult(
     val msg: String
-): WorkloadResult
+): Result

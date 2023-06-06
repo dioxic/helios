@@ -26,7 +26,7 @@ class WorkerTests : FunSpec({
         val workloadName = "workload"
         val stage = SingleStage(
             name = stageName,
-            workload = CommandWorkload(name = workloadName)
+            workload = SingleExecutionWorkload("workload", CommandExecutor)
         )
 
         executeStages(stage, tick = 500.milliseconds).collect {
@@ -39,13 +39,15 @@ class WorkerTests : FunSpec({
     }
 
     test("workload summarization count") {
+        val executor = MessageExecutor { "[$it] hello" }
+
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MessageWorkload(name = "workload1000", count = 1_000) { "[$it] hello1" },
-                MessageWorkload(name = "workload1000R", count = 1_000, rate = 500.tps) { "[$it] hello1" },
-                MessageWorkload(name = "workload500", count = 500) { "[$it] hello1" },
-                MessageWorkload(name = "workload200", count = 200) { "[$it] hello1" },
+                MultiExecutionWorkload(name = "workload1000", count = 1_000, executor = executor),
+                MultiExecutionWorkload(name = "workload1000R", count = 1_000, rate = 500.tps, executor = executor),
+                MultiExecutionWorkload(name = "workload500", count = 500, executor = executor),
+                MultiExecutionWorkload(name = "workload200", count = 200, executor = executor),
             )
         )
 
@@ -63,7 +65,12 @@ class WorkerTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MessageWorkload(name = "workload500", count = 500, rate = 500.tps) { "[$it] hello1" },
+                MultiExecutionWorkload(
+                    name = "workload500",
+                    count = 500,
+                    rate = 500.tps,
+                    executor = MessageExecutor { "[$it] hello1" }
+                ),
             )
         )
 
@@ -80,11 +87,12 @@ class WorkerTests : FunSpec({
 
 
     test("workload rate") {
+        val executor = MessageExecutor { "[$it] hello" }
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MessageWorkload(name = "workload1000", count = 1_000, rate = 1000.tps) { "[$it] hello1" },
-                MessageWorkload(name = "workload500", count = 1_000, rate = 500.tps) { "[$it] hello1" },
+                MultiExecutionWorkload(name = "workload1000", count = 1_000, rate = 1000.tps, executor = executor),
+                MultiExecutionWorkload(name = "workload500", count = 1_000, rate = 500.tps, executor = executor),
             )
         )
 
@@ -100,7 +108,6 @@ class WorkerTests : FunSpec({
                 list.forEach {
                     it.workloadName shouldStartWith "workload"
                 }
-//                list.sumOf { it.msgCount } shouldBe stage.workloads.sumOf { it.count }
                 list.filter { it.workloadName == "workload1000" }
                     .map { it.msgCount }.average()
                     .shouldBeGreaterThan(90.0)
@@ -117,13 +124,17 @@ class WorkerTests : FunSpec({
         val stages = arrayOf(
             SingleStage(
                 "singleStage",
-                workload = CommandWorkload(name = "wk1")
+                workload = SingleExecutionWorkload("single", CommandExecutor)
             ), MultiExecutionStage(
                 name = "testStage",
                 timeout = 1.seconds,
                 rate = Rate.of(1),
                 workloads = listOf(
-                    MessageWorkload(name = "wk1", count = 5) { "[$it] hello1" },
+                    MultiExecutionWorkload(
+                        name = "wk1",
+                        count = 5,
+                        executor = MessageExecutor { "[$it] hello1" }
+                    )
                 ),
             )
         )

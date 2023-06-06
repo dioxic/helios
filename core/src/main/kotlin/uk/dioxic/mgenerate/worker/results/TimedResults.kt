@@ -2,8 +2,8 @@ package uk.dioxic.mgenerate.worker.results
 
 import kotlin.time.Duration
 
-sealed interface TimedWorkloadResult : SummarizationMessage, OutputResult {
-    val value: WorkloadResult
+sealed interface TimedResult : SummarizationMessage, OutputResult {
+    val value: Result
     val duration: Duration
     override val workloadName: String
 }
@@ -12,16 +12,16 @@ data class TimedWriteResult(
     override val value: WriteResult,
     override val duration: Duration,
     override val workloadName: String
-): TimedWorkloadResult
+): TimedResult
 
 data class TimedReadResult(
     override val value: ReadResult,
     override val duration: Duration,
     override val workloadName: String
-): TimedWorkloadResult
+): TimedResult
 
 data class TimedMessageResult(
     override val value: MessageResult,
     override val duration: Duration,
     override val workloadName: String
-): TimedWorkloadResult
+): TimedResult
