@@ -80,7 +80,7 @@ class ExecutorTests : FunSpec({
         }
     }
 
-    test("insert one executor") {
+    test("insertOne executor") {
         val workload = sew(
             InsertOneExecutor(
                 client = client,
@@ -107,7 +107,7 @@ class ExecutorTests : FunSpec({
         verify { collection.insertOne(any()) }
     }
 
-    test("insert many executor") {
+    test("insertMany executor") {
         checkAll(Arb.int(0..5)) { docCount ->
             val result = mapOf(*(0..docCount).map { it to BsonObjectId() }.toTypedArray())
 
@@ -138,7 +138,7 @@ class ExecutorTests : FunSpec({
         }
     }
 
-    test("update one executor") {
+    test("updateOne executor") {
         checkAll(updateResultArb) { updateResult ->
             val filter = Template(mapOf("name" to "Bob"))
             val update = Template(mapOf("\$set" to mapOf("name" to "Alice")))
@@ -170,7 +170,7 @@ class ExecutorTests : FunSpec({
         }
     }
 
-    test("update many executor") {
+    test("updateMany executor") {
         checkAll(updateResultArb) { updateResult ->
             val filter = Template(mapOf("name" to "Bob"))
             val update = Template(mapOf("\$set" to mapOf("name" to "Alice")))
@@ -202,7 +202,7 @@ class ExecutorTests : FunSpec({
         }
     }
 
-    test("delete one executor") {
+    test("deleteOne executor") {
         checkAll(Arb.int(0..5)) { docCount ->
             every { collection.deleteOne(any()) } returns DeleteResult.acknowledged(docCount.toLong())
 
@@ -231,7 +231,7 @@ class ExecutorTests : FunSpec({
         }
     }
 
-    test("delete many executor") {
+    test("deleteMany executor") {
         checkAll(Arb.int(0..5)) { docCount ->
             every { collection.deleteMany(any()) } returns DeleteResult.acknowledged(docCount.toLong())
 
