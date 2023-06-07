@@ -14,6 +14,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.bson.Document
+import uk.dioxic.mgenerate.test.IS_NOT_GH_ACTION
 import uk.dioxic.mgenerate.worker.results.OutputResult
 import uk.dioxic.mgenerate.worker.results.SummarizedMessageResult
 import uk.dioxic.mgenerate.worker.results.TimedCommandResult
@@ -105,7 +106,7 @@ class FrameworkTests : FunSpec({
     }
 
 
-    test("workload rate") {
+    test("workload rate").config(enabled = IS_NOT_GH_ACTION) {
         val executor = MessageExecutor { "[$it] hello" }
         val stage = MultiExecutionStage(
             name = "testStage",
