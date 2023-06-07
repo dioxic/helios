@@ -1,18 +1,5 @@
 package uk.dioxic.mgenerate.deprecated
 
-import assertk.Assert
-import assertk.all
-import assertk.assertThat
-import assertk.assertions.*
-import org.bson.Document
-import org.bson.types.ObjectId
-import org.junit.jupiter.api.DisplayName
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.TestFactory
-import uk.dioxic.mgenerate.exceptions.OperatorArgumentException
-import uk.dioxic.mgenerate.extensions.isSubsetOf
-
 @Deprecated("")
 internal class OperatorBuilderTest {
 

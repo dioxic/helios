@@ -1,10 +1,8 @@
-import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import uk.dioxic.gradle.libs
 
 plugins {
     kotlin("jvm")
-//    alias(libs.plugins.versions)
     id("base-conventions")
 }
 

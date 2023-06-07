@@ -1,7 +1,7 @@
 package uk.dioxic.mgenerate.operators.general
 
 import uk.dioxic.mgenerate.annotations.Operator
-import java.util.UUID
+import java.util.*
 
 class UuidOperator(
     val type: () -> String = { "BINARY" }
