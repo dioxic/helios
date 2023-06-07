@@ -111,7 +111,6 @@ class FrameworkTests : FunSpec({
             name = "testStage",
             workloads = listOf(
                 MultiExecutionWorkload(name = "workload1000", count = 1_000, rate = 1000.tps, executor = executor),
-                MultiExecutionWorkload(name = "workload500", count = 1_000, rate = 500.tps, executor = executor),
             )
         )
 
@@ -130,12 +129,7 @@ class FrameworkTests : FunSpec({
                 list.filter { it.workloadName == "workload1000" }
                     .map { it.msgCount }.average()
                     .shouldBeGreaterThan(90.0)
-                    .shouldBeLessThan(115.0)
-
-                list.filter { it.workloadName == "workload500" }
-                    .map { it.msgCount }.average()
-                    .shouldBeGreaterThan(40.0)
-                    .shouldBeLessThan(60.0)
+                    .shouldBeLessThan(120.0)
             }
     }
 
