@@ -4,12 +4,14 @@ import org.bson.Document
 import org.bson.UuidRepresentation
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistries
+import org.bson.codecs.configuration.CodecRegistry
 import org.bson.codecs.jsr310.Jsr310CodecProvider
 import org.bson.json.JsonMode
 import org.bson.json.JsonReader
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.mgenerate.codecs.OperatorExecutionCodecProvider
 import uk.dioxic.mgenerate.codecs.TemplateDocumentCodec
+import uk.dioxic.mgenerate.codecs.TemplateDocumentCodecProvider
 
 class Template(map: Map<String, *>) : Document(map) {
 
@@ -25,9 +27,9 @@ class Template(map: Map<String, *>) : Document(map) {
         super.toJson(defaultJsonWriter, defaultCodec)
 
     companion object {
-        private val defaultRegistry = CodecRegistries.fromProviders(
+        val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
             listOf(
-                ValueCodecProvider(), Jsr310CodecProvider(),
+                ValueCodecProvider(), Jsr310CodecProvider(), TemplateDocumentCodecProvider(),
                 CollectionCodecProvider(), IterableCodecProvider(), OperatorExecutionCodecProvider(),
                 BsonValueCodecProvider(), DocumentCodecProvider(OperatorTransformer()), MapCodecProvider()
             )

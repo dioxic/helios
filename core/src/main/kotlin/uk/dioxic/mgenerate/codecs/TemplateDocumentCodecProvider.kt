@@ -7,6 +7,7 @@ import org.bson.codecs.Codec
 import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.types.CodeWithScope
+import uk.dioxic.mgenerate.Template
 
 class TemplateDocumentCodecProvider @JvmOverloads constructor(
     private val bsonTypeClassMap: BsonTypeClassMap = BsonTypeClassMap()
@@ -17,7 +18,7 @@ class TemplateDocumentCodecProvider @JvmOverloads constructor(
         if (clazz == CodeWithScope::class.java) {
             return CodeWithScopeCodec(registry.get(Document::class.java)) as Codec<T>
         }
-        return if (clazz == Document::class.java) {
+        return if (clazz == Template::class.java) {
             TemplateDocumentCodec(registry, bsonTypeClassMap) as Codec<T>
         } else null
     }
