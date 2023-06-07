@@ -1,5 +1,4 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import uk.dioxic.gradle.libs
 
 plugins {
     id("com.github.ben-manes.versions")

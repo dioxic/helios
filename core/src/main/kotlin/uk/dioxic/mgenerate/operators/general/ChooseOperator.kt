@@ -1,8 +1,8 @@
 package uk.dioxic.mgenerate.operators.general
 
 import uk.dioxic.mgenerate.annotations.Alias
-import uk.dioxic.mgenerate.utils.nextElement
 import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.utils.nextElement
 import kotlin.random.Random
 
 @Alias("choose")

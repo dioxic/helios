@@ -1,7 +1,9 @@
 package uk.dioxic.mgenerate.codecs
 
 import org.bson.Document
-import org.bson.codecs.*
+import org.bson.codecs.BsonTypeClassMap
+import org.bson.codecs.CodeWithScopeCodec
+import org.bson.codecs.Codec
 import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.types.CodeWithScope
