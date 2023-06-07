@@ -3,8 +3,10 @@ import uk.dioxic.gradle.libs
 plugins {
     alias(libs.plugins.kotlin.serialization)
     `kotlin-conventions`
+    application
 //    `with-test-fixtures`
     `with-docs`
+    distribution
 }
 
 repositories {
@@ -21,4 +23,14 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass.set("uk.dioxic.mgenerate.cli.CliKt")
+}
+
+distributions {
+    main {
+        distributionBaseName.set("cli")
+    }
 }
