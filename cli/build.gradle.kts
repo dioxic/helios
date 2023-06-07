@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.bson)
     implementation(libs.mongodb.sync)
     implementation(libs.bundles.logging)
+    implementation(libs.kotlin.coroutines.core)
     implementation(libs.clikt)
 }
 
