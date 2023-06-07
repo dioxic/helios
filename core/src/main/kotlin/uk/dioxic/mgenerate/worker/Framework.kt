@@ -25,7 +25,7 @@ fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.second
     }
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class)
 fun CoroutineScope.executeStage(
     stage: MultiExecutionStage,
     tick: Duration = 1.seconds
@@ -35,8 +35,8 @@ fun CoroutineScope.executeStage(
 
     // launch producers
     with(workChannel) {
-        val rateLimitedWorkloads = stage.workloads.filterNot { it.rate == Rate.MAX }
-        val rateUnlimitedWorkloads = stage.workloads.filter { it.rate == Rate.MAX }
+        val rateLimitedWorkloads = stage.workloads.filter { it.rate != Rate.MAX && it.count > 0 }
+        val rateUnlimitedWorkloads = stage.workloads.filter { it.rate == Rate.MAX && it.count > 0 }
 
         if (rateUnlimitedWorkloads.isNotEmpty()) {
             producerJobs.add(launch(Dispatchers.Default) {
@@ -119,7 +119,7 @@ private suspend fun produceWork(workloads: List<MultiExecutionWorkload>, rate: R
     val counts = workloads.map { it.count }.toMutableList()
     var weightSum = weights.sum()
 
-    while (isActive && (weights.sum() > 0)) {
+    while (isActive && (weightSum > 0)) {
         val selection = Random.nextElementIndex(weights, weightSum).let {
             val count = --counts[it]
             if (count == 0L) {

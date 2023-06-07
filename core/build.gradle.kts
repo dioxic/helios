@@ -4,18 +4,8 @@ import uk.dioxic.gradle.libs
 plugins {
     alias(libs.plugins.kotlin.serialization)
     `kotlin-conventions`
-//    `with-test-fixtures`
     `with-docs`
 }
-
-group = "uk.dioxic"
-version = "0.0.1-SNAPSHOT"
-
-//tasks.withType<KotlinCompile> {
-//    kotlinOptions {
-//        freeCompilerArgs += "-Xcontext-receivers"
-//    }
-//}
 
 dependencies {
     implementation(libs.bson)

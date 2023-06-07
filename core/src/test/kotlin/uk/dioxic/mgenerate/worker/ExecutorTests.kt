@@ -4,6 +4,7 @@ import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoCursor
 import com.mongodb.client.MongoDatabase
+import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.InsertManyResult
 import com.mongodb.client.result.InsertOneResult
@@ -49,10 +50,10 @@ class ExecutorTests : FunSpec({
 
     val client = mockk<MongoClient>()
     val database = mockk<MongoDatabase>()
-    val collection = mockk<MongoCollection<Document>>()
+    val collection = mockk<MongoCollection<Template>>()
 
     every { client.getDatabase(any()) } returns database
-    every { database.getCollection(any()) } returns collection
+    every { database.getCollection(any(), Template::class.java) } returns collection
 
     test("message executor") {
         val workload = sew(MessageExecutor { "hello worker $it" })
@@ -108,7 +109,7 @@ class ExecutorTests : FunSpec({
         }
 
         verify { client.getDatabase("myDB") }
-        verify { database.getCollection("myCollection") }
+        verify { database.getCollection("myCollection", Template::class.java) }
         verify { collection.insertOne(any()) }
     }
 
@@ -116,14 +117,15 @@ class ExecutorTests : FunSpec({
         checkAll(Arb.int(0..5)) { docCount ->
             val result = mapOf(*(0..docCount).map { it to BsonObjectId() }.toTypedArray())
 
-            every { collection.insertMany(any()) } returns InsertManyResult.acknowledged(result)
+            every { collection.insertMany(any(), any<InsertManyOptions>()) } returns InsertManyResult.acknowledged(result)
 
             val workload = sew(
                 InsertManyExecutor(
                     client = client,
                     db = "myDB",
                     collection = "myCollection",
-                    template = Template(mapOf("name" to "Bob"))
+                    template = Template(mapOf("name" to "Bob")),
+                    number = 1
                 )
             )
 
@@ -138,8 +140,8 @@ class ExecutorTests : FunSpec({
             }
 
             verify { client.getDatabase("myDB") }
-            verify { database.getCollection("myCollection") }
-            verify { collection.insertMany(any()) }
+            verify { database.getCollection("myCollection", Template::class.java) }
+            verify { collection.insertMany(any(), any<InsertManyOptions>()) }
         }
     }
 
@@ -170,7 +172,7 @@ class ExecutorTests : FunSpec({
             }
 
             verify { client.getDatabase("myDB") }
-            verify { database.getCollection("myCollection") }
+            verify { database.getCollection("myCollection", Template::class.java) }
             verify { collection.updateOne(filter, update, any()) }
         }
     }
@@ -202,7 +204,7 @@ class ExecutorTests : FunSpec({
             }
 
             verify { client.getDatabase("myDB") }
-            verify { database.getCollection("myCollection") }
+            verify { database.getCollection("myCollection", Template::class.java) }
             verify { collection.updateMany(filter, update, any()) }
         }
     }
@@ -231,7 +233,7 @@ class ExecutorTests : FunSpec({
             }
 
             verify { client.getDatabase("myDB") }
-            verify { database.getCollection("myCollection") }
+            verify { database.getCollection("myCollection", Template::class.java) }
             verify { collection.deleteOne(any()) }
         }
     }
@@ -260,7 +262,7 @@ class ExecutorTests : FunSpec({
             }
 
             verify { client.getDatabase("myDB") }
-            verify { database.getCollection("myCollection") }
+            verify { database.getCollection("myCollection", Template::class.java) }
             verify { collection.deleteMany(any()) }
         }
     }
@@ -270,8 +272,8 @@ class ExecutorTests : FunSpec({
             val cursor = mockk<MongoCursor<RawBsonDocument>>()
 
             every {
-                collection
-                    .withDocumentClass(RawBsonDocument::class.java)
+                database
+                    .getCollection("myCollection", RawBsonDocument::class.java)
                     .find(any<Template>())
                     .iterator()
             } returns cursor
@@ -295,7 +297,7 @@ class ExecutorTests : FunSpec({
             }
 
             verify { client.getDatabase("myDB") }
-            verify { database.getCollection("myCollection") }
+            verify { database.getCollection("myCollection", RawBsonDocument::class.java) }
 //            verify { collection.find(any<Template>()) }
         }
     }

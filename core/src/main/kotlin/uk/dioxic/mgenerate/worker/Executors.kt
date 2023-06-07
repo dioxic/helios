@@ -4,6 +4,7 @@ package uk.dioxic.mgenerate.worker
 
 import com.mongodb.client.MongoClient
 import com.mongodb.client.model.Aggregates.project
+import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.model.UpdateOptions
 import org.bson.Document
 import org.bson.RawBsonDocument
@@ -45,7 +46,7 @@ class InsertOneExecutor(
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection)
+        .getCollection(collection, Template::class.java)
 
     override fun invoke(workerId: Int) =
         mongoCollection.insertOne(template).standardize()
@@ -55,15 +56,19 @@ class InsertManyExecutor(
     client: MongoClient,
     db: String,
     collection: String,
-    val number: Int = 1,
+    ordered: Boolean = true,
+    val number: Int,
     val template: Template,
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection)
+        .getCollection(collection, Template::class.java)
+
+    private val documents = List(number) { template }
+    private val options = InsertManyOptions().ordered(ordered)
 
     override fun invoke(workerId: Int) =
-        mongoCollection.insertMany(List(number) { template }).standardize()
+        mongoCollection.insertMany(documents, options).standardize()
 }
 
 class UpdateOneExecutor(
@@ -76,7 +81,7 @@ class UpdateOneExecutor(
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection)
+        .getCollection(collection, Template::class.java)
 
     override fun invoke(workerId: Int) =
         mongoCollection.updateOne(filter, update, updateOptions).standardize()
@@ -92,7 +97,7 @@ class UpdateManyExecutor(
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection)
+        .getCollection(collection, Template::class.java)
 
     override fun invoke(workerId: Int) =
         mongoCollection.updateMany(filter, update, updateOptions).standardize()
@@ -106,7 +111,7 @@ class DeleteOneExecutor(
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection)
+        .getCollection(collection, Template::class.java)
 
     override fun invoke(workerId: Int) =
         mongoCollection.deleteOne(filter).standardize()
@@ -120,7 +125,7 @@ class DeleteManyExecutor(
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection)
+        .getCollection(collection, Template::class.java)
 
     override fun invoke(workerId: Int) =
         mongoCollection.deleteMany(filter).standardize()
@@ -138,8 +143,7 @@ class FindExecutor(
 ) : Executor {
 
     private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection)
-        .withDocumentClass(RawBsonDocument::class.java)
+        .getCollection(collection, RawBsonDocument::class.java)
 
     override fun invoke(workerId: Int) =
         ReadResult(mongoCollection.find(filter).apply {

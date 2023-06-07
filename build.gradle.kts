@@ -1,3 +1,3 @@
 
 
-group = "uk.dioxic"
+group = "uk.dioxic.mgenerate"
