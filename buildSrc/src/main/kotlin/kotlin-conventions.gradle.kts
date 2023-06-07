@@ -36,9 +36,7 @@ kotlin {
 
 dependencies {
     implementation(libs.bundles.logging)
-    testImplementation(libs.junit)
     testImplementation(libs.bundles.kotest)
-    testImplementation(libs.assertk)
 }
 
 //tasks.withType<KotlinCompile> {
