@@ -25,7 +25,7 @@ fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.second
     }
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class)
 fun CoroutineScope.executeStage(
     stage: MultiExecutionStage,
     tick: Duration = 1.seconds
