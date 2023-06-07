@@ -26,3 +26,10 @@ data class SummarizedMessageResult(
     val msgCount: Int = 0,
     val latencyPercentiles: List<Pair<String, Duration>>
 ) : SummarizedResult
+
+data class SummarizedCommandResult(
+    override val workloadName: String,
+    val successes: Int = 0,
+    val failures: Int = 0,
+    val latencyPercentiles: List<Pair<String, Duration>>
+) : SummarizedResult

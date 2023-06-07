@@ -19,7 +19,7 @@ fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.second
         when (it) {
             is MultiExecutionStage -> emitAll(executeStage(it, tick))
             is SingleStage -> {
-                emit(it.workload.execute(0))
+                emit(it.workload.invoke(0))
             }
         }
     }
@@ -115,8 +115,8 @@ private suspend fun produceWork(workload: MultiExecutionWorkload) {
 context(Channel<MultiExecutionWorkload>, CoroutineScope)
 private suspend fun produceWork(workloads: List<MultiExecutionWorkload>, rate: Rate) {
     require(workloads.isNotEmpty())
-    val weights = workloads.map(MultiExecutionWorkload::weight).toMutableList()
-    val counts = workloads.map(MultiExecutionWorkload::count).toMutableList()
+    val weights = workloads.map { it.weight }.toMutableList()
+    val counts = workloads.map { it.count }.toMutableList()
     var weightSum = weights.sum()
 
     while (isActive && (weights.sum() > 0)) {
@@ -137,12 +137,12 @@ private suspend fun produceWork(workloads: List<MultiExecutionWorkload>, rate: R
 @OptIn(ObsoleteCoroutinesApi::class)
 private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>(capacity = 100) {
     logger.trace("Starting result summarizer actor")
-    val resultsMap = mutableMapOf<String, MutableList<TimedWorkloadResult>>()
+    val resultsMap = mutableMapOf<String, MutableList<TimedResult>>()
     var scheduleToClose = false
 
     for (msg in channel) {
         when (msg) {
-            is TimedWorkloadResult -> {
+            is TimedResult -> {
                 resultsMap.getOrPut(msg.workloadName) { mutableListOf() }
                     .add(msg)
             }
@@ -169,6 +169,6 @@ private fun CoroutineScope.launchProcessor(
 ) = launch(Dispatchers.IO) {
     logger.trace { "Launching work processor $id" }
     for (work in workChannel) {
-        resultChannel.send(work.execute(id))
+        resultChannel.send(work.invoke(id))
     }
 }

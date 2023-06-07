@@ -30,4 +30,5 @@ dependencies {
     implementation(libs.reflections)
     implementation(libs.bundles.logging)
     testImplementation(libs.kotlin.coroutines.test)
+    testImplementation(libs.mockk)
 }

@@ -1,5 +1,7 @@
 package uk.dioxic.mgenerate.worker
 
+import com.mongodb.client.MongoClient
+import com.mongodb.client.MongoDatabase
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.comparables.shouldBeLessThan
@@ -8,9 +10,13 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.bson.Document
 import uk.dioxic.mgenerate.worker.results.OutputResult
 import uk.dioxic.mgenerate.worker.results.SummarizedMessageResult
-import uk.dioxic.mgenerate.worker.results.TimedMessageResult
+import uk.dioxic.mgenerate.worker.results.TimedCommandResult
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -19,33 +25,48 @@ import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
 @OptIn(ExperimentalTime::class)
-class WorkerTests : FunSpec({
+class FrameworkTests : FunSpec({
 
     test("single stage workload") {
-        val stageName = "single"
+        val client = mockk<MongoClient>()
+        val database = mockk<MongoDatabase>()
+        val helloCommand = Document("hello", 1)
+
+        every { client.getDatabase(any()) } returns database
+        every { database.runCommand(any()) } returns Document("ok", 1)
+
         val workloadName = "workload"
         val stage = SingleStage(
-            name = stageName,
-            workload = CommandWorkload(name = workloadName)
+            name = "single",
+            workload = SingleExecutionWorkload(workloadName, CommandExecutor(
+                client = client,
+                command = helloCommand,
+                database = "test"
+            ))
         )
 
         executeStages(stage, tick = 500.milliseconds).collect {
-            it.shouldBeInstanceOf<TimedMessageResult>()
+            it.shouldBeInstanceOf<TimedCommandResult>()
             it.workloadName shouldBe workloadName
-            it.value.msg shouldBe "hello"
+            it.value.success shouldBe true
             it.duration shouldBeLessThan 100.milliseconds
             println(it)
         }
+
+        verify { client.getDatabase("test") }
+        verify { database.runCommand(any()) }
     }
 
     test("workload summarization count") {
+        val executor = MessageExecutor { "[$it] hello" }
+
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MessageWorkload(name = "workload1000", count = 1_000) { "[$it] hello1" },
-                MessageWorkload(name = "workload1000R", count = 1_000, rate = 500.tps) { "[$it] hello1" },
-                MessageWorkload(name = "workload500", count = 500) { "[$it] hello1" },
-                MessageWorkload(name = "workload200", count = 200) { "[$it] hello1" },
+                MultiExecutionWorkload(name = "workload1000", count = 1_000, executor = executor),
+                MultiExecutionWorkload(name = "workload1000R", count = 1_000, rate = 500.tps, executor = executor),
+                MultiExecutionWorkload(name = "workload500", count = 500, executor = executor),
+                MultiExecutionWorkload(name = "workload200", count = 200, executor = executor),
             )
         )
 
@@ -63,7 +84,12 @@ class WorkerTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MessageWorkload(name = "workload500", count = 500, rate = 500.tps) { "[$it] hello1" },
+                MultiExecutionWorkload(
+                    name = "workload500",
+                    count = 500,
+                    rate = 500.tps,
+                    executor = MessageExecutor { "[$it] hello1" }
+                ),
             )
         )
 
@@ -80,11 +106,12 @@ class WorkerTests : FunSpec({
 
 
     test("workload rate") {
+        val executor = MessageExecutor { "[$it] hello" }
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MessageWorkload(name = "workload1000", count = 1_000, rate = 1000.tps) { "[$it] hello1" },
-                MessageWorkload(name = "workload500", count = 1_000, rate = 500.tps) { "[$it] hello1" },
+                MultiExecutionWorkload(name = "workload1000", count = 1_000, rate = 1000.tps, executor = executor),
+                MultiExecutionWorkload(name = "workload500", count = 1_000, rate = 500.tps, executor = executor),
             )
         )
 
@@ -100,7 +127,6 @@ class WorkerTests : FunSpec({
                 list.forEach {
                     it.workloadName shouldStartWith "workload"
                 }
-//                list.sumOf { it.msgCount } shouldBe stage.workloads.sumOf { it.count }
                 list.filter { it.workloadName == "workload1000" }
                     .map { it.msgCount }.average()
                     .shouldBeGreaterThan(90.0)
@@ -117,13 +143,17 @@ class WorkerTests : FunSpec({
         val stages = arrayOf(
             SingleStage(
                 "singleStage",
-                workload = CommandWorkload(name = "wk1")
+                workload = SingleExecutionWorkload("single", MessageExecutor { "[$it] hello" })
             ), MultiExecutionStage(
                 name = "testStage",
                 timeout = 1.seconds,
                 rate = Rate.of(1),
                 workloads = listOf(
-                    MessageWorkload(name = "wk1", count = 5) { "[$it] hello1" },
+                    MultiExecutionWorkload(
+                        name = "wk1",
+                        count = 5,
+                        executor = MessageExecutor { "[$it] hello1" }
+                    )
                 ),
             )
         )
