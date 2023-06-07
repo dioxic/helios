@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation(project(":core"))
+    implementation(libs.clikt)
 }
 
 tasks.test {

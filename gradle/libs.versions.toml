@@ -3,7 +3,7 @@ assertj = "3.22.0"
 assertk = "0.26.1"
 atomicfu = "0.17.1"
 axionPlugin = "1.13.6"
-clikt = "2.8.0"
+clikt = "3.5.2"
 commonsCodec = "1.15"
 commonsMath = "3.6.1"
 dokka = "1.8.20"
@@ -30,7 +30,7 @@ assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 assertk = { module = "com.willowtreeapps.assertk:assertk-jvm", version.ref = "assertk" }
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 bson = { module = "org.mongodb:bson", version.ref = "mongodb" }
-clikt = { module = "com.github.ajalt:clikt", version.ref = "clikt" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commonsCodec" }
 commons-math = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath" }
 faker = { module = "io.github.serpro69:kotlin-faker", version.ref = "faker" }
