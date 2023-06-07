@@ -1,18 +1,16 @@
 package uk.dioxic.mgenerate
 
-import assertk.assertThat
-import assertk.assertions.isIn
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isNotNull
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.bson.Document
-import org.junit.jupiter.api.Test
 import uk.dioxic.mgenerate.operators.general.ChooseOperator
 
-class OperatorTransformerTest {
+class OperatorTransformerTest: FunSpec({
 
-    private val colours = listOf("blue", "red", "green")
+    val colours = listOf("blue", "red", "green")
 
-    private val doc = Document(
+    val doc = Document(
         mapOf(
             "\$choose" to mapOf(
                 "from" to colours
@@ -20,16 +18,11 @@ class OperatorTransformerTest {
         )
     )
 
-    @Test
-    fun decode() {
-
-        val transformer = OperatorTransformer()
-        assertThat(transformer.transform(doc), name = "transform")
-            .isInstanceOf(ChooseOperator::class)
-            .transform("execute") { it.invoke() }
-            .isNotNull()
-            .isIn(*colours.toTypedArray())
-
+    test("decode") {
+        OperatorTransformer().transform(doc).let {
+            it.shouldBeInstanceOf<ChooseOperator>()
+            it.invoke().shouldBeIn(*colours.toTypedArray())
+        }
     }
 
-}
+})

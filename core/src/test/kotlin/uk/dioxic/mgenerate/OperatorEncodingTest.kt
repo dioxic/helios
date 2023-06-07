@@ -1,55 +1,41 @@
 package uk.dioxic.mgenerate
 
-import assertk.all
-import assertk.assertThat
-import assertk.assertions.isInstanceOf
-import assertk.assertions.key
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.bson.Document
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import uk.dioxic.mgenerate.operators.IntOperator
 import uk.dioxic.mgenerate.operators.general.ChooseOperator
 import uk.dioxic.mgenerate.operators.general.PickSetOperator
 import uk.dioxic.mgenerate.test.readResource
 
-class OperatorJsonDecode {
+class OperatorJsonDecode: FunSpec({
 
-    @Test
-    fun decode() {
+    test("decode") {
         val json = readResource("/test.json")
-        val actual = assertDoesNotThrow { Template.parse(json) }
-
         println("json: $json")
-        println(actual)
 
-        assertThat(actual, "document")
-            .isInstanceOf(Document::class)
-            .all {
-                key("color").isInstanceOf(ChooseOperator::class)
-                key("height").isInstanceOf(IntOperator::class)
-                key("address")
-                    .isInstanceOf(Document::class)
-                    .key("city").isInstanceOf(ChooseOperator::class)
-            }
+        Template.parse(json).apply {
+            shouldBeInstanceOf<Document>()
+            get("color").shouldBeInstanceOf<ChooseOperator>()
+            get("height").shouldBeInstanceOf<IntOperator>()
+            get("address")
+                .shouldBeInstanceOf<Document>()
+                .get("city").shouldBeInstanceOf<ChooseOperator>()
+            println(this)
+        }
     }
 
-    @Test
-    fun encodeToJson() {
+    test("encodeToJson") {
         val json = readResource("/test3.json")
-        val template = Template.parse(json)
+        println(json)
 
-        assertThat(template, "document")
-            .isInstanceOf(Document::class)
-            .all {
-                key("drivers").isInstanceOf(PickSetOperator::class)
-                key("env").isInstanceOf(ChooseOperator::class)
-            }
-
-        val actual = template.toJson()
-
-//        println("json: $json")
-        println("actual: $actual")
+        Template.parse(json).apply {
+            shouldBeInstanceOf<Document>()
+            get("drivers").shouldBeInstanceOf<PickSetOperator>()
+            get("env").shouldBeInstanceOf<ChooseOperator>()
+            println("actual: $this")
+        }
 
     }
 
-}
+})
