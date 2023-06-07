@@ -1,0 +1,23 @@
+{
+  "ruleSetName": "myRule",
+  "env": {
+    "$choose": {
+      "from": ["prod", "test", "qa", "dev"]
+    }
+  },
+  "date": "$now",
+  "drivers": {
+    "$pickSet": {
+      "from": [
+        { "k": "account", "v": 5 },
+        { "k": "account", "v": 5 }
+      ],
+      "quantity": {
+        "$int": {
+          "min": 1,
+          "max": 4
+        }
+      }
+    }
+  }
+}
