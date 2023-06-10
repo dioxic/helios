@@ -1,4 +1,5 @@
 [versions]
+arrow = "1.2.0-RC"
 assertj = "3.22.0"
 assertk = "0.26.1"
 atomicfu = "0.17.1"
@@ -11,12 +12,12 @@ faker = "1.14.0"
 junit = "5.9.3"
 kbson = "0.5.0"
 kotest = "5.6.2"
-kotlin = "1.8.21"
+kotlin = "1.8.22"
 kotlinCoroutines = "1.7.1"
 kotlinDatetime = "0.4.0"
 kotlinPoet = "1.13.2"
 kotlinSerialization = "1.5.1"
-ksp = "1.8.21-1.0.11"
+ksp = "1.8.22-1.0.11"
 log4j = "2.20.0"
 mockk = "1.13.5"
 mongodb = "4.9.1"
@@ -26,6 +27,14 @@ statistics = "1.2.1"
 versionsPlugin = "0.42.0"
 
 [libraries]
+arrow-atomic = { module = "io.arrow-kt:arrow-atomic", version.ref = "arrow" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+arrow-fx-stm = { module = "io.arrow-kt:arrow-fx-stm", version.ref = "arrow" }
+arrow-optics = { module = "io.arrow-kt:arrow-optics", version.ref = "arrow" }
+arrow-optics-ksp-plugin = { module = "io.arrow-kt:arrow-optics-ksp-plugin", version.ref = "arrow" }
+arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
+arrow-test = { module = "io.arrow-kt:arrow-test", version.ref = "arrow" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 assertk = { module = "com.willowtreeapps.assertk:assertk-jvm", version.ref = "assertk" }
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
@@ -36,11 +45,11 @@ commons-math = { module = "org.apache.commons:commons-math3", version.ref = "com
 faker = { module = "io.github.serpro69:kotlin-faker", version.ref = "faker" }
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 kbson = { module = "com.github.jershell:kbson", version.ref = "kbson" }
-kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-property-arbs = { module = "io.kotest.extensions:kotest-property-arbs", version = "2.1.2" }
-kotest-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutines" }
 kotlin-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinDatetime" }
@@ -53,9 +62,9 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
-log4j-slf4j = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
 log4j-kotlin = { module = "org.apache.logging.log4j:log4j-api-kotlin", version = "1.2.0" }
-mockk = { module = "io.mockk:mockk", version.ref = "mockk"}
+log4j-slf4j = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mongodb-async = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
 mongodb-sync = { module = "org.mongodb:mongodb-driver-sync", version.ref = "mongodb" }
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
