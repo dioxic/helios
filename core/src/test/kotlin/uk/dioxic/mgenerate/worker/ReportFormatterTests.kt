@@ -2,18 +2,19 @@ package uk.dioxic.mgenerate.worker
 
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoCollection
+import com.mongodb.client.MongoCursor
 import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.InsertManyResult
 import com.mongodb.client.result.UpdateResult
-import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.FunSpec
 import io.mockk.every
 import io.mockk.mockk
 import org.bson.BsonObjectId
 import org.bson.Document
+import org.bson.RawBsonDocument
 import org.bson.conversions.Bson
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.worker.report.ReportFormat
@@ -24,7 +25,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class ReportFormatterTests : FunSpec({
 
-    isolationMode = IsolationMode.InstancePerTest
+//    isolationMode = IsolationMode.InstancePerTest
 
     test("Single execution") {
         val client = mockk<MongoClient>()
@@ -96,12 +97,16 @@ class ReportFormatterTests : FunSpec({
 
     test("Multiple workloads") {
         val client = mockk<MongoClient>()
+        val database = mockk<MongoDatabase>()
         val collection = mockk<MongoCollection<Template>>()
+        val cursor = mockk<MongoCursor<RawBsonDocument>>()
 
         every {
-            client
-                .getDatabase(any())
-                .getCollection(any(), Template::class.java)
+            client.getDatabase(any())
+        } returns database
+
+        every {
+            database.getCollection(any(), Template::class.java)
         } returns collection
 
         every {
@@ -116,6 +121,16 @@ class ReportFormatterTests : FunSpec({
         every {
             collection.deleteMany(any<Bson>())
         } returns DeleteResult.acknowledged(100)
+
+        every {
+            database
+                .getCollection("myCollection", RawBsonDocument::class.java)
+                .find(any<Template>())
+                .iterator()
+        } returns cursor
+
+        every { cursor.next() } returns RawBsonDocument(ByteArray(10))
+        every { cursor.hasNext() } returnsMany List(100) { true } + false
 
         val stage = MultiExecutionStage(
             name = "stage",
@@ -148,6 +163,15 @@ class ReportFormatterTests : FunSpec({
                         db = "myDB",
                         collection = "myCollection",
                         filter = Template(mapOf("name" to "Bob")),
+                    )
+                ),
+                MultiExecutionWorkload(
+                    name = "find workload",
+                    executor = FindExecutor(
+                        client = client,
+                        db = "myDB",
+                        collection = "myCollection",
+                        filter = Template(mapOf("name" to "Bob"))
                     )
                 )
             )
