@@ -20,6 +20,9 @@ import kotlinx.coroutines.runBlocking
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.cli.options.*
 import uk.dioxic.mgenerate.worker.*
+import uk.dioxic.mgenerate.worker.report.ReportFormat
+import uk.dioxic.mgenerate.worker.report.ReportFormatter
+import uk.dioxic.mgenerate.worker.report.format
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
@@ -90,9 +93,11 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
 
         val duration = runBlocking {
             measureTime {
-                executeStage(stage).collect {
-                    println(it)
-                }
+                executeStage(stage)
+                    .format(ReportFormatter.create(ReportFormat.TEXT))
+                    .collect {
+                        println(it)
+                    }
             }
         }
 
