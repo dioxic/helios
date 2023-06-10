@@ -28,6 +28,7 @@ import org.bson.BsonObjectId
 import org.bson.Document
 import org.bson.RawBsonDocument
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.test.sew
 import uk.dioxic.mgenerate.worker.results.TimedCommandResult
 import uk.dioxic.mgenerate.worker.results.TimedMessageResult
 import uk.dioxic.mgenerate.worker.results.TimedReadResult
@@ -35,11 +36,6 @@ import uk.dioxic.mgenerate.worker.results.TimedWriteResult
 
 class ExecutorTests : FunSpec({
     isolationMode = IsolationMode.InstancePerTest
-
-    fun sew(executor: Executor) = SingleExecutionWorkload(
-        name = "myWorkload",
-        executor = executor
-    )
 
     val updateResultArb = arbitrary {
         val matched = Arb.long(0L..50).bind()
@@ -115,9 +111,11 @@ class ExecutorTests : FunSpec({
 
     test("insertMany executor") {
         checkAll(Arb.int(0..5)) { docCount ->
-            val result = mapOf(*(0..docCount).map { it to BsonObjectId() }.toTypedArray())
+            val result = (0..docCount).associateWith { BsonObjectId() }
 
-            every { collection.insertMany(any(), any<InsertManyOptions>()) } returns InsertManyResult.acknowledged(result)
+            every {
+                collection.insertMany(any(), any<InsertManyOptions>())
+            } returns InsertManyResult.acknowledged(result)
 
             val workload = sew(
                 InsertManyExecutor(
@@ -211,7 +209,9 @@ class ExecutorTests : FunSpec({
 
     test("deleteOne executor") {
         checkAll(Arb.int(0..5)) { docCount ->
-            every { collection.deleteOne(any()) } returns DeleteResult.acknowledged(docCount.toLong())
+            every {
+                collection.deleteOne(any())
+            } returns DeleteResult.acknowledged(docCount.toLong())
 
             val workload = sew(
                 DeleteOneExecutor(
@@ -240,7 +240,9 @@ class ExecutorTests : FunSpec({
 
     test("deleteMany executor") {
         checkAll(Arb.int(0..5)) { docCount ->
-            every { collection.deleteMany(any()) } returns DeleteResult.acknowledged(docCount.toLong())
+            every {
+                collection.deleteMany(any())
+            } returns DeleteResult.acknowledged(docCount.toLong())
 
             val workload = sew(
                 DeleteManyExecutor(

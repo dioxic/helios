@@ -4,7 +4,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-class Rate private constructor(val delay: Duration) {
+class Rate private constructor(private val delay: Duration) {
 
     suspend fun delay() {
         if (this.delay > 100.milliseconds) {
@@ -13,6 +13,10 @@ class Rate private constructor(val delay: Duration) {
             val deadline = System.nanoTime() + delay.inWholeNanoseconds
             while (System.nanoTime() < deadline){}
         }
+    }
+
+    override fun toString(): String {
+        return "Rate(tps=${1.seconds.div(delay)})"
     }
 
     companion object {
@@ -24,6 +28,8 @@ class Rate private constructor(val delay: Duration) {
 
         fun of(duration: Duration) = Rate(duration)
     }
+
+
 }
 
 inline val Int.tps get() = Rate.of(this)

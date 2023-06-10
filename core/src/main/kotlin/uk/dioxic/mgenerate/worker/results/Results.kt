@@ -1,10 +1,14 @@
 package uk.dioxic.mgenerate.worker.results
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlin.time.Duration
 
-sealed interface OutputResult {
-    val workloadName: String
-}
+sealed interface OutputResult
+
+class SummarizedResultsBatch(
+    val duration: Duration,
+    val results: List<SummarizedResult>
+): OutputResult
 
 sealed interface SummarizationMessage
 

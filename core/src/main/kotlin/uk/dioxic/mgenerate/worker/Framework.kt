@@ -18,7 +18,7 @@ fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.second
     stages.forEach {
         when (it) {
             is MultiExecutionStage -> emitAll(executeStage(it, tick))
-            is SingleStage -> {
+            is SingleExecutionStage -> {
                 emit(it.workload.invoke(0))
             }
         }
@@ -29,7 +29,7 @@ fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.second
 fun CoroutineScope.executeStage(
     stage: MultiExecutionStage,
     tick: Duration = 1.seconds
-): Flow<SummarizedResult> {
+): Flow<SummarizedResultsBatch> {
     val workChannel = Channel<MultiExecutionWorkload>(100)
     val producerJobs = mutableListOf<Job>()
 
@@ -94,9 +94,7 @@ fun CoroutineScope.executeStage(
             delay(tick)
             val response = CompletableDeferred<List<SummarizedResult>>()
             resultChannel.trySend(GetSummarizedResults(response)).onSuccess {
-                response.await().forEach {
-                    emit(it)
-                }
+                emit(SummarizedResultsBatch(tick, response.await()))
             }
         }
     }
@@ -150,7 +148,7 @@ private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>
             is GetSummarizedResults -> {
                 msg.response.complete(resultsMap.map { (k, v) ->
                     v.summarize(k)
-                })
+                }.sortedBy { it.workloadName })
                 resultsMap.clear()
                 if (scheduleToClose) {
                     channel.close()

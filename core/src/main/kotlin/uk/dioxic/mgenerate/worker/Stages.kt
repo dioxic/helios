@@ -14,7 +14,7 @@ data class MultiExecutionStage(
     val workers: Int = 4,
 ) : Stage
 
-data class SingleStage(
+data class SingleExecutionStage(
     override val name: String,
     val workload: SingleExecutionWorkload
 ) : Stage

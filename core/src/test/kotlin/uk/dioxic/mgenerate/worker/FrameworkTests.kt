@@ -37,7 +37,7 @@ class FrameworkTests : FunSpec({
         every { database.runCommand(any()) } returns Document("ok", 1)
 
         val workloadName = "workload"
-        val stage = SingleStage(
+        val stage = SingleExecutionStage(
             name = "single",
             workload = SingleExecutionWorkload(workloadName, CommandExecutor(
                 client = client,
@@ -136,7 +136,7 @@ class FrameworkTests : FunSpec({
 
     test("workload timeout") {
         val stages = arrayOf(
-            SingleStage(
+            SingleExecutionStage(
                 "singleStage",
                 workload = SingleExecutionWorkload("single", MessageExecutor { "[$it] hello" })
             ), MultiExecutionStage(
