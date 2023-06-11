@@ -65,33 +65,23 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
 
         val amendedBatchSize = min(batchSize, number.toInt())
         val amendedRate = tps?.div(amendedBatchSize)?.let { Rate.of(it) } ?: Rate.MAX
-        val executor = if (amendedBatchSize == 1) {
-            InsertOneExecutor(
-                client = client,
-                db = namespaceOptions.database,
-                collection = namespaceOptions.collection,
-                template = template,
-            )
-        } else {
-            InsertManyExecutor(
-                client = client,
-                db = namespaceOptions.database,
-                collection = namespaceOptions.collection,
-                number = amendedBatchSize,
-                ordered = ordered,
-                template = template,
-            )
-        }
 
         val loadStage = MultiExecutionStage(
             name = "load stage",
             workers = workers,
             workloads = listOf(
                 MultiExecutionWorkload(
-                    name = "insertMany",
+                    name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
                     rate = amendedRate,
                     count = number / amendedBatchSize,
-                    executor = executor,
+                    executor = InsertManyExecutor(
+                        client = client,
+                        db = namespaceOptions.database,
+                        collection = namespaceOptions.collection,
+                        number = amendedBatchSize,
+                        ordered = ordered,
+                        template = template,
+                    ),
                 )
             ),
         )
