@@ -1,7 +1,29 @@
 package uk.dioxic.mgenerate.worker
 
-import uk.dioxic.mgenerate.utils.percentile
+import org.apache.commons.math3.stat.StatUtils
 import uk.dioxic.mgenerate.worker.results.*
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
+
+fun List<Duration>.summarize() = SummarizedLatencies(
+    p50 = percentile(0.5),
+    p95 = percentile(0.95),
+    p99 = percentile(0.95),
+    max = max(),
+    min = min(),
+)
+
+fun Iterable<Duration>.percentile(percentile: Double) =
+    map { it.toDouble(DurationUnit.MILLISECONDS) }.percentile(percentile)
+
+fun Sequence<Duration>.percentile(percentile: Double) =
+    map { it.toDouble(DurationUnit.MILLISECONDS) }
+        .toList().percentile(percentile)
+
+fun List<Double>.percentile(percentile: Double) =
+    StatUtils.percentile(toDoubleArray(), percentile)
+        .toDuration(DurationUnit.MILLISECONDS)
 
 
 fun List<TimedWriteResult>.summarize(workloadName: String) =
@@ -12,11 +34,7 @@ fun List<TimedWriteResult>.summarize(workloadName: String) =
         modifiedCount = sumOf { it.value.modifiedCount },
         deletedCount = sumOf { it.value.deletedCount },
         upsertedCount = sumOf { it.value.upsertedCount },
-        latencyPercentiles = listOf(
-            "p50" to map { it.duration }.percentile(0.5),
-            "p95" to map { it.duration }.percentile(0.95),
-            "p99" to map { it.duration }.percentile(0.99)
-        )
+        latencies = map { it.duration }.summarize()
     )
 
 fun List<TimedReadResult>.summarize(workloadName: String) =
@@ -24,18 +42,14 @@ fun List<TimedReadResult>.summarize(workloadName: String) =
         workloadName = workloadName,
         docReturned = sumOf { it.value.docReturned },
         queryCount = size,
-        latencyPercentiles = listOf(
-            "p50" to map { it.duration }.percentile(0.5)
-        )
+        latencies = map { it.duration }.summarize()
     )
 
 fun List<TimedMessageResult>.summarize(workloadName: String) =
     SummarizedMessageResult(
         workloadName = workloadName,
         msgCount = size,
-        latencyPercentiles = listOf(
-            "p50" to map { it.duration }.percentile(0.5)
-        )
+        latencies = map { it.duration }.summarize()
     )
 
 fun List<TimedCommandResult>.summarize(workloadName: String) =
@@ -43,9 +57,7 @@ fun List<TimedCommandResult>.summarize(workloadName: String) =
         workloadName = workloadName,
         successes = count { it.value.success },
         failures = count { !it.value.success },
-        latencyPercentiles = listOf(
-            "p50" to map { it.duration }.percentile(0.5)
-        )
+        latencies = map { it.duration }.summarize()
     )
 
 @Suppress("UNCHECKED_CAST")

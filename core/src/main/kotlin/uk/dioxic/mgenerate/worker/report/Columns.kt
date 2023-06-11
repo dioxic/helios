@@ -18,7 +18,9 @@ enum class ColumnHeader(val display: String) {
     FAILURES("failures/s"),
     LATENCY_P50("latency P50"),
     LATENCY_P95("latency P95"),
-    LATENCY_P99("latency P99");
+    LATENCY_P99("latency P99"),
+    LATENCY_MAX("latency min"),
+    LATENCY_MIN("latency max");
 
     val length: Int
         get() = display.length
@@ -39,12 +41,13 @@ private fun SummarizedResult.workloadColumn() = mapOf(
     ColumnHeader.WORKLOAD to workloadName,
 )
 
-private fun SummarizedResult.percentileColumns() =
-    latencyPercentiles
-        .associate { (name, duration) ->
-            ColumnHeader.valueOf("LATENCY_${name.uppercase()}") to duration.toString()
-        }
-//        .mapKeys { (k, _) -> ColumnHeader.valueOf(k.uppercase()) }
+private fun SummarizedResult.percentileColumns() = mapOf(
+    ColumnHeader.LATENCY_P50 to latencies.p50.toString(),
+    ColumnHeader.LATENCY_P95 to latencies.p95.toString(),
+    ColumnHeader.LATENCY_P99 to latencies.p99.toString(),
+    ColumnHeader.LATENCY_MAX to latencies.max.toString(),
+    ColumnHeader.LATENCY_MIN to latencies.min.toString(),
+)
 
 context(Duration)
 private fun SummarizedWriteResult.scalarColumns() = mapOf(

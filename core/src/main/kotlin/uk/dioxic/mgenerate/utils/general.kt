@@ -1,15 +1,12 @@
 package uk.dioxic.mgenerate.utils
 
-import org.apache.commons.math3.stat.StatUtils
+import kotlinx.coroutines.flow.Flow
 import uk.dioxic.mgenerate.operators.toUtcLocalDateTime
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.*
 import kotlin.random.Random
-import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 val myLocale: Locale = Locale.ENGLISH
 
@@ -54,12 +51,16 @@ fun Iterable<Number>.average(): Double {
     return if (count == 0) Double.NaN else sum / count
 }
 
-fun Iterable<Duration>.percentile(percentile: Double) = asSequence().percentile(percentile)
+suspend fun Flow<Number>.average(): Double  {
+    var sum = 0.0
+    var count = 0L
+    collect {
+        ++count
+        sum += it.toDouble()
+        if (count < 0L) {
+            throw ArithmeticException("Count overflow has happened.")
+        }
+    }
 
-fun Sequence<Duration>.percentile(percentile: Double) =
-    StatUtils.percentile(
-        map { it.toDouble(DurationUnit.MILLISECONDS) }
-            .toList()
-            .toDoubleArray(),
-        percentile
-    ).toDuration(DurationUnit.MILLISECONDS)
+    return if (count == 0L) Double.NaN else sum / count
+}

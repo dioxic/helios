@@ -5,13 +5,13 @@ import kotlin.time.Duration
 
 sealed interface OutputResult
 
-class SummarizedResultsBatch(
+data class SummarizedResultsBatch(
     val duration: Duration,
     val results: List<SummarizedResult>
 ): OutputResult
 
 sealed interface SummarizationMessage
 
-class GetSummarizedResults(val response: CompletableDeferred<List<SummarizedResult>>) : SummarizationMessage
+class GetSummarizedResults(val response: CompletableDeferred<SummarizedResultsBatch>) : SummarizationMessage
 object CloseAfterNextSummarization : SummarizationMessage
 
