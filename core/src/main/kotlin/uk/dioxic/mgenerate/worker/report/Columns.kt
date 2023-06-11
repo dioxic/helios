@@ -6,7 +6,7 @@ import kotlin.time.DurationUnit
 
 enum class ColumnHeader(val display: String) {
     WORKLOAD("workload"),
-    INSERT("inserts/s"),
+    INSERT("inserted/s"),
     MATCHED("matched/s"),
     MODIFIED("modified/s"),
     DELETED("deleted/s"),
