@@ -92,7 +92,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         val stages = if (drop) {
             arrayOf(
                 SingleExecutionStage(
-                    name = "drop ${namespaceOptions.collection} collection",
+                    name = "Drop ${namespaceOptions.collection} collection",
                     executor = DropExecutor(
                         client = client,
                         db = namespaceOptions.database,
