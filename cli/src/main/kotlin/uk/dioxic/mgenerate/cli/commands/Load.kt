@@ -63,37 +63,57 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 .build()
         )
 
-        val collection = client
-            .getDatabase(namespaceOptions.database)
-            .getCollection(namespaceOptions.collection, Template::class.java)
-
-        if (drop) collection.drop()
-
         val amendedBatchSize = min(batchSize, number.toInt())
+        val amendedRate = tps?.div(amendedBatchSize)?.let { Rate.of(it) } ?: Rate.MAX
+        val executor = if (amendedBatchSize == 1) {
+            InsertOneExecutor(
+                client = client,
+                db = namespaceOptions.database,
+                collection = namespaceOptions.collection,
+                template = template,
+            )
+        } else {
+            InsertManyExecutor(
+                client = client,
+                db = namespaceOptions.database,
+                collection = namespaceOptions.collection,
+                number = amendedBatchSize,
+                ordered = ordered,
+                template = template,
+            )
+        }
 
-        val stage = MultiExecutionStage(
-            name = "load",
+        val loadStage = MultiExecutionStage(
+            name = "load stage",
             workers = workers,
             workloads = listOf(
                 MultiExecutionWorkload(
                     name = "insertMany",
-                    rate = tps?.tps ?: Rate.MAX,
+                    rate = amendedRate,
                     count = number / amendedBatchSize,
-                    executor = InsertManyExecutor(
-                        client = client,
-                        db = namespaceOptions.database,
-                        collection = namespaceOptions.collection,
-                        number = amendedBatchSize,
-                        ordered = ordered,
-                        template = template,
-                    ),
+                    executor = executor,
                 )
             ),
         )
 
+        val stages = if (drop) {
+            arrayOf(
+                SingleExecutionStage(
+                    name = "drop ${namespaceOptions.collection}",
+                    executor = DropExecutor(
+                        client = client,
+                        db = namespaceOptions.database,
+                        collection = namespaceOptions.collection
+                    )
+                ), loadStage
+            )
+        } else {
+            arrayOf(loadStage)
+        }
+
         val duration = runBlocking {
             measureTime {
-                executeStage(stage)
+                executeStages(*stages)
                     .format(ReportFormatter.create(ReportFormat.TEXT))
                     .collect {
                         println(it)
@@ -101,7 +121,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
             }
         }
 
-        println("Completed in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")
+        println("\nCompleted in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")
 
     }
 

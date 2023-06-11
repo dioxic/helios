@@ -2,6 +2,7 @@
 
 package uk.dioxic.mgenerate.worker
 
+import com.mongodb.MongoCommandException
 import com.mongodb.client.MongoClient
 import com.mongodb.client.model.Aggregates.project
 import com.mongodb.client.model.InsertManyOptions
@@ -15,22 +16,31 @@ import uk.dioxic.mgenerate.worker.results.MessageResult
 import uk.dioxic.mgenerate.worker.results.ReadResult
 import uk.dioxic.mgenerate.worker.results.Result
 
-fun interface Executor {
+sealed interface Executor {
     fun invoke(workerId: Int): Result
 }
 
-class CommandExecutor(
+open class CommandExecutor(
     client: MongoClient,
-    val command: Bson,
     database: String = "admin",
+    val command: Bson,
 ) : Executor {
     private val database = client.getDatabase(database)
 
     override fun invoke(workerId: Int) = CommandResult(
-        database.runCommand(command)
+        try {
+            database.runCommand(command)["ok"] == 1
+        } catch (e: MongoCommandException) {
+            false
+        }
     )
-
 }
+
+class DropExecutor(
+    client: MongoClient,
+    db: String,
+    collection: String,
+) : CommandExecutor(client, db, Document("drop", collection))
 
 class MessageExecutor(
     val messageFn: (Int) -> String,
