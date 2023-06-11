@@ -11,6 +11,7 @@ import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
 import org.bson.Document
+import java.util.concurrent.TimeUnit
 
 class AuthOptions : OptionGroup(name = "Authentication Options") {
     val username by option("-u", "--username", help = "username for authentication").required()
@@ -31,7 +32,13 @@ class NamespaceOptions : OptionGroup(name = "Namespace Options") {
 
 fun MongoClientSettings.Builder.applyAuthOptions(authOptions: AuthOptions?): MongoClientSettings.Builder {
     if (authOptions != null) {
-        credential(MongoCredential.createCredential(authOptions.username, authOptions.authSource, authOptions.password.toCharArray()))
+        credential(
+            MongoCredential.createCredential(
+                authOptions.username,
+                authOptions.authSource,
+                authOptions.password.toCharArray()
+            )
+        )
     }
     return this
 }
@@ -42,6 +49,7 @@ fun MongoClientSettings.Builder.applyConnectionOptions(connectionOptions: Connec
     } else {
         applyToClusterSettings { it.hosts(listOf(ServerAddress(connectionOptions.host, connectionOptions.port))) }
     }
+    applyToClusterSettings { it.serverSelectionTimeout(3L, TimeUnit.SECONDS) }
     return this
 }
 

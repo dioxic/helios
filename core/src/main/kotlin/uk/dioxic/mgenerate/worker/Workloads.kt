@@ -4,18 +4,18 @@ import uk.dioxic.mgenerate.worker.results.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 
-sealed interface Workload {
-    val name: String
+sealed interface Workload : Named {
+    override val name: String
     val executor: Executor
     operator fun invoke(workerId: Int) = measureTimedResult {
         executor.invoke(workerId)
     }
 }
 
-data class SingleExecutionWorkload(
-    override val name: String,
-    override val executor: Executor
-) : Workload
+//data class SingleExecutionWorkload(
+//    override val name: String,
+//    override val executor: Executor
+//) : Workload
 
 data class MultiExecutionWorkload(
     override val name: String,
@@ -26,7 +26,7 @@ data class MultiExecutionWorkload(
 ) : Workload
 
 @OptIn(ExperimentalTime::class)
-inline fun Workload.measureTimedResult(block: () -> Result): TimedResult {
+inline fun Named.measureTimedResult(block: () -> Result): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
     return when (val value = block()) {
         is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), name)

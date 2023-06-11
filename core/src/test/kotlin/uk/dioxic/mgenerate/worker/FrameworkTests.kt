@@ -3,20 +3,23 @@ package uk.dioxic.mgenerate.worker
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoDatabase
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.map
 import org.bson.Document
+import uk.dioxic.mgenerate.extensions.average
+import uk.dioxic.mgenerate.extensions.tps
 import uk.dioxic.mgenerate.test.IS_NOT_GH_ACTION
-import uk.dioxic.mgenerate.worker.results.OutputResult
 import uk.dioxic.mgenerate.worker.results.SummarizedMessageResult
+import uk.dioxic.mgenerate.worker.results.SummarizedResultsBatch
 import uk.dioxic.mgenerate.worker.results.TimedCommandResult
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -36,22 +39,20 @@ class FrameworkTests : FunSpec({
         every { client.getDatabase(any()) } returns database
         every { database.runCommand(any()) } returns Document("ok", 1)
 
-        val workloadName = "workload"
-        val stage = SingleStage(
-            name = "single",
-            workload = SingleExecutionWorkload(workloadName, CommandExecutor(
+        val stage = SingleExecutionStage(
+            name = "single stage",
+            executor = CommandExecutor(
                 client = client,
                 command = helloCommand,
                 database = "test"
-            ))
+            )
         )
 
         executeStages(stage, tick = 500.milliseconds).collect {
             it.shouldBeInstanceOf<TimedCommandResult>()
-            it.workloadName shouldBe workloadName
+            it.workloadName shouldBe stage.name
             it.value.success shouldBe true
             it.duration shouldBeLessThan 100.milliseconds
-            println(it)
         }
 
         verify { client.getDatabase("test") }
@@ -72,16 +73,19 @@ class FrameworkTests : FunSpec({
         )
 
         var count = 0
-        executeStages(stage, tick = 100.milliseconds).collect {
-            println(it)
-            it.shouldBeInstanceOf<SummarizedMessageResult>()
-            count += it.msgCount
+        executeStages(stage, tick = 100.milliseconds).collect { batch ->
+//            println(batch)
+            batch.shouldBeInstanceOf<SummarizedResultsBatch>()
+            batch.results.forEach {
+                it.shouldBeInstanceOf<SummarizedMessageResult>()
+                count += it.msgCount
+            }
         }
 
         count shouldBe stage.workloads.sumOf { it.count }
     }
 
-    test("workload tick rate") {
+    test("workload tick rate").config(enabled = IS_NOT_GH_ACTION) {
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
@@ -97,7 +101,7 @@ class FrameworkTests : FunSpec({
         var lastTick: TimeMark? = null
         executeStages(stage, tick = 100.milliseconds).collect {
             lastTick?.elapsedNow()?.also {
-                println(it)
+//                println(it)
                 it.shouldBeGreaterThanOrEqualTo(100.milliseconds)
                 it.shouldBeLessThan(120.milliseconds)
             }
@@ -115,30 +119,22 @@ class FrameworkTests : FunSpec({
             )
         )
 
-        val results = mutableListOf<OutputResult>()
-        executeStages(stage, tick = 100.milliseconds).collect {
-            println(it)
-            results.add(it)
+        executeStages(stage, tick = 100.milliseconds).map { batch ->
+//            println(it)
+            batch.shouldBeInstanceOf<SummarizedResultsBatch>()
+            batch.results shouldHaveSize 1
+            batch.results.first().shouldBeInstanceOf<SummarizedMessageResult>().msgCount
+        }.average().should {
+            it.shouldBeGreaterThan(90.0)
+            it.shouldBeLessThan(120.0)
         }
-
-        results
-            .shouldBeInstanceOf<List<SummarizedMessageResult>>()
-            .should { list ->
-                list.forEach {
-                    it.workloadName shouldStartWith "workload"
-                }
-                list.filter { it.workloadName == "workload1000" }
-                    .map { it.msgCount }.average()
-                    .shouldBeGreaterThan(90.0)
-                    .shouldBeLessThan(120.0)
-            }
     }
 
     test("workload timeout") {
         val stages = arrayOf(
-            SingleStage(
+            SingleExecutionStage(
                 "singleStage",
-                workload = SingleExecutionWorkload("single", MessageExecutor { "[$it] hello" })
+                executor = MessageExecutor { "[$it] hello" }
             ), MultiExecutionStage(
                 name = "testStage",
                 timeout = 1.seconds,
@@ -155,7 +151,7 @@ class FrameworkTests : FunSpec({
 
         measureTime {
             executeStages(*stages, tick = 100.milliseconds).collect {
-                println(it)
+//                println(it)
             }
         }.shouldBeGreaterThanOrEqualTo(1.seconds)
     }

@@ -3,9 +3,9 @@ package uk.dioxic.mgenerate.worker.results
 import kotlin.time.Duration
 
 sealed interface TimedResult : SummarizationMessage, OutputResult {
+    val workloadName: String
     val value: Result
     val duration: Duration
-    override val workloadName: String
 }
 
 data class TimedCommandResult(

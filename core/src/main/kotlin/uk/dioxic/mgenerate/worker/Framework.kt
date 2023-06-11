@@ -5,21 +5,25 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import org.apache.logging.log4j.kotlin.logger
-import uk.dioxic.mgenerate.utils.nextElementIndex
+import uk.dioxic.mgenerate.extensions.nextElementIndex
 import uk.dioxic.mgenerate.worker.results.*
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 private val logger = logger("uk.dioxic.mgenerate.worker.Framework")
 
-fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.seconds) = flow {
+fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.seconds): Flow<OutputResult> = flow {
     stages.forEach {
         when (it) {
             is MultiExecutionStage -> emitAll(executeStage(it, tick))
-            is SingleStage -> {
-                emit(it.workload.invoke(0))
+            is SingleExecutionStage -> {
+                emit(it.invoke(0))
             }
         }
     }
@@ -29,7 +33,7 @@ fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.second
 fun CoroutineScope.executeStage(
     stage: MultiExecutionStage,
     tick: Duration = 1.seconds
-): Flow<SummarizedResult> {
+): Flow<SummarizedResultsBatch> {
     val workChannel = Channel<MultiExecutionWorkload>(100)
     val producerJobs = mutableListOf<Job>()
 
@@ -92,14 +96,12 @@ fun CoroutineScope.executeStage(
     return flow {
         while (!resultChannel.isClosedForSend) {
             delay(tick)
-            val response = CompletableDeferred<List<SummarizedResult>>()
+            val response = CompletableDeferred<SummarizedResultsBatch>()
             resultChannel.trySend(GetSummarizedResults(response)).onSuccess {
-                response.await().forEach {
-                    emit(it)
-                }
+                emit(response.await())
             }
         }
-    }
+    }.flowOn(Dispatchers.Default)
 }
 
 context(Channel<MultiExecutionWorkload>, CoroutineScope)
@@ -134,10 +136,11 @@ private suspend fun produceWork(workloads: List<MultiExecutionWorkload>, rate: R
     }
 }
 
-@OptIn(ObsoleteCoroutinesApi::class)
+@OptIn(ObsoleteCoroutinesApi::class, ExperimentalTime::class)
 private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>(capacity = 100) {
     logger.trace("Starting result summarizer actor")
     val resultsMap = mutableMapOf<String, MutableList<TimedResult>>()
+    var lastSummaryTime: TimeMark = TimeSource.Monotonic.markNow()
     var scheduleToClose = false
 
     for (msg in channel) {
@@ -148,9 +151,13 @@ private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>
             }
 
             is GetSummarizedResults -> {
-                msg.response.complete(resultsMap.map { (k, v) ->
-                    v.summarize(k)
-                })
+                val summarizationBatch = SummarizedResultsBatch(
+                    duration = lastSummaryTime.elapsedNow(),
+                    results = resultsMap.map { (k, v) -> v.summarize(k) }
+                        .sortedBy { it.workloadName }
+                )
+                lastSummaryTime = TimeSource.Monotonic.markNow()
+                msg.response.complete(summarizationBatch)
                 resultsMap.clear()
                 if (scheduleToClose) {
                     channel.close()

@@ -2,8 +2,8 @@ package uk.dioxic.mgenerate.worker
 
 import kotlin.time.Duration
 
-sealed interface Stage {
-    val name: String
+sealed interface Stage: Named {
+    override val name: String
 }
 
 data class MultiExecutionStage(
@@ -14,7 +14,11 @@ data class MultiExecutionStage(
     val workers: Int = 4,
 ) : Stage
 
-data class SingleStage(
+data class SingleExecutionStage(
     override val name: String,
-    val workload: SingleExecutionWorkload
-) : Stage
+    val executor: Executor
+) : Stage {
+    operator fun invoke(workerId: Int) = measureTimedResult {
+        executor.invoke(workerId)
+    }
+}

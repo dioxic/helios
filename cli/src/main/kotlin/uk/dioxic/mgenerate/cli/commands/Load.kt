@@ -18,8 +18,12 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.client.MongoClients
 import kotlinx.coroutines.runBlocking
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
 import uk.dioxic.mgenerate.worker.*
+import uk.dioxic.mgenerate.worker.report.ReportFormat
+import uk.dioxic.mgenerate.worker.report.ReportFormatter
+import uk.dioxic.mgenerate.worker.report.format
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
@@ -60,21 +64,18 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 .build()
         )
 
-        val collection = client
-            .getDatabase(namespaceOptions.database)
-            .getCollection(namespaceOptions.collection, Template::class.java)
-
-        if (drop) collection.drop()
+        if (!checkConnection(client)) { return }
 
         val amendedBatchSize = min(batchSize, number.toInt())
+        val amendedRate = tps?.div(amendedBatchSize)?.let { Rate.of(it) } ?: Rate.MAX
 
-        val stage = MultiExecutionStage(
-            name = "load",
+        val loadStage = MultiExecutionStage(
+            name = "load stage",
             workers = workers,
             workloads = listOf(
                 MultiExecutionWorkload(
-                    name = "insertMany",
-                    rate = tps?.tps ?: Rate.MAX,
+                    name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
+                    rate = amendedRate,
                     count = number / amendedBatchSize,
                     executor = InsertManyExecutor(
                         client = client,
@@ -88,15 +89,34 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
             ),
         )
 
+        val stages = if (drop) {
+            arrayOf(
+                SingleExecutionStage(
+                    name = "Drop ${namespaceOptions.collection} collection",
+                    executor = DropExecutor(
+                        client = client,
+                        db = namespaceOptions.database,
+                        collection = namespaceOptions.collection
+                    )
+                ), loadStage
+            )
+        } else {
+            arrayOf(loadStage)
+        }
+
+        println("Starting load...")
+
         val duration = runBlocking {
             measureTime {
-                executeStage(stage).collect {
-                    println(it)
-                }
+                executeStages(*stages)
+                    .format(ReportFormatter.create(ReportFormat.TEXT))
+                    .collect {
+                        print(it)
+                    }
             }
         }
 
-        println("Completed in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")
+        println("\nCompleted in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")
 
     }
 
