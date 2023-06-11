@@ -1,17 +1,20 @@
 package uk.dioxic.mgenerate.worker
 
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class Rate private constructor(private val delay: Duration) {
 
     suspend fun delay() {
-        if (this.delay > 100.milliseconds) {
-            kotlinx.coroutines.delay(this.delay)
-        } else {
-            val deadline = System.nanoTime() + delay.inWholeNanoseconds
-            while (System.nanoTime() < deadline){}
+        when {
+            delay == ZERO -> return
+            delay < 100.milliseconds -> {
+                val deadline = System.nanoTime() + delay.inWholeNanoseconds
+                while (System.nanoTime() < deadline){}
+            }
+            else -> kotlinx.coroutines.delay(this.delay)
         }
     }
 
