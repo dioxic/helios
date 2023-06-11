@@ -17,6 +17,7 @@ import org.bson.Document
 import org.bson.RawBsonDocument
 import org.bson.conversions.Bson
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.extensions.tps
 import uk.dioxic.mgenerate.worker.report.ReportFormat
 import uk.dioxic.mgenerate.worker.report.ReportFormatter
 import uk.dioxic.mgenerate.worker.report.format
@@ -35,15 +36,12 @@ class ReportFormatterTests : FunSpec({
         every { client.getDatabase(any()) } returns database
         every { database.runCommand(any()) } returns Document("ok", 1)
 
-        val workloadName = "workload"
         val stage = SingleExecutionStage(
-            name = "single",
-            workload = SingleExecutionWorkload(
-                workloadName, CommandExecutor(
-                    client = client,
-                    command = helloCommand,
-                    database = "test"
-                )
+            name = "single stage",
+            executor = CommandExecutor(
+                client = client,
+                command = helloCommand,
+                database = "test"
             )
         )
 

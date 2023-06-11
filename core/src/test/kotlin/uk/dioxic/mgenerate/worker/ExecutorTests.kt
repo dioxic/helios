@@ -28,11 +28,10 @@ import org.bson.BsonObjectId
 import org.bson.Document
 import org.bson.RawBsonDocument
 import uk.dioxic.mgenerate.Template
-import uk.dioxic.mgenerate.test.sew
-import uk.dioxic.mgenerate.worker.results.TimedCommandResult
-import uk.dioxic.mgenerate.worker.results.TimedMessageResult
-import uk.dioxic.mgenerate.worker.results.TimedReadResult
-import uk.dioxic.mgenerate.worker.results.TimedWriteResult
+import uk.dioxic.mgenerate.worker.results.CommandResult
+import uk.dioxic.mgenerate.worker.results.MessageResult
+import uk.dioxic.mgenerate.worker.results.ReadResult
+import uk.dioxic.mgenerate.worker.results.WriteResult
 
 class ExecutorTests : FunSpec({
     isolationMode = IsolationMode.InstancePerTest
@@ -52,13 +51,12 @@ class ExecutorTests : FunSpec({
     every { database.getCollection(any(), Template::class.java) } returns collection
 
     test("message executor") {
-        val workload = sew(MessageExecutor { "hello worker $it" })
-        val result = workload.invoke(0)
+        val executor = MessageExecutor { "hello worker $it" }
+        val result = executor.invoke(0)
 
-        result.shouldBeInstanceOf<TimedMessageResult>()
-        result.workloadName shouldBe "myWorkload"
-        result.value.msg shouldStartWith "hello worker"
-        result.value.msg shouldEndWith "0"
+        result.shouldBeInstanceOf<MessageResult>()
+        result.msg shouldStartWith "hello worker"
+        result.msg shouldEndWith "0"
     }
 
     listOf(
@@ -67,14 +65,13 @@ class ExecutorTests : FunSpec({
     ).forEach {
         test("command executor ${it.first}") {
             val helloCommand = Document("hello", 1)
-            val workload = sew(CommandExecutor(client, helloCommand, "test"))
+            val executor = CommandExecutor(client, "test", helloCommand)
 
             every { database.runCommand(any()) } returns Document("ok", it.second)
 
-            workload.invoke(0).apply {
-                shouldBeInstanceOf<TimedCommandResult>()
-                workloadName shouldBe workload.name
-                value.success shouldBe (it.second == 1)
+            executor.invoke(0).apply {
+                shouldBeInstanceOf<CommandResult>()
+                success shouldBe (it.second == 1)
             }
 
             verify { client.getDatabase("test") }
@@ -83,25 +80,22 @@ class ExecutorTests : FunSpec({
     }
 
     test("insertOne executor") {
-        val workload = sew(
-            InsertOneExecutor(
-                client = client,
-                db = "myDB",
-                collection = "myCollection",
-                template = Template(mapOf("name" to "Bob"))
-            )
+        val executor = InsertOneExecutor(
+            client = client,
+            db = "myDB",
+            collection = "myCollection",
+            template = Template(mapOf("name" to "Bob"))
         )
 
         every { collection.insertOne(any()) } returns InsertOneResult.acknowledged(BsonObjectId())
 
-        workload.invoke(0).apply {
-            shouldBeInstanceOf<TimedWriteResult>()
-            workloadName shouldBe workload.name
-            value.insertCount shouldBe 1
-            value.deletedCount shouldBe 0
-            value.matchedCount shouldBe 0
-            value.modifiedCount shouldBe 0
-            value.upsertedCount shouldBe 0
+        executor.invoke(0).apply {
+            shouldBeInstanceOf<WriteResult>()
+            insertCount shouldBe 1
+            deletedCount shouldBe 0
+            matchedCount shouldBe 0
+            modifiedCount shouldBe 0
+            upsertedCount shouldBe 0
         }
 
         verify { client.getDatabase("myDB") }
@@ -117,24 +111,21 @@ class ExecutorTests : FunSpec({
                 collection.insertMany(any(), any<InsertManyOptions>())
             } returns InsertManyResult.acknowledged(result)
 
-            val workload = sew(
-                InsertManyExecutor(
-                    client = client,
-                    db = "myDB",
-                    collection = "myCollection",
-                    template = Template(mapOf("name" to "Bob")),
-                    number = 1
-                )
+            val executor = InsertManyExecutor(
+                client = client,
+                db = "myDB",
+                collection = "myCollection",
+                template = Template(mapOf("name" to "Bob")),
+                number = 1
             )
 
-            workload.invoke(0).apply {
-                shouldBeInstanceOf<TimedWriteResult>()
-                workloadName shouldBe workload.name
-                value.insertCount shouldBe result.count()
-                value.deletedCount shouldBe 0
-                value.matchedCount shouldBe 0
-                value.modifiedCount shouldBe 0
-                value.upsertedCount shouldBe 0
+            executor.invoke(0).apply {
+                shouldBeInstanceOf<WriteResult>()
+                insertCount shouldBe result.count()
+                deletedCount shouldBe 0
+                matchedCount shouldBe 0
+                modifiedCount shouldBe 0
+                upsertedCount shouldBe 0
             }
 
             verify { client.getDatabase("myDB") }
@@ -147,26 +138,23 @@ class ExecutorTests : FunSpec({
         checkAll(updateResultArb) { updateResult ->
             val filter = Template(mapOf("name" to "Bob"))
             val update = Template(mapOf("\$set" to mapOf("name" to "Alice")))
-            val workload = sew(
-                UpdateOneExecutor(
-                    client = client,
-                    db = "myDB",
-                    collection = "myCollection",
-                    filter = filter,
-                    update = update,
-                )
+            val executor = UpdateOneExecutor(
+                client = client,
+                db = "myDB",
+                collection = "myCollection",
+                filter = filter,
+                update = update,
             )
 
             every { collection.updateOne(filter, update, any()) } returns updateResult
 
-            workload.invoke(0).apply {
-                shouldBeInstanceOf<TimedWriteResult>()
-                workloadName shouldBe workload.name
-                value.insertCount shouldBe 0
-                value.deletedCount shouldBe 0
-                value.matchedCount shouldBe updateResult.matchedCount
-                value.modifiedCount shouldBe updateResult.modifiedCount
-                value.upsertedCount shouldBe if (updateResult.upsertedId != null) 1 else 0
+            executor.invoke(0).apply {
+                shouldBeInstanceOf<WriteResult>()
+                insertCount shouldBe 0
+                deletedCount shouldBe 0
+                matchedCount shouldBe updateResult.matchedCount
+                modifiedCount shouldBe updateResult.modifiedCount
+                upsertedCount shouldBe if (updateResult.upsertedId != null) 1 else 0
             }
 
             verify { client.getDatabase("myDB") }
@@ -179,26 +167,23 @@ class ExecutorTests : FunSpec({
         checkAll(updateResultArb) { updateResult ->
             val filter = Template(mapOf("name" to "Bob"))
             val update = Template(mapOf("\$set" to mapOf("name" to "Alice")))
-            val workload = sew(
-                UpdateManyExecutor(
-                    client = client,
-                    db = "myDB",
-                    collection = "myCollection",
-                    filter = filter,
-                    update = update,
-                )
+            val executor = UpdateManyExecutor(
+                client = client,
+                db = "myDB",
+                collection = "myCollection",
+                filter = filter,
+                update = update,
             )
 
             every { collection.updateMany(filter, update, any()) } returns updateResult
 
-            workload.invoke(0).apply {
-                shouldBeInstanceOf<TimedWriteResult>()
-                workloadName shouldBe workload.name
-                value.insertCount shouldBe 0
-                value.deletedCount shouldBe 0
-                value.matchedCount shouldBe updateResult.matchedCount
-                value.modifiedCount shouldBe updateResult.modifiedCount
-                value.upsertedCount shouldBe if (updateResult.upsertedId != null) 1 else 0
+            executor.invoke(0).apply {
+                shouldBeInstanceOf<WriteResult>()
+                insertCount shouldBe 0
+                deletedCount shouldBe 0
+                matchedCount shouldBe updateResult.matchedCount
+                modifiedCount shouldBe updateResult.modifiedCount
+                upsertedCount shouldBe if (updateResult.upsertedId != null) 1 else 0
             }
 
             verify { client.getDatabase("myDB") }
@@ -213,23 +198,20 @@ class ExecutorTests : FunSpec({
                 collection.deleteOne(any())
             } returns DeleteResult.acknowledged(docCount.toLong())
 
-            val workload = sew(
-                DeleteOneExecutor(
-                    client = client,
-                    db = "myDB",
-                    collection = "myCollection",
-                    filter = Template(mapOf("name" to "Bob"))
-                )
+            val executor = DeleteOneExecutor(
+                client = client,
+                db = "myDB",
+                collection = "myCollection",
+                filter = Template(mapOf("name" to "Bob"))
             )
 
-            workload.invoke(0).apply {
-                shouldBeInstanceOf<TimedWriteResult>()
-                workloadName shouldBe workload.name
-                value.insertCount shouldBe 0
-                value.deletedCount shouldBe docCount
-                value.matchedCount shouldBe 0
-                value.modifiedCount shouldBe 0
-                value.upsertedCount shouldBe 0
+            executor.invoke(0).apply {
+                shouldBeInstanceOf<WriteResult>()
+                insertCount shouldBe 0
+                deletedCount shouldBe docCount
+                matchedCount shouldBe 0
+                modifiedCount shouldBe 0
+                upsertedCount shouldBe 0
             }
 
             verify { client.getDatabase("myDB") }
@@ -244,23 +226,20 @@ class ExecutorTests : FunSpec({
                 collection.deleteMany(any())
             } returns DeleteResult.acknowledged(docCount.toLong())
 
-            val workload = sew(
-                DeleteManyExecutor(
-                    client = client,
-                    db = "myDB",
-                    collection = "myCollection",
-                    filter = Template(mapOf("name" to "Bob"))
-                )
+            val workload = DeleteManyExecutor(
+                client = client,
+                db = "myDB",
+                collection = "myCollection",
+                filter = Template(mapOf("name" to "Bob"))
             )
 
             workload.invoke(0).apply {
-                shouldBeInstanceOf<TimedWriteResult>()
-                workloadName shouldBe workload.name
-                value.insertCount shouldBe 0
-                value.deletedCount shouldBe docCount
-                value.matchedCount shouldBe 0
-                value.modifiedCount shouldBe 0
-                value.upsertedCount shouldBe 0
+                shouldBeInstanceOf<WriteResult>()
+                insertCount shouldBe 0
+                deletedCount shouldBe docCount
+                matchedCount shouldBe 0
+                modifiedCount shouldBe 0
+                upsertedCount shouldBe 0
             }
 
             verify { client.getDatabase("myDB") }
@@ -283,19 +262,16 @@ class ExecutorTests : FunSpec({
             every { cursor.next() } returns RawBsonDocument(ByteArray(10))
             every { cursor.hasNext() } returnsMany List(docCount) { true } + false
 
-            val workload = sew(
-                FindExecutor(
-                    client = client,
-                    db = "myDB",
-                    collection = "myCollection",
-                    filter = Template(mapOf("name" to "Bob"))
-                )
+            val executor = FindExecutor(
+                client = client,
+                db = "myDB",
+                collection = "myCollection",
+                filter = Template(mapOf("name" to "Bob"))
             )
 
-            workload.invoke(0).apply {
-                shouldBeInstanceOf<TimedReadResult>()
-                workloadName shouldBe workload.name
-                value.docReturned shouldBe docCount
+            executor.invoke(0).apply {
+                shouldBeInstanceOf<ReadResult>()
+                docReturned shouldBe docCount
             }
 
             verify { client.getDatabase("myDB") }

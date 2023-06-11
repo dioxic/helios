@@ -18,7 +18,6 @@ import org.bson.Document
 import uk.dioxic.mgenerate.extensions.average
 import uk.dioxic.mgenerate.extensions.tps
 import uk.dioxic.mgenerate.test.IS_NOT_GH_ACTION
-import uk.dioxic.mgenerate.utils.average
 import uk.dioxic.mgenerate.worker.results.SummarizedMessageResult
 import uk.dioxic.mgenerate.worker.results.SummarizedResultsBatch
 import uk.dioxic.mgenerate.worker.results.TimedCommandResult
@@ -40,19 +39,18 @@ class FrameworkTests : FunSpec({
         every { client.getDatabase(any()) } returns database
         every { database.runCommand(any()) } returns Document("ok", 1)
 
-        val workloadName = "workload"
         val stage = SingleExecutionStage(
-            name = "single",
-            workload = SingleExecutionWorkload(workloadName, CommandExecutor(
+            name = "single stage",
+            executor = CommandExecutor(
                 client = client,
                 command = helloCommand,
                 database = "test"
-            ))
+            )
         )
 
         executeStages(stage, tick = 500.milliseconds).collect {
             it.shouldBeInstanceOf<TimedCommandResult>()
-            it.workloadName shouldBe workloadName
+            it.workloadName shouldBe stage.name
             it.value.success shouldBe true
             it.duration shouldBeLessThan 100.milliseconds
         }
@@ -136,7 +134,7 @@ class FrameworkTests : FunSpec({
         val stages = arrayOf(
             SingleExecutionStage(
                 "singleStage",
-                workload = SingleExecutionWorkload("single", MessageExecutor { "[$it] hello" })
+                executor = MessageExecutor { "[$it] hello" }
             ), MultiExecutionStage(
                 name = "testStage",
                 timeout = 1.seconds,

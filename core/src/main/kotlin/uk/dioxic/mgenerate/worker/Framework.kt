@@ -18,12 +18,12 @@ import kotlin.time.TimeSource
 
 private val logger = logger("uk.dioxic.mgenerate.worker.Framework")
 
-fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.seconds) = flow {
+fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.seconds): Flow<OutputResult> = flow {
     stages.forEach {
         when (it) {
             is MultiExecutionStage -> emitAll(executeStage(it, tick))
             is SingleExecutionStage -> {
-                emit(it.workload.invoke(0))
+                emit(it.invoke(0))
             }
         }
     }
