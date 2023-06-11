@@ -18,6 +18,7 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.client.MongoClients
 import kotlinx.coroutines.runBlocking
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
 import uk.dioxic.mgenerate.worker.*
 import uk.dioxic.mgenerate.worker.report.ReportFormat
@@ -62,6 +63,8 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 .codecRegistry(Template.defaultRegistry)
                 .build()
         )
+
+        if (!checkConnection(client)) { return }
 
         val amendedBatchSize = min(batchSize, number.toInt())
         val amendedRate = tps?.div(amendedBatchSize)?.let { Rate.of(it) } ?: Rate.MAX
