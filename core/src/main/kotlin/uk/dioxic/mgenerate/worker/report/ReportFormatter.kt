@@ -26,8 +26,9 @@ sealed class ReportFormatter {
 
 internal object ConsoleReportFormatter : ReportFormatter() {
     private const val padding = 2
+    private const val printHeaderEvery = 10
 
-    private fun formatSummarized(now: LocalDateTime, resultBatch: SummarizedResultsBatch) = buildString {
+    private fun formatSummarized(resultBatch: SummarizedResultsBatch, outputCount: Long) = buildString {
         val results = resultBatch.results.map { it.toReportColumns(resultBatch.duration) }
         val columns = results.flatMap { it.keys }.distinct().sorted()
         val columnLengthPairs = columns.map { column ->
@@ -39,13 +40,16 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         val lineLength = columnLengthPairs.sumOf { it.second + padding } - padding
 
         // print column headers
-        columnLengthPairs.forEachIndexed { index, (column, length) ->
-            val pad = if (index == columnLengthPairs.lastIndex) 0 else padding
-            appendPaddedAfter(column.display, length + pad)
+        if (resultBatch.results.size > 1 || outputCount % printHeaderEvery == 0L) {
+            appendLine()
+            columnLengthPairs.forEachIndexed { index, (column, length) ->
+                val pad = if (index == columnLengthPairs.lastIndex) 0 else padding
+                appendPaddedAfter(column.display, length + pad)
+            }
+            appendLine()
+            append("".padEnd(lineLength, '-'))
+            appendLine()
         }
-        appendLine()
-        append("".padEnd(lineLength, '-'))
-        appendLine()
 
         // print results
         results.forEach { result ->
@@ -53,7 +57,6 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                 val pad = if (index == columnLengthPairs.lastIndex) 0 else padding
                 appendPaddedAfter(result[column] ?: "0", length + pad)
             }
-            appendLine()
         }
 
         // print totals
@@ -61,10 +64,14 @@ internal object ConsoleReportFormatter : ReportFormatter() {
     }
 
     override fun format(results: Flow<OutputResult>) = flow {
+        var count = 0L
         results.collect {
             val now = LocalDateTime.now()
             when (it) {
-                is SummarizedResultsBatch -> emit(formatSummarized(now, it))
+                is SummarizedResultsBatch -> {
+                    emit(formatSummarized(it, count))
+                    count++
+                }
                 is TimedResult -> emit("$now - ${it.workloadName} - completed in ${it.duration}")
             }
         }
