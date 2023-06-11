@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.flow
 import uk.dioxic.mgenerate.worker.results.OutputResult
 import uk.dioxic.mgenerate.worker.results.SummarizedResultsBatch
 import uk.dioxic.mgenerate.worker.results.TimedResult
-import java.time.LocalDateTime
 import kotlin.math.max
 
 fun Flow<OutputResult>.format(formatter: ReportFormatter) = formatter.format(this)
@@ -66,13 +65,15 @@ internal object ConsoleReportFormatter : ReportFormatter() {
     override fun format(results: Flow<OutputResult>) = flow {
         var count = 0L
         results.collect {
-            val now = LocalDateTime.now()
             when (it) {
                 is SummarizedResultsBatch -> {
                     emit(formatSummarized(it, count))
                     count++
                 }
-                is TimedResult -> emit("$now - ${it.workloadName} - completed in ${it.duration}")
+
+                is TimedResult -> {
+                    emit("${it.workloadName} completed in ${it.duration}")
+                }
             }
         }
     }
