@@ -42,11 +42,11 @@ private fun SummarizedResult.workloadColumn() = mapOf(
 )
 
 private fun SummarizedResult.percentileColumns() = mapOf(
-    ColumnHeader.LATENCY_P50 to latencies.p50.toString(),
-    ColumnHeader.LATENCY_P95 to latencies.p95.toString(),
-    ColumnHeader.LATENCY_P99 to latencies.p99.toString(),
-    ColumnHeader.LATENCY_MAX to latencies.max.toString(),
-    ColumnHeader.LATENCY_MIN to latencies.min.toString(),
+    ColumnHeader.LATENCY_P50 to latencies.p50.toString(DurationUnit.MILLISECONDS, 1),
+    ColumnHeader.LATENCY_P95 to latencies.p95.toString(DurationUnit.MILLISECONDS, 1),
+    ColumnHeader.LATENCY_P99 to latencies.p99.toString(DurationUnit.MILLISECONDS, 1),
+    ColumnHeader.LATENCY_MAX to latencies.max.toString(DurationUnit.MILLISECONDS, 1),
+    ColumnHeader.LATENCY_MIN to latencies.min.toString(DurationUnit.MILLISECONDS, 1),
 )
 
 context(Duration)
