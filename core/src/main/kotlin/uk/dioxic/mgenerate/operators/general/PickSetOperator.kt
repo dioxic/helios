@@ -3,7 +3,7 @@ package uk.dioxic.mgenerate.operators.general
 import org.apache.logging.log4j.kotlin.logger
 import uk.dioxic.mgenerate.annotations.Alias
 import uk.dioxic.mgenerate.annotations.Operator
-import uk.dioxic.mgenerate.utils.nextElement
+import uk.dioxic.mgenerate.extensions.nextElement
 import kotlin.math.min
 import kotlin.random.Random
 

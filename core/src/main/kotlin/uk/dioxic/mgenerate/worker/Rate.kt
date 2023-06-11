@@ -28,8 +28,4 @@ class Rate private constructor(private val delay: Duration) {
 
         fun of(duration: Duration) = Rate(duration)
     }
-
-
 }
-
-inline val Int.tps get() = Rate.of(this)

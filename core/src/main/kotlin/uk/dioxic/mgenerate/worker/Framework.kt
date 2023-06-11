@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import org.apache.logging.log4j.kotlin.logger
-import uk.dioxic.mgenerate.utils.nextElementIndex
+import uk.dioxic.mgenerate.extensions.nextElementIndex
 import uk.dioxic.mgenerate.worker.results.*
 import kotlin.random.Random
 import kotlin.time.Duration
