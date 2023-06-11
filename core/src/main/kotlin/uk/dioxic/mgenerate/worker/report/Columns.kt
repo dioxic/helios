@@ -19,8 +19,8 @@ enum class ColumnHeader(val display: String) {
     LATENCY_P50("latency P50"),
     LATENCY_P95("latency P95"),
     LATENCY_P99("latency P99"),
-    LATENCY_MAX("latency min"),
-    LATENCY_MIN("latency max");
+    LATENCY_MAX("latency max"),
+    LATENCY_MIN("latency min");
 
     val length: Int
         get() = display.length
