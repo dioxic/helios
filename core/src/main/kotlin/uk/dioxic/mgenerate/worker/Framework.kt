@@ -34,7 +34,7 @@ fun CoroutineScope.executeStage(
     stage: MultiExecutionStage,
     tick: Duration = 1.seconds
 ): Flow<SummarizedResultsBatch> {
-    val workChannel = Channel<MultiExecutionWorkload>(100)
+    val workChannel = Channel<Workload>(100)
     val producerJobs = mutableListOf<Job>()
 
     // launch producers
@@ -104,8 +104,8 @@ fun CoroutineScope.executeStage(
     }.flowOn(Dispatchers.Default)
 }
 
-context(Channel<MultiExecutionWorkload>, CoroutineScope)
-private suspend fun produceWork(workload: MultiExecutionWorkload) {
+context(Channel<Workload>, CoroutineScope)
+private suspend fun produceWork(workload: Workload) {
     var count = workload.count
     while (isActive && count > 0) {
         send(workload)
@@ -114,8 +114,8 @@ private suspend fun produceWork(workload: MultiExecutionWorkload) {
     }
 }
 
-context(Channel<MultiExecutionWorkload>, CoroutineScope)
-private suspend fun produceWork(workloads: List<MultiExecutionWorkload>, rate: Rate) {
+context(Channel<Workload>, CoroutineScope)
+private suspend fun produceWork(workloads: List<Workload>, rate: Rate) {
     require(workloads.isNotEmpty())
     val weights = workloads.map { it.weight }.toMutableList()
     val counts = workloads.map { it.count }.toMutableList()
@@ -171,7 +171,7 @@ private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>
 
 private fun CoroutineScope.launchProcessor(
     id: Int,
-    workChannel: ReceiveChannel<MultiExecutionWorkload>,
+    workChannel: ReceiveChannel<Workload>,
     resultChannel: SendChannel<SummarizationMessage>
 ) = launch(Dispatchers.IO) {
     logger.trace { "Launching work processor $id" }

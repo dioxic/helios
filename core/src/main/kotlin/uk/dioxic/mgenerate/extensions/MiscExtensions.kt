@@ -1,7 +1,11 @@
 package uk.dioxic.mgenerate.extensions
 
+import uk.dioxic.mgenerate.worker.Named
 import uk.dioxic.mgenerate.worker.Rate
+import uk.dioxic.mgenerate.worker.results.*
 import java.util.*
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource
 
 val myLocale: Locale = Locale.ENGLISH
 
@@ -20,3 +24,13 @@ fun Iterable<Number>.average(): Double {
     return if (count == 0) Double.NaN else sum / count
 }
 
+@OptIn(ExperimentalTime::class)
+inline fun Named.measureTimedResult(block: () -> Result): TimedResult {
+    val mark = TimeSource.Monotonic.markNow()
+    return when (val value = block()) {
+        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), name)
+        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), name)
+        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), name)
+        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), name)
+    }
+}

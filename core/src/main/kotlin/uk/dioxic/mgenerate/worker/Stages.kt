@@ -1,5 +1,6 @@
 package uk.dioxic.mgenerate.worker
 
+import uk.dioxic.mgenerate.extensions.measureTimedResult
 import kotlin.time.Duration
 
 sealed interface Stage: Named {
@@ -8,7 +9,7 @@ sealed interface Stage: Named {
 
 data class MultiExecutionStage(
     override val name: String,
-    val workloads: List<MultiExecutionWorkload>,
+    val workloads: List<Workload>,
     val timeout: Duration? = null,
     val rate: Rate = Rate.MAX,
     val workers: Int = 4,

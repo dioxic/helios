@@ -65,10 +65,10 @@ class FrameworkTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MultiExecutionWorkload(name = "workload1000", count = 1_000, executor = executor),
-                MultiExecutionWorkload(name = "workload1000R", count = 1_000, rate = 500.tps, executor = executor),
-                MultiExecutionWorkload(name = "workload500", count = 500, executor = executor),
-                MultiExecutionWorkload(name = "workload200", count = 200, executor = executor),
+                Workload(name = "workload1000", count = 1_000, executor = executor),
+                Workload(name = "workload1000R", count = 1_000, rate = 500.tps, executor = executor),
+                Workload(name = "workload500", count = 500, executor = executor),
+                Workload(name = "workload200", count = 200, executor = executor),
             )
         )
 
@@ -89,7 +89,7 @@ class FrameworkTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MultiExecutionWorkload(
+                Workload(
                     name = "workload500",
                     count = 500,
                     rate = 500.tps,
@@ -115,7 +115,7 @@ class FrameworkTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                MultiExecutionWorkload(name = "workload1000", count = 1_000, rate = 1000.tps, executor = executor),
+                Workload(name = "workload1000", count = 1_000, rate = 1000.tps, executor = executor),
             )
         )
 
@@ -140,7 +140,7 @@ class FrameworkTests : FunSpec({
                 timeout = 1.seconds,
                 rate = Rate.of(1),
                 workloads = listOf(
-                    MultiExecutionWorkload(
+                    Workload(
                         name = "wk1",
                         count = 5,
                         executor = MessageExecutor { "[$it] hello1" }

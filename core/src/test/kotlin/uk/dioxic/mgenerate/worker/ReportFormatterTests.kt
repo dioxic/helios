@@ -73,7 +73,7 @@ class ReportFormatterTests : FunSpec({
             name = "stage",
             timeout = 5.seconds,
             workloads = listOf(
-                MultiExecutionWorkload(
+                Workload(
                     name = "really long workload name",
                     rate = 100.tps,
                     count = 100,
@@ -137,7 +137,7 @@ class ReportFormatterTests : FunSpec({
             name = "stage",
             timeout = 5.seconds,
             workloads = listOf(
-                MultiExecutionWorkload(
+                Workload(
                     name = "really long insert workload",
                     rate = 100.tps,
                     count = 100,
@@ -149,7 +149,7 @@ class ReportFormatterTests : FunSpec({
                         number = 1
                     )
                 ),
-                MultiExecutionWorkload(
+                Workload(
                     name = "update workload",
                     rate = 100.tps,
                     count = 100,
@@ -161,7 +161,7 @@ class ReportFormatterTests : FunSpec({
                         update = Template(mapOf("\$set" to mapOf("name" to "Alice")))
                     )
                 ),
-                MultiExecutionWorkload(
+                Workload(
                     name = "delete workload",
                     rate = 100.tps,
                     count = 100,
@@ -172,7 +172,7 @@ class ReportFormatterTests : FunSpec({
                         filter = Template(mapOf("name" to "Bob")),
                     )
                 ),
-                MultiExecutionWorkload(
+                Workload(
                     name = "find workload",
                     rate = 100.tps,
                     count = 100,
