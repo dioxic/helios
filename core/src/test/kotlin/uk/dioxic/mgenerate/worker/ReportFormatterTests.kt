@@ -18,6 +18,7 @@ import org.bson.RawBsonDocument
 import org.bson.conversions.Bson
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.extensions.tps
+import uk.dioxic.mgenerate.test.IS_NOT_GH_ACTION
 import uk.dioxic.mgenerate.worker.report.ReportFormat
 import uk.dioxic.mgenerate.worker.report.ReportFormatter
 import uk.dioxic.mgenerate.worker.report.format
@@ -28,7 +29,7 @@ class ReportFormatterTests : FunSpec({
 
 //    isolationMode = IsolationMode.InstancePerTest
 
-    test("Single execution") {
+    test("Single execution").config(enabled = IS_NOT_GH_ACTION) {
         val client = mockk<MongoClient>()
         val database = mockk<MongoDatabase>()
         val helloCommand = Document("hello", 1)
@@ -52,7 +53,7 @@ class ReportFormatterTests : FunSpec({
             }
     }
 
-    test("Single workload") {
+    test("Single workload").config(enabled = IS_NOT_GH_ACTION) {
         val client = mockk<MongoClient>()
         val collection = mockk<MongoCollection<Template>>()
         val result = InsertManyResult.acknowledged((0..5)
@@ -75,6 +76,7 @@ class ReportFormatterTests : FunSpec({
                 MultiExecutionWorkload(
                     name = "really long workload name",
                     rate = 100.tps,
+                    count = 100,
                     executor = InsertManyExecutor(
                         client = client,
                         db = "myDB",
@@ -94,7 +96,7 @@ class ReportFormatterTests : FunSpec({
     }
 
 
-    test("Multiple workloads") {
+    test("Multiple workloads").config(enabled = IS_NOT_GH_ACTION) {
         val client = mockk<MongoClient>()
         val database = mockk<MongoDatabase>()
         val collection = mockk<MongoCollection<Template>>()
@@ -138,6 +140,7 @@ class ReportFormatterTests : FunSpec({
                 MultiExecutionWorkload(
                     name = "really long insert workload",
                     rate = 100.tps,
+                    count = 100,
                     executor = InsertManyExecutor(
                         client = client,
                         db = "myDB",
@@ -149,6 +152,7 @@ class ReportFormatterTests : FunSpec({
                 MultiExecutionWorkload(
                     name = "update workload",
                     rate = 100.tps,
+                    count = 100,
                     executor = UpdateManyExecutor(
                         client = client,
                         db = "myDB",
@@ -160,6 +164,7 @@ class ReportFormatterTests : FunSpec({
                 MultiExecutionWorkload(
                     name = "delete workload",
                     rate = 100.tps,
+                    count = 100,
                     executor = DeleteManyExecutor(
                         client = client,
                         db = "myDB",
@@ -170,6 +175,7 @@ class ReportFormatterTests : FunSpec({
                 MultiExecutionWorkload(
                     name = "find workload",
                     rate = 100.tps,
+                    count = 100,
                     executor = FindExecutor(
                         client = client,
                         db = "myDB",
