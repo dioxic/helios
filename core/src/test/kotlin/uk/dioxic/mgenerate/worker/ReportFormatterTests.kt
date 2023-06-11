@@ -76,6 +76,7 @@ class ReportFormatterTests : FunSpec({
             workloads = listOf(
                 MultiExecutionWorkload(
                     name = "really long workload name",
+                    rate = 100.tps,
                     executor = InsertManyExecutor(
                         client = client,
                         db = "myDB",
@@ -138,6 +139,7 @@ class ReportFormatterTests : FunSpec({
             workloads = listOf(
                 MultiExecutionWorkload(
                     name = "really long insert workload",
+                    rate = 100.tps,
                     executor = InsertManyExecutor(
                         client = client,
                         db = "myDB",
@@ -148,6 +150,7 @@ class ReportFormatterTests : FunSpec({
                 ),
                 MultiExecutionWorkload(
                     name = "update workload",
+                    rate = 100.tps,
                     executor = UpdateManyExecutor(
                         client = client,
                         db = "myDB",
@@ -158,6 +161,7 @@ class ReportFormatterTests : FunSpec({
                 ),
                 MultiExecutionWorkload(
                     name = "delete workload",
+                    rate = 100.tps,
                     executor = DeleteManyExecutor(
                         client = client,
                         db = "myDB",
@@ -167,6 +171,7 @@ class ReportFormatterTests : FunSpec({
                 ),
                 MultiExecutionWorkload(
                     name = "find workload",
+                    rate = 100.tps,
                     executor = FindExecutor(
                         client = client,
                         db = "myDB",
