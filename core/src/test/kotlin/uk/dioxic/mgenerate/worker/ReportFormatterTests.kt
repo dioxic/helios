@@ -48,7 +48,7 @@ class ReportFormatterTests : FunSpec({
         executeStages(stage, tick = 500.milliseconds)
             .format(ReportFormatter.create(ReportFormat.TEXT))
             .collect {
-                println(it)
+                print(it)
             }
     }
 
@@ -89,7 +89,7 @@ class ReportFormatterTests : FunSpec({
         executeStage(stage)
             .format(ReportFormatter.create(ReportFormat.TEXT))
             .collect {
-                println(it)
+                print(it)
             }
     }
 
@@ -183,7 +183,7 @@ class ReportFormatterTests : FunSpec({
         executeStage(stage)
             .format(ReportFormatter.create(ReportFormat.TEXT))
             .collect {
-                println(it)
+                print(it)
             }
     }
 

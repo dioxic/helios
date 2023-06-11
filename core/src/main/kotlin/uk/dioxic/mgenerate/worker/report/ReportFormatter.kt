@@ -56,6 +56,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                 val pad = if (index == columnLengthPairs.lastIndex) 0 else padding
                 appendPaddedAfter(result[column] ?: "0", length + pad)
             }
+            appendLine()
         }
 
         // print totals

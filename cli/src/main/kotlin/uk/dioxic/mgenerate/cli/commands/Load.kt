@@ -99,7 +99,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         val stages = if (drop) {
             arrayOf(
                 SingleExecutionStage(
-                    name = "drop ${namespaceOptions.collection}",
+                    name = "drop ${namespaceOptions.collection} collection",
                     executor = DropExecutor(
                         client = client,
                         db = namespaceOptions.database,
@@ -111,12 +111,14 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
             arrayOf(loadStage)
         }
 
+        println("Starting load...")
+
         val duration = runBlocking {
             measureTime {
                 executeStages(*stages)
                     .format(ReportFormatter.create(ReportFormat.TEXT))
                     .collect {
-                        println(it)
+                        print(it)
                     }
             }
         }
