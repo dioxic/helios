@@ -85,7 +85,7 @@ class FrameworkTests : FunSpec({
         count shouldBe stage.workloads.sumOf { it.count }
     }
 
-    test("workload tick rate") {
+    test("workload tick rate").config(enabled = IS_NOT_GH_ACTION) {
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
