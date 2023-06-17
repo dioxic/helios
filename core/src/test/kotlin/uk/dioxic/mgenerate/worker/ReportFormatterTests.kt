@@ -76,10 +76,10 @@ class ReportFormatterTests : FunSpec({
                 Workload(
                     name = "really long workload name",
                     rate = 100.tps,
-                    count = 100,
+                    executionCount = 100,
                     executor = InsertManyExecutor(
                         client = client,
-                        db = "myDB",
+                        database = "myDB",
                         collection = "myCollection",
                         template = Template(mapOf("name" to "Bob")),
                         number = 1
@@ -140,10 +140,10 @@ class ReportFormatterTests : FunSpec({
                 Workload(
                     name = "really long insert workload",
                     rate = 100.tps,
-                    count = 100,
+                    executionCount = 100,
                     executor = InsertManyExecutor(
                         client = client,
-                        db = "myDB",
+                        database = "myDB",
                         collection = "myCollection",
                         template = Template(mapOf("name" to "Bob")),
                         number = 1
@@ -152,7 +152,7 @@ class ReportFormatterTests : FunSpec({
                 Workload(
                     name = "update workload",
                     rate = 100.tps,
-                    count = 100,
+                    executionCount = 100,
                     executor = UpdateManyExecutor(
                         client = client,
                         db = "myDB",
@@ -164,10 +164,10 @@ class ReportFormatterTests : FunSpec({
                 Workload(
                     name = "delete workload",
                     rate = 100.tps,
-                    count = 100,
+                    executionCount = 100,
                     executor = DeleteManyExecutor(
                         client = client,
-                        db = "myDB",
+                        database = "myDB",
                         collection = "myCollection",
                         filter = Template(mapOf("name" to "Bob")),
                     )
@@ -175,7 +175,7 @@ class ReportFormatterTests : FunSpec({
                 Workload(
                     name = "find workload",
                     rate = 100.tps,
-                    count = 100,
+                    executionCount = 100,
                     executor = FindExecutor(
                         client = client,
                         db = "myDB",

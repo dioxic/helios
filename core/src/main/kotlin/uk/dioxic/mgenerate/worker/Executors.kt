@@ -16,20 +16,40 @@ import uk.dioxic.mgenerate.worker.results.MessageResult
 import uk.dioxic.mgenerate.worker.results.ReadResult
 import uk.dioxic.mgenerate.worker.results.Result
 
-sealed interface Executor {
-    fun invoke(workerId: Int): Result
+sealed interface Executor<T : ExecutionContext> {
+    fun invoke(workerId: Int, context: T): Result
+}
+
+sealed interface BaseExecutor : Executor<BaseExecutionContext> {
+    fun createContext(): BaseExecutionContext
+}
+
+sealed interface MongoExecutor<T : ExecutionContext> : Executor<T> {
+    fun createContext(client: MongoClient): T
+}
+
+sealed interface DatabaseExecutor : MongoExecutor<DatabaseExecutionContext> {
+    val database: String
+    override fun createContext(client: MongoClient) =
+        DatabaseExecutionContext(client, this)
+}
+
+sealed interface CollectionExecutor<TDocument> : MongoExecutor<CollectionExecutionContext<TDocument>> {
+    val database: String
+    val collection: String
+    val documentClass: Class<TDocument>
+    override fun createContext(client: MongoClient) =
+        CollectionExecutionContext(client, this)
 }
 
 open class CommandExecutor(
-    client: MongoClient,
-    database: String = "admin",
+    override val database: String = "admin",
     val command: Bson,
-) : Executor {
-    private val database = client.getDatabase(database)
+) : DatabaseExecutor {
 
-    override fun invoke(workerId: Int) = CommandResult(
+    override fun invoke(workerId: Int, context: DatabaseExecutionContext): Result = CommandResult(
         try {
-            database.runCommand(command)["ok"] == 1
+            context.mongoDatabase.runCommand(command)["ok"] == 1
         } catch (e: MongoCommandException) {
             false
         }
@@ -37,126 +57,107 @@ open class CommandExecutor(
 }
 
 class DropExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
-) : CommandExecutor(client, db, Document("drop", collection))
+    database: String,
+    val collection: String,
+) : CommandExecutor(database, Document("drop", collection))
 
 class MessageExecutor(
     val messageFn: (Int) -> String,
-) : Executor {
-    override fun invoke(workerId: Int) = MessageResult(messageFn(workerId))
+) : BaseExecutor {
+    override fun createContext() = BaseExecutionContext(this)
+
+    override fun invoke(workerId: Int, context: BaseExecutionContext): Result =
+        MessageResult(messageFn(workerId))
 }
 
 class InsertOneExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
+    override val database: String,
+    override val collection: String,
     val template: Template,
-) : Executor {
+) : CollectionExecutor<Template> {
+    override val documentClass = Template::class.java
 
-    private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection, Template::class.java)
-
-    override fun invoke(workerId: Int) =
-        mongoCollection.insertOne(template).standardize()
+    override fun invoke(workerId: Int, context: CollectionExecutionContext<Template>): Result =
+        context.mongoCollection.insertOne(template).standardize()
 }
 
 class InsertManyExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
-    ordered: Boolean = true,
+    override val database: String,
+    override val collection: String,
+    val ordered: Boolean = true,
     val number: Int,
     val template: Template,
-) : Executor {
-
-    private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection, Template::class.java)
+) : CollectionExecutor<Template> {
+    override val documentClass = Template::class.java
 
     private val documents = List(number) { template }
     private val options = InsertManyOptions().ordered(ordered)
 
-    override fun invoke(workerId: Int) =
-        mongoCollection.insertMany(documents, options).standardize()
+    override fun invoke(workerId: Int, context: CollectionExecutionContext<Template>): Result =
+        context.mongoCollection.insertMany(documents, options).standardize()
 }
 
 class UpdateOneExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
+    override val database: String,
+    override val collection: String,
     val filter: Template,
     val update: Template,
     val updateOptions: UpdateOptions = UpdateOptions()
-) : Executor {
+) : CollectionExecutor<Template> {
+    override val documentClass = Template::class.java
 
-    private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection, Template::class.java)
-
-    override fun invoke(workerId: Int) =
-        mongoCollection.updateOne(filter, update, updateOptions).standardize()
+    override fun invoke(workerId: Int, context: CollectionExecutionContext<Template>): Result =
+        context.mongoCollection.updateOne(filter, update, updateOptions).standardize()
 }
 
 class UpdateManyExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
+    override val database: String,
+    override val collection: String,
     val filter: Template,
     val update: Template,
     val updateOptions: UpdateOptions = UpdateOptions()
-) : Executor {
+) : CollectionExecutor<Template> {
+    override val documentClass = Template::class.java
 
-    private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection, Template::class.java)
-
-    override fun invoke(workerId: Int) =
-        mongoCollection.updateMany(filter, update, updateOptions).standardize()
+    override fun invoke(workerId: Int, context: CollectionExecutionContext<Template>): Result =
+        context.mongoCollection.updateMany(filter, update, updateOptions).standardize()
 }
 
 class DeleteOneExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
+    override val database: String,
+    override val collection: String,
     val filter: Template,
-) : Executor {
+) : CollectionExecutor<Template> {
+    override val documentClass = Template::class.java
 
-    private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection, Template::class.java)
-
-    override fun invoke(workerId: Int) =
-        mongoCollection.deleteOne(filter).standardize()
+    override fun invoke(workerId: Int, context: CollectionExecutionContext<Template>): Result =
+        context.mongoCollection.deleteOne(filter).standardize()
 }
 
 class DeleteManyExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
+    override val database: String,
+    override val collection: String,
     val filter: Template,
-) : Executor {
+) : CollectionExecutor<Template> {
+    override val documentClass = Template::class.java
 
-    private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection, Template::class.java)
-
-    override fun invoke(workerId: Int) =
-        mongoCollection.deleteMany(filter).standardize()
+    override fun invoke(workerId: Int, context: CollectionExecutionContext<Template>): Result =
+        context.mongoCollection.deleteMany(filter).standardize()
 }
 
 class FindExecutor(
-    client: MongoClient,
-    db: String,
-    collection: String,
+    override val database: String,
+    override val collection: String,
     val skip: Int? = null,
     val limit: Int? = null,
     val sort: Document? = null,
     val project: Document? = null,
     val filter: Template,
-) : Executor {
+) : CollectionExecutor<RawBsonDocument> {
+    override val documentClass = RawBsonDocument::class.java
 
-    private val mongoCollection = client.getDatabase(db)
-        .getCollection(collection, RawBsonDocument::class.java)
-
-    override fun invoke(workerId: Int) =
-        ReadResult(mongoCollection.find(filter).apply {
+    override fun invoke(workerId: Int, context: CollectionExecutionContext<RawBsonDocument>): Result =
+        ReadResult(context.mongoCollection.find(filter).apply {
             if (project != null) project(project)
             if (limit != null) limit(limit)
             if (sort != null) sort(sort)

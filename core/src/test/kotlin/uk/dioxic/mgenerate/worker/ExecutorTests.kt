@@ -82,7 +82,7 @@ class ExecutorTests : FunSpec({
     test("insertOne executor") {
         val executor = InsertOneExecutor(
             client = client,
-            db = "myDB",
+            database = "myDB",
             collection = "myCollection",
             template = Template(mapOf("name" to "Bob"))
         )
@@ -113,7 +113,7 @@ class ExecutorTests : FunSpec({
 
             val executor = InsertManyExecutor(
                 client = client,
-                db = "myDB",
+                database = "myDB",
                 collection = "myCollection",
                 template = Template(mapOf("name" to "Bob")),
                 number = 1
@@ -140,7 +140,7 @@ class ExecutorTests : FunSpec({
             val update = Template(mapOf("\$set" to mapOf("name" to "Alice")))
             val executor = UpdateOneExecutor(
                 client = client,
-                db = "myDB",
+                database = "myDB",
                 collection = "myCollection",
                 filter = filter,
                 update = update,
@@ -228,7 +228,7 @@ class ExecutorTests : FunSpec({
 
             val workload = DeleteManyExecutor(
                 client = client,
-                db = "myDB",
+                database = "myDB",
                 collection = "myCollection",
                 filter = Template(mapOf("name" to "Bob"))
             )

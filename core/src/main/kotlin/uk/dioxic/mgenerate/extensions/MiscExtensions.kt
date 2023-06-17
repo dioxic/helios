@@ -34,3 +34,14 @@ inline fun Named.measureTimedResult(block: () -> Result): TimedResult {
         is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), name)
     }
 }
+
+@OptIn(ExperimentalTime::class)
+inline fun measureTimedResult(name: String, block: () -> Result): TimedResult {
+    val mark = TimeSource.Monotonic.markNow()
+    return when (val value = block()) {
+        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), name)
+        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), name)
+        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), name)
+        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), name)
+    }
+}

@@ -22,7 +22,7 @@ fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.second
     stages.forEach {
         when (it) {
             is MultiExecutionStage -> emitAll(executeStage(it, tick))
-            is SingleExecutionStage -> {
+            is SingleExecutionStage<*> -> {
                 emit(it.invoke(0))
             }
         }
@@ -34,13 +34,13 @@ fun CoroutineScope.executeStage(
     stage: MultiExecutionStage,
     tick: Duration = 1.seconds
 ): Flow<SummarizedResultsBatch> {
-    val workChannel = Channel<Workload>(100)
+    val workChannel = Channel<Workload<*>>(100)
     val producerJobs = mutableListOf<Job>()
 
     // launch producers
     with(workChannel) {
-        val rateLimitedWorkloads = stage.workloads.filter { it.rate != Rate.MAX && it.count > 0 }
-        val rateUnlimitedWorkloads = stage.workloads.filter { it.rate == Rate.MAX && it.count > 0 }
+        val rateLimitedWorkloads = stage.workloads.filter { it.rate != Rate.MAX && it.executionCount > 0 }
+        val rateUnlimitedWorkloads = stage.workloads.filter { it.rate == Rate.MAX && it.executionCount > 0 }
 
         if (rateUnlimitedWorkloads.isNotEmpty()) {
             producerJobs.add(launch(Dispatchers.Default) {
@@ -106,7 +106,8 @@ fun CoroutineScope.executeStage(
 
 context(Channel<Workload>, CoroutineScope)
 private suspend fun produceWork(workload: Workload) {
-    var count = workload.count
+    val startMillis = System.currentTimeMillis()
+    var count = workload.executionCount
     while (isActive && count > 0) {
         send(workload)
         count--
@@ -114,11 +115,11 @@ private suspend fun produceWork(workload: Workload) {
     }
 }
 
-context(Channel<Workload>, CoroutineScope)
-private suspend fun produceWork(workloads: List<Workload>, rate: Rate) {
+context(Channel<Workload<*>>, CoroutineScope)
+private suspend fun produceWork(workloads: List<Workload<*>>, rate: Rate) {
     require(workloads.isNotEmpty())
     val weights = workloads.map { it.weight }.toMutableList()
-    val counts = workloads.map { it.count }.toMutableList()
+    val counts = workloads.map { it.executionCount }.toMutableList()
     var weightSum = weights.sum()
 
     while (isActive && (weightSum > 0)) {
@@ -171,7 +172,7 @@ private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>
 
 private fun CoroutineScope.launchProcessor(
     id: Int,
-    workChannel: ReceiveChannel<Workload>,
+    workChannel: ReceiveChannel<Workload<*>>,
     resultChannel: SendChannel<SummarizationMessage>
 ) = launch(Dispatchers.IO) {
     logger.trace { "Launching work processor $id" }

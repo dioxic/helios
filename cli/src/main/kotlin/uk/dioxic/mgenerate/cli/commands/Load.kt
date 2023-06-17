@@ -76,10 +76,10 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 Workload(
                     name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
                     rate = amendedRate,
-                    count = number / amendedBatchSize,
+                    executionCount = number / amendedBatchSize,
                     executor = InsertManyExecutor(
                         client = client,
-                        db = namespaceOptions.database,
+                        database = namespaceOptions.database,
                         collection = namespaceOptions.collection,
                         number = amendedBatchSize,
                         ordered = ordered,

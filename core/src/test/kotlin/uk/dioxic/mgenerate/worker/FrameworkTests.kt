@@ -65,10 +65,10 @@ class FrameworkTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                Workload(name = "workload1000", count = 1_000, executor = executor),
-                Workload(name = "workload1000R", count = 1_000, rate = 500.tps, executor = executor),
-                Workload(name = "workload500", count = 500, executor = executor),
-                Workload(name = "workload200", count = 200, executor = executor),
+                Workload(name = "workload1000", executionCount = 1_000, executor = executor),
+                Workload(name = "workload1000R", executionCount = 1_000, rate = 500.tps, executor = executor),
+                Workload(name = "workload500", executionCount = 500, executor = executor),
+                Workload(name = "workload200", executionCount = 200, executor = executor),
             )
         )
 
@@ -82,7 +82,7 @@ class FrameworkTests : FunSpec({
             }
         }
 
-        count shouldBe stage.workloads.sumOf { it.count }
+        count shouldBe stage.workloads.sumOf { it.executionCount }
     }
 
     test("workload tick rate").config(enabled = IS_NOT_GH_ACTION) {
@@ -91,7 +91,7 @@ class FrameworkTests : FunSpec({
             workloads = listOf(
                 Workload(
                     name = "workload500",
-                    count = 500,
+                    executionCount = 500,
                     rate = 500.tps,
                     executor = MessageExecutor { "[$it] hello1" }
                 ),
@@ -115,7 +115,7 @@ class FrameworkTests : FunSpec({
         val stage = MultiExecutionStage(
             name = "testStage",
             workloads = listOf(
-                Workload(name = "workload1000", count = 1_000, rate = 1000.tps, executor = executor),
+                Workload(name = "workload1000", executionCount = 1_000, rate = 1000.tps, executor = executor),
             )
         )
 
@@ -142,7 +142,7 @@ class FrameworkTests : FunSpec({
                 workloads = listOf(
                     Workload(
                         name = "wk1",
-                        count = 5,
+                        executionCount = 5,
                         executor = MessageExecutor { "[$it] hello1" }
                     )
                 ),
