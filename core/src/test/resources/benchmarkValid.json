@@ -1,0 +1,71 @@
+{
+  "name": "benchmark",
+  "stages": [
+    {
+      "type": "sequential",
+      "name": "seqStage",
+      "workloads": [
+        {
+          "name": "myWorkload",
+          "executor": {
+            "type": "insertOne",
+            "database": "myDB",
+            "collection": "myCollection",
+            "template": {
+              "name": "$name"
+            }
+          },
+          "count": 20
+        }
+      ]
+    },
+    {
+      "type": "parallel",
+      "name": "parStage",
+      "timeout": "PT0.005S",
+      "workloads": [
+        {
+          "name": "work2",
+          "executor": {
+            "type": "insertOne",
+            "database": "myDB",
+            "collection": "myCollection",
+            "template": {
+              "name": "$name"
+            }
+          },
+          "weight": 2.0,
+          "rate": {
+            "type": "fixed",
+            "tps": 500
+          }
+        },
+        {
+          "name": "work3",
+          "executor": {
+            "type": "insertOne",
+            "database": "myDB",
+            "collection": "myCollection",
+            "template": {
+              "name": "$name"
+            }
+          },
+          "weight": 2.0,
+          "rate": {
+            "type": "ramped",
+            "delay": "PT5S",
+            "from": {
+              "type": "fixed",
+              "every": "PT1S"
+            },
+            "to": {
+              "type": "fixed",
+              "tps": 9000
+            },
+            "rampDuration": "PT5M"
+          }
+        }
+      ]
+    }
+  ]
+}

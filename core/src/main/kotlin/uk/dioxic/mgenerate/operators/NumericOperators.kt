@@ -1,7 +1,6 @@
 package uk.dioxic.mgenerate.operators
 
 import uk.dioxic.mgenerate.annotations.Alias
-import uk.dioxic.mgenerate.annotations.Operator
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.random.nextInt

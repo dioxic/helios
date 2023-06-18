@@ -1,7 +1,6 @@
 package uk.dioxic.mgenerate.operators
 
 import io.github.serpro69.kfaker.Faker
-import uk.dioxic.mgenerate.annotations.Operator
 
 private val faker = Faker()
 
