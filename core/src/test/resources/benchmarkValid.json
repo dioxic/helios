@@ -11,7 +11,9 @@
             "type": "insertOne",
             "database": "myDB",
             "collection": "myCollection",
-            "template": "someTemplate"
+            "template": {
+              "name": "$name"
+            }
           },
           "count": 20
         }
@@ -28,7 +30,9 @@
             "type": "insertOne",
             "database": "myDB",
             "collection": "myCollection",
-            "template": "someTemplate"
+            "template": {
+              "name": "$name"
+            }
           },
           "weight": 2.0,
           "rate": {
@@ -42,7 +46,9 @@
             "type": "insertOne",
             "database": "myDB",
             "collection": "myCollection",
-            "template": "someTemplate"
+            "template": {
+              "name": "$name"
+            }
           },
           "weight": 2.0,
           "rate": {

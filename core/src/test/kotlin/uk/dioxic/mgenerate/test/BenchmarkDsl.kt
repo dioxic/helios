@@ -1,6 +1,10 @@
 package uk.dioxic.mgenerate.test
 
-import uk.dioxic.mgenerate.worker.serialization.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import uk.dioxic.mgenerate.OperatorFactory
+import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.worker.model.*
 import kotlin.time.Duration
 
 
@@ -40,7 +44,16 @@ abstract class StageBuilder(protected val name: String) {
         executor: Executor = InsertOneExecutor(
             database = "myDB",
             collection = "myCollection",
-            template = "someTemplate"
+            template = Template(
+                hydratedMap = mapOf(
+                    "name" to OperatorFactory.create("\$name"),
+                    "long" to Long.MAX_VALUE
+                ),
+                definition = JsonObject(mapOf(
+                    "name" to JsonPrimitive("\$name"),
+                    "long" to JsonPrimitive(Long.MAX_VALUE)
+                ))
+            )
         ),
         name: String? = null,
         weight: Double = 1.0,

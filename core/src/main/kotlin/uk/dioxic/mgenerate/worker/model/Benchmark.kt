@@ -1,7 +1,8 @@
-package uk.dioxic.mgenerate.worker.serialization
+package uk.dioxic.mgenerate.worker.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.worker.Named
 import kotlin.time.Duration
 
@@ -48,7 +49,7 @@ sealed interface Executor
 data class InsertOneExecutor(
     val database: String,
     val collection: String,
-    val template: String
+    val template: Template
 ) : Executor
 
 @Serializable

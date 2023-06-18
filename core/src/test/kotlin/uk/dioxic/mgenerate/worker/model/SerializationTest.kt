@@ -1,9 +1,11 @@
-package uk.dioxic.mgenerate.worker.serialization
+package uk.dioxic.mgenerate.worker.model
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeExactly
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import uk.dioxic.mgenerate.operators.Operator
@@ -14,12 +16,6 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class SerializationTest : FunSpec({
-
-    val defaultExecutor = InsertOneExecutor(
-        database = "myDB",
-        collection = "myCollection",
-        template = "someTemplate"
-    )
 
     val json = Json {
         prettyPrint = true
@@ -68,7 +64,29 @@ class SerializationTest : FunSpec({
         val decoded = json.decodeFromString<Benchmark>(output)
 
         decoded.stages.filterIsInstance<ParallelStage>().first().timeout shouldBe 5.milliseconds
+    }
 
+    test("template is deserialized correctly") {
+        val benchmark = benchmark {
+            sequentialStage {
+                workload(
+                    count = Long.MAX_VALUE
+                )
+            }
+        }
+
+        val decodedBenchmark = Json.decodeFromString<Benchmark>(json.encodeToString(benchmark))
+
+        decodedBenchmark.stages
+            .shouldHaveSize(1)
+            .first()
+            .workloads
+            .shouldHaveSize(1)
+            .first()
+            .executor
+            .shouldBeInstanceOf<InsertOneExecutor>()
+            .template["name"]
+            .shouldBeInstanceOf<Operator<String>>()
     }
 
     test("decoding invalid rate throws exception") {
@@ -77,7 +95,6 @@ class SerializationTest : FunSpec({
         shouldThrow<IllegalArgumentException> {
             json.decodeFromString<Benchmark>(str)
         }
-
     }
 
 })
