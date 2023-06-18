@@ -2,7 +2,6 @@ package uk.dioxic.mgenerate.operators
 
 import org.bson.BsonTimestamp
 import uk.dioxic.mgenerate.annotations.Alias
-import uk.dioxic.mgenerate.annotations.Operator
 import uk.dioxic.mgenerate.extensions.myLocale
 import uk.dioxic.mgenerate.extensions.nextInstant
 import java.time.Instant

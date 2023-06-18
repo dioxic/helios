@@ -2,7 +2,7 @@ package uk.dioxic.mgenerate
 
 import org.reflections.Reflections
 import uk.dioxic.mgenerate.annotations.Alias
-import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.operators.Operator
 import uk.dioxic.mgenerate.operators.fakerOperators
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation

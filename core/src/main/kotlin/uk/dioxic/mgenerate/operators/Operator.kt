@@ -1,3 +1,3 @@
-package uk.dioxic.mgenerate.annotations
+package uk.dioxic.mgenerate.operators
 
 fun interface Operator<T: Any?>: () -> T

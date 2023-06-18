@@ -6,6 +6,7 @@ import io.kotest.matchers.longs.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import uk.dioxic.mgenerate.operators.Operator
 import uk.dioxic.mgenerate.test.benchmark
 import uk.dioxic.mgenerate.test.readResource
 import kotlin.time.Duration.Companion.milliseconds
