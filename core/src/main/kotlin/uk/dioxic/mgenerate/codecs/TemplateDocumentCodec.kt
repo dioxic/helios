@@ -1,5 +1,6 @@
 package uk.dioxic.mgenerate.codecs
 
+import kotlinx.serialization.json.JsonObject
 import org.bson.BsonReader
 import org.bson.BsonValue
 import org.bson.BsonWriter
@@ -34,6 +35,9 @@ class TemplateDocumentCodec(
 
     override fun decode(reader: BsonReader, decoderContext: DecoderContext) =
         Template(documentCodec.decode(reader, decoderContext))
+
+    fun decode(reader: BsonReader, decoderContext: DecoderContext, definition: JsonObject) =
+        Template(documentCodec.decode(reader, decoderContext), definition)
 
     override fun getDocumentId(template: Template): BsonValue =
         documentCodec.getDocumentId(template)

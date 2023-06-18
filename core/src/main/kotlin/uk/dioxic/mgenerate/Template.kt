@@ -1,5 +1,7 @@
 package uk.dioxic.mgenerate
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import org.bson.Document
 import org.bson.UuidRepresentation
 import org.bson.codecs.*
@@ -13,7 +15,8 @@ import uk.dioxic.mgenerate.codecs.OperatorExecutionCodecProvider
 import uk.dioxic.mgenerate.codecs.TemplateDocumentCodec
 import uk.dioxic.mgenerate.codecs.TemplateDocumentCodecProvider
 
-class Template(map: Map<String, *>) : Document(map) {
+@Serializable(TemplateSerializer::class)
+class Template(hydratedMap: Map<String, *>, val definition: JsonObject? = null) : Document(hydratedMap) {
 
     private val defaultJsonWriter = JsonWriterSettings.builder()
         .indent(true)
@@ -46,5 +49,6 @@ class Template(map: Map<String, *>) : Document(map) {
             val bsonReader = JsonReader(json)
             return decoder.decode(bsonReader, DecoderContext.builder().build())
         }
+
     }
 }

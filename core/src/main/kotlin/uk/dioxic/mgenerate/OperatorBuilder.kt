@@ -1,6 +1,6 @@
 package uk.dioxic.mgenerate
 
-import uk.dioxic.mgenerate.annotations.Operator
+import uk.dioxic.mgenerate.operators.Operator
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
