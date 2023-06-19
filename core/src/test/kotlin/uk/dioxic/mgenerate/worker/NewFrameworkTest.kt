@@ -8,7 +8,6 @@ import io.mockk.every
 import io.mockk.mockk
 import org.bson.BsonObjectId
 import uk.dioxic.mgenerate.Template
-import uk.dioxic.mgenerate.test.benchmark
 import uk.dioxic.mgenerate.worker.model.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -18,7 +17,7 @@ class NewFrameworkTest : FunSpec({
         val client = mockk<MongoClient>()
         val collection = mockk<MongoCollection<Template>>()
 
-        val benchmark = benchmark {
+        val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload(
                     rate = PeriodRate(1.seconds, 0.5),

@@ -12,6 +12,7 @@ import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.mgenerate.codecs.OperatorExecutionCodecProvider
 import uk.dioxic.mgenerate.codecs.TemplateDocumentCodecProvider
+import uk.dioxic.mgenerate.serialization.TemplateSerializer
 
 @Serializable(TemplateSerializer::class)
 class Template(map: Map<String, *>, val definition: JsonObject? = null) : Document(map) {

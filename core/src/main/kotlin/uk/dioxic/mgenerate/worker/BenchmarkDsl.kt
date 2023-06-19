@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.test
+package uk.dioxic.mgenerate.worker
 
 import kotlinx.serialization.json.put
 import uk.dioxic.mgenerate.buildTemplate
@@ -18,7 +18,7 @@ val defaultExecutor = InsertOneExecutor(
     template = defaultTemplate
 )
 
-fun benchmark(name: String = "benchmark", init: BenchmarkBuilder.() -> Unit): Benchmark {
+fun buildBenchmark(name: String = "benchmark", init: BenchmarkBuilder.() -> Unit): Benchmark {
     val builder = BenchmarkBuilder(name)
     builder.init()
     return builder.build()
@@ -51,10 +51,10 @@ abstract class StageBuilder(protected val name: String) {
     protected val workloads = mutableListOf<Workload>()
 
     fun rateWorkload(
-        executor: Executor<*> = defaultExecutor,
         name: String? = null,
+        executor: Executor<*> = defaultExecutor,
         count: Long = 1,
-        rate: Rate = Unlimited,
+        rate: Rate = UnlimitedRate,
     ) {
         workloads.add(
             RateWorkload(

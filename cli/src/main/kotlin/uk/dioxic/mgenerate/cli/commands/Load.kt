@@ -18,14 +18,17 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.client.MongoClients
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.put
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.buildTemplate
 import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
-import uk.dioxic.mgenerate.worker.*
-import uk.dioxic.mgenerate.worker.model.Rate
-import uk.dioxic.mgenerate.worker.report.ReportFormat
-import uk.dioxic.mgenerate.worker.report.ReportFormatter
-import uk.dioxic.mgenerate.worker.report.format
+import uk.dioxic.mgenerate.worker.buildBenchmark
+import uk.dioxic.mgenerate.worker.executeBenchmark
+import uk.dioxic.mgenerate.worker.model.CommandExecutor
+import uk.dioxic.mgenerate.worker.model.InsertOneExecutor
+import uk.dioxic.mgenerate.worker.model.TpsRate
+import uk.dioxic.mgenerate.worker.model.UnlimitedRate
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
@@ -66,53 +69,51 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 .build()
         )
 
-        if (!checkConnection(client)) { return }
+        if (!checkConnection(client)) {
+            return
+        }
 
         val amendedBatchSize = min(batchSize, number.toInt())
-        val amendedRate = tps?.div(amendedBatchSize)?.let { Rate.of(it) } ?: Rate.MAX
+        val amendedRate = tps?.div(amendedBatchSize)?.let { TpsRate(it) } ?: UnlimitedRate
 
-        val loadStage = MultiExecutionStage(
-            name = "load stage",
-            workers = workers,
-            workloads = listOf(
-                MongoOldWorkload(
+        val benchmark = buildBenchmark {
+            sequentialStage("main") {
+                if (drop) {
+                    rateWorkload(
+                        name = "drop ${namespaceOptions.collection}",
+                        count = 1,
+                        executor = CommandExecutor(
+                            database = namespaceOptions.database,
+                            command = buildTemplate {
+                                put("drop", namespaceOptions.collection)
+                            }
+                        )
+                    )
+                }
+                rateWorkload(
                     name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
+                    count = number / amendedBatchSize,
                     rate = amendedRate,
-                    executionCount = number / amendedBatchSize,
-                    executor = InsertManyExecutor(
+                    executor = InsertOneExecutor(
                         database = namespaceOptions.database,
                         collection = namespaceOptions.collection,
-                        number = amendedBatchSize,
-                        ordered = ordered,
                         template = template,
-                    ),
-                )
-            ),
-        )
-
-        val stages = if (drop) {
-            arrayOf(
-                SingleExecutionStage(
-                    name = "Drop ${namespaceOptions.collection} collection",
-                    executor = DropExecutor(
-                        database = namespaceOptions.database,
-                        collection = namespaceOptions.collection
+//                        number = amendedBatchSize,
+//                        ordered = ordered,
                     )
-                ), loadStage
-            )
-        } else {
-            arrayOf(loadStage)
+                )
+            }
         }
 
         println("Starting load...")
 
         val duration = runBlocking {
             measureTime {
-                executeStages(*stages)
-                    .format(ReportFormatter.create(ReportFormat.TEXT))
-                    .collect {
-                        print(it)
-                    }
+                executeBenchmark(benchmark, client, workers)
+//                    .format(ReportFormatter.create(ReportFormat.TEXT))
+//                    .collect {
+//                        print(it)
+//                    }
             }
         }
 

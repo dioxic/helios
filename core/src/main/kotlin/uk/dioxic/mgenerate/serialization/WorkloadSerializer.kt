@@ -1,8 +1,11 @@
-package uk.dioxic.mgenerate.worker.model
+package uk.dioxic.mgenerate.serialization
 
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
+import uk.dioxic.mgenerate.worker.model.RateWorkload
+import uk.dioxic.mgenerate.worker.model.WeightedWorkload
+import uk.dioxic.mgenerate.worker.model.Workload
 
 object WorkloadSerializer : JsonContentPolymorphicSerializer<Workload>(Workload::class) {
 

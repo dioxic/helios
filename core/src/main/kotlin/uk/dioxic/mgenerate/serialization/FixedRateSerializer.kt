@@ -1,8 +1,11 @@
-package uk.dioxic.mgenerate.worker.model
+package uk.dioxic.mgenerate.serialization
 
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
+import uk.dioxic.mgenerate.worker.model.FixedRate
+import uk.dioxic.mgenerate.worker.model.PeriodRate
+import uk.dioxic.mgenerate.worker.model.TpsRate
 
 object FixedRateSerializer : JsonContentPolymorphicSerializer<FixedRate>(FixedRate::class) {
 

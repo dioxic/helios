@@ -12,7 +12,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.put
 import uk.dioxic.mgenerate.buildTemplate
 import uk.dioxic.mgenerate.operators.Operator
-import uk.dioxic.mgenerate.test.benchmark
 import uk.dioxic.mgenerate.test.readResource
 import uk.dioxic.mgenerate.worker.model.*
 import kotlin.time.Duration.Companion.milliseconds
@@ -25,7 +24,7 @@ class SerializationTest : FunSpec({
     }
 
     test("can handle 64-bit integer") {
-        val benchmark = benchmark {
+        val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload(
                     count = Long.MAX_VALUE
@@ -40,7 +39,7 @@ class SerializationTest : FunSpec({
     }
 
     test("command executor") {
-        val benchmark = benchmark {
+        val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload(
                     executor = CommandExecutor("myDB", buildTemplate { put("buildInfo", 1) })
@@ -103,7 +102,7 @@ class SerializationTest : FunSpec({
     }
 
     test("basic") {
-        val benchmark = benchmark {
+        val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload()
             }
@@ -112,7 +111,7 @@ class SerializationTest : FunSpec({
                     rate = TpsRate(tps = 500),
                 )
                 rateWorkload(
-                    rate = Unlimited
+                    rate = UnlimitedRate
                 )
                 rateWorkload(
                     rate = RampedRate(
@@ -136,7 +135,7 @@ class SerializationTest : FunSpec({
     }
 
     test("template is deserialized correctly") {
-        val benchmark = benchmark {
+        val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload(
                     count = Long.MAX_VALUE

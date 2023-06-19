@@ -2,6 +2,8 @@ package uk.dioxic.mgenerate.worker.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import uk.dioxic.mgenerate.serialization.FixedRateSerializer
+import uk.dioxic.mgenerate.serialization.RateSerializer
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
@@ -17,7 +19,7 @@ sealed class Rate {
 sealed class FixedRate: Rate()
 
 @Serializable
-object Unlimited : FixedRate() {
+object UnlimitedRate : FixedRate() {
     override fun calculateDelay(state: ExecutionState): Duration = ZERO
 }
 
@@ -53,7 +55,7 @@ data class PeriodRate(
 @SerialName("ramped")
 data class RampedRate(
     val from: FixedRate,
-    val to: FixedRate = Unlimited,
+    val to: FixedRate = UnlimitedRate,
     val rampDuration: Duration
 ) : Rate() {
     override fun calculateDelay(state: ExecutionState): Duration {
