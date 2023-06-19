@@ -2,6 +2,7 @@ package uk.dioxic.mgenerate
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.serialization.json.Json
 import org.bson.Document
 import uk.dioxic.mgenerate.operators.IntOperator
 import uk.dioxic.mgenerate.operators.general.ChooseOperator
@@ -14,7 +15,7 @@ class OperatorJsonDecode: FunSpec({
         val json = readResource("/test.json")
         println("json: $json")
 
-        Template.parse(json).apply {
+        Json.decodeFromString<Template>(json).apply {
             shouldBeInstanceOf<Document>()
             get("color").shouldBeInstanceOf<ChooseOperator>()
             get("height").shouldBeInstanceOf<IntOperator>()
@@ -29,7 +30,7 @@ class OperatorJsonDecode: FunSpec({
         val json = readResource("/test3.json")
         println(json)
 
-        Template.parse(json).apply {
+        Json.decodeFromString<Template>(json).apply {
             shouldBeInstanceOf<Document>()
             get("drivers").shouldBeInstanceOf<PickSetOperator>()
             get("env").shouldBeInstanceOf<ChooseOperator>()

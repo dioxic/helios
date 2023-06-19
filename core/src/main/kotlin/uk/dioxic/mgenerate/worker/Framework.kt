@@ -1,130 +1,54 @@
 package uk.dioxic.mgenerate.worker
 
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
+import arrow.core.NonEmptyList
+import arrow.fx.coroutines.parMap
+import com.mongodb.client.MongoClient
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import org.apache.logging.log4j.kotlin.logger
+import kotlinx.coroutines.flow.map
 import uk.dioxic.mgenerate.extensions.nextElementIndex
-import uk.dioxic.mgenerate.worker.results.*
+import uk.dioxic.mgenerate.worker.model.*
 import kotlin.random.Random
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
+import kotlin.time.measureTime
 
-private val logger = logger("uk.dioxic.mgenerate.worker.Framework")
+@OptIn(ExperimentalTime::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
+fun executeBenchmark(benchmark: Benchmark, client: MongoClient, workers: Int = 4): Flow<FrameworkMessage> = flow {
+    val benchmarkState = benchmark.hydratedState
 
-fun CoroutineScope.executeStages(vararg stages: Stage, tick: Duration = 1.seconds): Flow<OutputResult> = flow {
-    stages.forEach {
-        when (it) {
-            is MultiExecutionStage -> emitAll(executeStage(it, tick))
-            is SingleExecutionStage<*> -> {
-                emit(it.invoke(0))
+    benchmark.stages.forEach { stage ->
+        val stageState = benchmarkState + stage.hydratedState
+
+        when (stage) {
+            is ParallelStage -> TODO()
+            is SequentialStage -> {
+                emit(StageStartMessage(stage))
+                val duration = measureTime {
+                    stage.workloads.forEach { workload ->
+                        produceWork(workload, stageState, client)
+//                            .onStart { emit(WorkloadStartMessage(workload)) }
+//                            .onCompletion { emit(WorkloadCompleteMessage(workload)) }
+                            .parMap(workers) { it.invoke() }
+                            .map { WorkloadProgressMessage(workload, it) }
+                            .collect { emit(it) }
+                    }
+                }
+                emit(StageCompleteMessage(stage, duration))
             }
         }
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-fun CoroutineScope.executeStage(
-    stage: MultiExecutionStage,
-    tick: Duration = 1.seconds
-): Flow<SummarizedResultsBatch> {
-    val workChannel = Channel<Workload<*>>(100)
-    val producerJobs = mutableListOf<Job>()
-
-    // launch producers
-    with(workChannel) {
-        val rateLimitedWorkloads = stage.workloads.filter { it.rate != Rate.MAX && it.executionCount > 0 }
-        val rateUnlimitedWorkloads = stage.workloads.filter { it.rate == Rate.MAX && it.executionCount > 0 }
-
-        if (rateUnlimitedWorkloads.isNotEmpty()) {
-            producerJobs.add(launch(Dispatchers.Default) {
-                logger.trace { "Launching ${rateUnlimitedWorkloads.size} rate unlimited workloads" }
-                produceWork(rateUnlimitedWorkloads, stage.rate)
-            })
-        }
-
-        rateLimitedWorkloads.forEach {
-            producerJobs.add(launch(Dispatchers.Default) {
-                logger.trace { "Launching rate limited workload for ${it.name}" }
-                produceWork(it)
-            })
-        }
-    }
-
-    val resultChannel = resultSummarizerActor()
-
-    // launch processors
-    val deferred = List(stage.workers) {
-        launchProcessor(it, workChannel, resultChannel)
-    }
-
-    // launch a cancellation coroutine if a timeout is specified
-    val timeoutJob = stage.timeout?.let {
-        launch(Dispatchers.Default) {
-            logger.trace { "Launching timeout [$it] coroutine" }
-            delay(it)
-            logger.debug("timeout of $it reached - cancelling producer jobs")
-            producerJobs.forEach { it.cancel() }
-        }
-    }
-
-    // close work channel when producer jobs are finished
-    launch(Dispatchers.Default) {
-        logger.trace("waiting for producer jobs to finish")
-        producerJobs.joinAll()
-        logger.trace("closing work channel")
-        workChannel.close()
-        logger.trace("cancelling timeout job")
-        timeoutJob?.cancel()
-    }
-
-    // close results channel when processor jobs are finished
-    launch(Dispatchers.Default) {
-        logger.trace("waiting for processor jobs to finish")
-        deferred.joinAll()
-        logger.trace("closing results channel")
-        resultChannel.send(CloseAfterNextSummarization)
-    }
-
-    // summarize results and return on a flow
-    return flow {
-        while (!resultChannel.isClosedForSend) {
-            delay(tick)
-            val response = CompletableDeferred<SummarizedResultsBatch>()
-            resultChannel.trySend(GetSummarizedResults(response)).onSuccess {
-                emit(response.await())
-            }
-        }
-    }.flowOn(Dispatchers.Default)
-}
-
-context(Channel<Workload>, CoroutineScope)
-private suspend fun produceWork(workload: Workload) {
-    val startMillis = System.currentTimeMillis()
-    var count = workload.executionCount
-    while (isActive && count > 0) {
-        send(workload)
-        count--
-        workload.rate.delay()
-    }
-}
-
-context(Channel<Workload<*>>, CoroutineScope)
-private suspend fun produceWork(workloads: List<Workload<*>>, rate: Rate) {
-    require(workloads.isNotEmpty())
+fun produceWork(workloads: NonEmptyList<WeightedWorkload>, stageState: State, client: MongoClient): Flow<ExecutionContext> = flow {
     val weights = workloads.map { it.weight }.toMutableList()
-    val counts = workloads.map { it.executionCount }.toMutableList()
-    var weightSum = weights.sum()
+    val counts = workloads.map { it.count }.toMutableList()
 
-    while (isActive && (weightSum > 0)) {
+    var weightSum = weights.sum()
+    while (weightSum > 0) {
         val selection = Random.nextElementIndex(weights, weightSum).let {
-            val count = --counts[it]
+            val count = ++counts[it]
             if (count == 0L) {
                 weights[it] = 0
                 weightSum = weights.sum()
@@ -132,51 +56,16 @@ private suspend fun produceWork(workloads: List<Workload<*>>, rate: Rate) {
             workloads[it]
         }
 
-        send(selection)
-        rate.delay()
+//        emit(selection)
+//        rate.delay()
     }
 }
 
-@OptIn(ObsoleteCoroutinesApi::class, ExperimentalTime::class)
-private fun CoroutineScope.resultSummarizerActor() = actor<SummarizationMessage>(capacity = 100) {
-    logger.trace("Starting result summarizer actor")
-    val resultsMap = mutableMapOf<String, MutableList<TimedResult>>()
-    var lastSummaryTime: TimeMark = TimeSource.Monotonic.markNow()
-    var scheduleToClose = false
-
-    for (msg in channel) {
-        when (msg) {
-            is TimedResult -> {
-                resultsMap.getOrPut(msg.workloadName) { mutableListOf() }
-                    .add(msg)
-            }
-
-            is GetSummarizedResults -> {
-                val summarizationBatch = SummarizedResultsBatch(
-                    duration = lastSummaryTime.elapsedNow(),
-                    results = resultsMap.map { (k, v) -> v.summarize(k) }
-                        .sortedBy { it.workloadName }
-                )
-                lastSummaryTime = TimeSource.Monotonic.markNow()
-                msg.response.complete(summarizationBatch)
-                resultsMap.clear()
-                if (scheduleToClose) {
-                    channel.close()
-                }
-            }
-
-            is CloseAfterNextSummarization -> scheduleToClose = true
-        }
-    }
-}
-
-private fun CoroutineScope.launchProcessor(
-    id: Int,
-    workChannel: ReceiveChannel<Workload<*>>,
-    resultChannel: SendChannel<SummarizationMessage>
-) = launch(Dispatchers.IO) {
-    logger.trace { "Launching work processor $id" }
-    for (work in workChannel) {
-        resultChannel.send(work.invoke(id))
+fun produceWork(workload: Workload, stageState: State, client: MongoClient): Flow<ExecutionContext> = flow {
+    var context = workload.createContext(client, stageState)
+    for (i in 1..workload.count) {
+        context = context.withState(context.state.copy(executionCount = i))
+        emit(context)
+        delay(context)
     }
 }

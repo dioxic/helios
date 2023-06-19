@@ -1,16 +1,20 @@
 import uk.dioxic.gradle.libs
 
-@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
     `kotlin-conventions`
     `with-docs`
 }
 
 dependencies {
+    ksp(libs.arrow.optics.ksp.plugin)
     implementation(libs.bson)
     implementation(libs.commons.math)
     implementation(libs.mongodb.sync)
+    implementation(libs.arrow.core)
+    implementation(libs.arrow.optics)
+    implementation(libs.arrow.fx.coroutines)
     implementation(libs.kotlin.datetime)
     implementation(libs.kotlin.coroutines.core)
     implementation(libs.kotlin.serialization.core)

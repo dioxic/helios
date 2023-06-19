@@ -12,6 +12,7 @@ import com.github.ajalt.clikt.parameters.types.defaultStdout
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.outputStream
+import kotlinx.serialization.json.Json
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.cli.enums.OutputType
 import uk.dioxic.mgenerate.cli.extensions.writeJson
@@ -32,7 +33,7 @@ class Generate : CliktCommand(help = "Generate data and output to a file or stdo
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
-    ).convert { Template.parse(it.readText()) }
+    ).convert { Json.decodeFromString<Template>(it.readText()) }
 
     override fun run() {
         outputStream.bufferedWriter().use {

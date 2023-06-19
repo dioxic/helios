@@ -19,6 +19,8 @@ dependencies {
     implementation(libs.mongodb.sync)
     implementation(libs.bundles.logging)
     implementation(libs.kotlin.coroutines.core)
+    implementation(libs.kotlin.serialization.json)
+    implementation(libs.kotlin.serialization.core)
     implementation(libs.clikt)
 }
 

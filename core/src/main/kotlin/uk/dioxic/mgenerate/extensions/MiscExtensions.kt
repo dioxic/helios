@@ -5,15 +5,12 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import uk.dioxic.mgenerate.worker.Named
-import uk.dioxic.mgenerate.worker.Rate
 import uk.dioxic.mgenerate.worker.results.*
 import java.util.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 
 val myLocale: Locale = Locale.ENGLISH
-
-inline val Int.tps get() = Rate.of(this)
 
 fun Iterable<Number>.average(): Double {
     var sum: Double = 0.0

@@ -17,10 +17,12 @@ import com.github.ajalt.clikt.parameters.types.long
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.MongoClients
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
 import uk.dioxic.mgenerate.worker.*
+import uk.dioxic.mgenerate.worker.model.Rate
 import uk.dioxic.mgenerate.worker.report.ReportFormat
 import uk.dioxic.mgenerate.worker.report.ReportFormatter
 import uk.dioxic.mgenerate.worker.report.format
@@ -51,7 +53,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
-    ).convert { Template.parse(it.readText()) }
+    ).convert { Json.decodeFromString<Template>(it.readText()) }
 
     @OptIn(ExperimentalTime::class)
     override fun run() {
@@ -73,12 +75,11 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
             name = "load stage",
             workers = workers,
             workloads = listOf(
-                Workload(
+                MongoOldWorkload(
                     name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
                     rate = amendedRate,
                     executionCount = number / amendedBatchSize,
                     executor = InsertManyExecutor(
-                        client = client,
                         database = namespaceOptions.database,
                         collection = namespaceOptions.collection,
                         number = amendedBatchSize,
@@ -94,8 +95,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 SingleExecutionStage(
                     name = "Drop ${namespaceOptions.collection} collection",
                     executor = DropExecutor(
-                        client = client,
-                        db = namespaceOptions.database,
+                        database = namespaceOptions.database,
                         collection = namespaceOptions.collection
                     )
                 ), loadStage

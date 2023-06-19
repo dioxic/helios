@@ -9,14 +9,12 @@ import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.codecs.jsr310.Jsr310CodecProvider
 import org.bson.json.JsonMode
-import org.bson.json.JsonReader
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.mgenerate.codecs.OperatorExecutionCodecProvider
-import uk.dioxic.mgenerate.codecs.TemplateDocumentCodec
 import uk.dioxic.mgenerate.codecs.TemplateDocumentCodecProvider
 
 @Serializable(TemplateSerializer::class)
-class Template(hydratedMap: Map<String, *>, val definition: JsonObject? = null) : Document(hydratedMap) {
+class Template(map: Map<String, *>, val definition: JsonObject? = null) : Document(map) {
 
     private val defaultJsonWriter = JsonWriterSettings.builder()
         .indent(true)
@@ -42,13 +40,7 @@ class Template(hydratedMap: Map<String, *>, val definition: JsonObject? = null) 
             UuidRepresentation.STANDARD
         )[Document::class.java]
 
-        fun parse(json: String) =
-            parse(json, TemplateDocumentCodec(defaultRegistry))
-
-        fun parse(json: String, decoder: Decoder<Template>): Template {
-            val bsonReader = JsonReader(json)
-            return decoder.decode(bsonReader, DecoderContext.builder().build())
-        }
+        val EMPTY = Template(emptyMap<String, Any>(), JsonObject(mapOf()))
 
     }
 }
