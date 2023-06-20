@@ -1,8 +1,9 @@
 package uk.dioxic.mgenerate.template.operators.general
 
+import uk.dioxic.mgenerate.template.annotations.Alias
 import uk.dioxic.mgenerate.template.operators.Operator
 
-@uk.dioxic.mgenerate.template.annotations.Alias("pick")
+@Alias("pick")
 class PickOperator(
     val array: () -> List<Any>,
     val element: () -> Int = { 0 },

@@ -3,7 +3,7 @@ package uk.dioxic.mgenerate.execute.results
 import uk.dioxic.mgenerate.execute.model.Workload
 import kotlin.time.Duration
 
-sealed interface TimedResult : SummarizationMessage, OutputResult {
+sealed interface TimedResult {
     val workload: Workload
     val value: Result
     val duration: Duration

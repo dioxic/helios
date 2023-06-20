@@ -1,5 +1,3 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
-
 package uk.dioxic.mgenerate.execute.results
 
 import org.bson.Document

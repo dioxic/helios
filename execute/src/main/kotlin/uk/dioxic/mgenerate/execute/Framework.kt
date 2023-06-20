@@ -1,7 +1,6 @@
 package uk.dioxic.mgenerate.execute
 
 import arrow.fx.coroutines.parMapUnordered
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -18,7 +17,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
-@OptIn(ExperimentalTime::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalTime::class, FlowPreview::class)
 fun executeBenchmark(benchmark: Benchmark, registry: ResourceRegistry, workers: Int = 4): Flow<FrameworkMessage> =
     flow {
 
