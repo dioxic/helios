@@ -13,10 +13,10 @@ import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.outputStream
 import kotlinx.serialization.json.Json
-import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.cli.enums.OutputType
 import uk.dioxic.mgenerate.cli.extensions.writeJson
-import uk.dioxic.mgenerate.codecs.TemplateDocumentCodec
+import uk.dioxic.mgenerate.template.Template
+import uk.dioxic.mgenerate.template.codecs.TemplateDocumentCodec
 
 class Generate : CliktCommand(help = "Generate data and output to a file or stdout") {
     init {
