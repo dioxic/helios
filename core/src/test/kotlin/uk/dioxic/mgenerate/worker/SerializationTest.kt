@@ -13,6 +13,7 @@ import kotlinx.serialization.json.put
 import uk.dioxic.mgenerate.buildTemplate
 import uk.dioxic.mgenerate.operators.Operator
 import uk.dioxic.mgenerate.test.defaultExecutor
+import uk.dioxic.mgenerate.test.defaultMongoExecutor
 import uk.dioxic.mgenerate.test.readResource
 import uk.dioxic.mgenerate.worker.model.*
 import kotlin.time.Duration.Companion.milliseconds
@@ -146,7 +147,7 @@ class SerializationTest : FunSpec({
         val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload(
-                    executor = defaultExecutor,
+                    executor = defaultMongoExecutor,
                     count = Long.MAX_VALUE
                 )
             }
