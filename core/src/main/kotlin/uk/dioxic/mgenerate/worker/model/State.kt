@@ -3,6 +3,7 @@ package uk.dioxic.mgenerate.worker.model
 import arrow.optics.optics
 import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.worker.Stateful
 
 @optics
 data class State(
@@ -14,15 +15,6 @@ data class State(
             putAll(other.custom)
         })
 
-    companion object
-}
-
-@optics
-data class ExecutionState(
-    val custom: Map<String, Any?>,
-    val executionCount: Long,
-    val startTimeMillis: Long,
-) {
     companion object
 }
 
@@ -38,11 +30,6 @@ private fun hydrateMap(map: Map<String, Any?>): Map<String, Any?> =
         }
     }
 
-val Workload.hydratedState
-    get() = State(state.hydrate())
+fun combine(vararg stateful: Stateful) {
 
-val Stage.hydratedState
-    get() = State(state.hydrate())
-
-val Benchmark.hydratedState
-    get() = State(state.hydrate())
+}

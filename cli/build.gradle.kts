@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     implementation(project(":core"))
+    implementation(libs.arrow.fx.coroutines)
     implementation(libs.bson)
     implementation(libs.mongodb.sync)
     implementation(libs.bundles.logging)

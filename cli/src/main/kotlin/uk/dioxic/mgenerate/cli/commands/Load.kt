@@ -1,5 +1,6 @@
 package uk.dioxic.mgenerate.cli.commands
 
+import arrow.fx.coroutines.resourceScope
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.output.CliktHelpFormatter
@@ -15,7 +16,6 @@ import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
 import com.mongodb.MongoClientSettings
-import com.mongodb.client.MongoClients
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.put
@@ -23,6 +23,9 @@ import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.buildTemplate
 import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
+import uk.dioxic.mgenerate.resources.MongoResource
+import uk.dioxic.mgenerate.resources.ResourceRegistry
+import uk.dioxic.mgenerate.resources.mongoClient
 import uk.dioxic.mgenerate.worker.buildBenchmark
 import uk.dioxic.mgenerate.worker.executeBenchmark
 import uk.dioxic.mgenerate.worker.model.CommandExecutor
@@ -61,17 +64,11 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
     @OptIn(ExperimentalTime::class)
     override fun run() {
 
-        val client = MongoClients.create(
-            MongoClientSettings.builder()
-                .applyAuthOptions(authOptions)
-                .applyConnectionOptions(connOptions)
-                .codecRegistry(Template.defaultRegistry)
-                .build()
-        )
-
-        if (!checkConnection(client)) {
-            return
-        }
+        val mcs = MongoClientSettings.builder()
+            .applyAuthOptions(authOptions)
+            .applyConnectionOptions(connOptions)
+            .codecRegistry(Template.defaultRegistry)
+            .build()
 
         val amendedBatchSize = min(batchSize, number.toInt())
         val amendedRate = tps?.div(amendedBatchSize)?.let { TpsRate(it) } ?: UnlimitedRate
@@ -107,13 +104,22 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
 
         println("Starting load...")
 
+
         val duration = runBlocking {
-            measureTime {
-                executeBenchmark(benchmark, client, workers)
-//                    .format(ReportFormatter.create(ReportFormat.TEXT))
-//                    .collect {
-//                        print(it)
-//                    }
+            resourceScope {
+                val client = mongoClient(mcs)
+                val registry = ResourceRegistry(MongoResource(client))
+
+                if (!checkConnection(client)) {
+                    error("Can't connect!")
+                }
+                measureTime {
+                    executeBenchmark(benchmark, registry, workers)
+    //                    .format(ReportFormatter.create(ReportFormat.TEXT))
+    //                    .collect {
+    //                        print(it)
+    //                    }
+                }
             }
         }
 

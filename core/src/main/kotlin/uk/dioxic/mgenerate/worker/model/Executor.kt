@@ -3,23 +3,33 @@ package uk.dioxic.mgenerate.worker.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.resources.MongoResource
+import uk.dioxic.mgenerate.resources.ResourceRegistry
 import uk.dioxic.mgenerate.worker.results.CommandResult
 import uk.dioxic.mgenerate.worker.results.Result
 import uk.dioxic.mgenerate.worker.standardize
 
 @Serializable
-sealed interface Executor<T: ExecutionContext> {
-    fun execute(context: T): Result
+sealed interface Executor {
+    fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry): Result
 }
 
-sealed interface CollectionExecutor<TDocument> : Executor<CollectionExecutionContext<TDocument>> {
-    val database: String
-    val collection: String
-    val documentClass: Class<TDocument>
+@Serializable
+sealed class CollectionExecutor : Executor {
+    abstract val database: String
+    abstract val collection: String
+
+    inline fun <reified TDocument> getCollection(resourceRegistry: ResourceRegistry) =
+        resourceRegistry[MongoResource::class].getCollection<TDocument>(database, collection)
+
 }
 
-sealed interface DatabaseExecutor : Executor<DatabaseExecutionContext> {
-    val database: String
+@Serializable
+sealed class DatabaseExecutor : Executor {
+    abstract val database: String
+
+    fun getDatabase(resourceRegistry: ResourceRegistry) =
+        resourceRegistry[MongoResource::class].getDatabase(database)
 }
 
 @Serializable
@@ -27,9 +37,9 @@ sealed interface DatabaseExecutor : Executor<DatabaseExecutionContext> {
 data class CommandExecutor(
     override val database: String,
     val command: Template
-) : DatabaseExecutor {
-    override fun execute(context: DatabaseExecutionContext) = CommandResult(
-        context.mongoDatabase.runCommand(command)
+) : DatabaseExecutor() {
+    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) = CommandResult(
+        getDatabase(resourceRegistry).runCommand(command)
     )
 }
 
@@ -39,10 +49,8 @@ data class InsertOneExecutor(
     override val database: String,
     override val collection: String,
     val template: Template
-) : CollectionExecutor<Template> {
-    override fun execute(context: CollectionExecutionContext<Template>) =
-        context.mongoCollection.insertOne(template).standardize()
+) : CollectionExecutor() {
+    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) =
+        getCollection<Template>(resourceRegistry).insertOne(template).standardize()
 
-    override val documentClass: Class<Template>
-        get() = Template::class.java
 }

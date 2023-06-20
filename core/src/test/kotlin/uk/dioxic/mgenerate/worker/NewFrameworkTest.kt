@@ -8,6 +8,8 @@ import io.mockk.every
 import io.mockk.mockk
 import org.bson.BsonObjectId
 import uk.dioxic.mgenerate.Template
+import uk.dioxic.mgenerate.resources.MongoResource
+import uk.dioxic.mgenerate.resources.ResourceRegistry
 import uk.dioxic.mgenerate.worker.model.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -35,7 +37,9 @@ class NewFrameworkTest : FunSpec({
 
         every { collection.insertOne(any()) } returns InsertOneResult.acknowledged(BsonObjectId())
 
-        executeBenchmark(benchmark, client).collect {
+        val registry = ResourceRegistry(MongoResource(client))
+
+        executeBenchmark(benchmark, registry).collect {
             println(when(it) {
                 is StageStartMessage -> "stage start"
                 is StageCompleteMessage -> "stage complete"

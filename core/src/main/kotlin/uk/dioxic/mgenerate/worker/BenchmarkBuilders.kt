@@ -47,12 +47,12 @@ class BenchmarkBuilder(private val name: String) {
         Benchmark(name = name, stages = stages)
 }
 
-abstract class StageBuilder(protected val name: String) {
-    protected val workloads = mutableListOf<Workload>()
+class SequentialStageBuilder(private val name: String) {
+    private val workloads = mutableListOf<RateWorkload>()
 
     fun rateWorkload(
         name: String? = null,
-        executor: Executor<*> = defaultExecutor,
+        executor: Executor = defaultExecutor,
         count: Long = 1,
         rate: Rate = UnlimitedRate,
     ) {
@@ -66,21 +66,34 @@ abstract class StageBuilder(protected val name: String) {
         )
     }
 
-    abstract fun build(): Stage
-}
-
-class SequentialStageBuilder(name: String) : StageBuilder(name) {
-    override fun build() =
+    fun build() =
         SequentialStage(name = name, workloads = workloads)
 }
 
 class ParallelStageBuilder(
-    name: String,
+    private val name: String,
     private val timeout: Duration
-) : StageBuilder(name) {
+) {
+    private val workloads = mutableListOf<Workload>()
+
+    fun rateWorkload(
+        name: String? = null,
+        executor: Executor = defaultExecutor,
+        count: Long = 1,
+        rate: Rate = UnlimitedRate,
+    ) {
+        workloads.add(
+            RateWorkload(
+                name = name ?: "workload${workloads.size}",
+                count = count,
+                rate = rate,
+                executor = executor
+            )
+        )
+    }
 
     fun weightedWorkload(
-        executor: Executor<*> = defaultExecutor,
+        executor: Executor = defaultExecutor,
         name: String? = null,
         weight: Int = 1,
         count: Long = 1,
@@ -95,7 +108,7 @@ class ParallelStageBuilder(
         )
     }
 
-    override fun build() =
+    fun build() =
         ParallelStage(name = name, timeout = timeout, workloads = workloads)
 }
 

@@ -55,7 +55,7 @@ class SerializationTest : FunSpec({
     test("polymorphic deserialization works without type") {
         val str = """
         {
-            "type": "sequential",
+            "type": "parallel",
             "name": "stage0",
             "workloads": [
                 {
@@ -89,7 +89,7 @@ class SerializationTest : FunSpec({
 
         val stage = json.decodeFromString<Stage>(str)
 
-        stage.shouldBeInstanceOf<SequentialStage>()
+        stage.shouldBeInstanceOf<ParallelStage>()
             .workloads.should {
                 it.shouldHaveSize(2)
                 it[0].shouldBeInstanceOf<WeightedWorkload>()

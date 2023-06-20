@@ -4,7 +4,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
-import uk.dioxic.mgenerate.worker.Named
+import uk.dioxic.mgenerate.worker.model.Workload
 import uk.dioxic.mgenerate.worker.results.*
 import java.util.*
 import kotlin.time.ExperimentalTime
@@ -26,24 +26,13 @@ fun Iterable<Number>.average(): Double {
 }
 
 @OptIn(ExperimentalTime::class)
-inline fun Named.measureTimedResult(block: () -> Result): TimedResult {
+inline fun measureTimedResult(workload: Workload, block: () -> Result): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
     return when (val value = block()) {
-        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), name)
-        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), name)
-        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), name)
-        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), name)
-    }
-}
-
-@OptIn(ExperimentalTime::class)
-inline fun measureTimedResult(name: String, block: () -> Result): TimedResult {
-    val mark = TimeSource.Monotonic.markNow()
-    return when (val value = block()) {
-        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), name)
-        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), name)
-        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), name)
-        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), name)
+        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), workload)
+        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), workload)
+        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), workload)
+        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), workload)
     }
 }
 
