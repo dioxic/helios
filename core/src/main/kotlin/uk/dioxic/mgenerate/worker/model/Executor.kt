@@ -6,6 +6,7 @@ import uk.dioxic.mgenerate.Template
 import uk.dioxic.mgenerate.resources.MongoResource
 import uk.dioxic.mgenerate.resources.ResourceRegistry
 import uk.dioxic.mgenerate.worker.results.CommandResult
+import uk.dioxic.mgenerate.worker.results.MessageResult
 import uk.dioxic.mgenerate.worker.results.Result
 import uk.dioxic.mgenerate.worker.standardize
 
@@ -30,6 +31,15 @@ sealed class DatabaseExecutor : Executor {
 
     fun getDatabase(resourceRegistry: ResourceRegistry) =
         resourceRegistry[MongoResource::class].getDatabase(database)
+}
+
+@Serializable
+data class MessageExecutor(
+    val message: String
+): Executor {
+    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) =
+        MessageResult(message)
+
 }
 
 @Serializable

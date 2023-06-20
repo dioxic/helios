@@ -24,5 +24,5 @@ data class StageCompleteMessage(
 
 data class WorkloadProgressMessage(
     val workload: Workload,
-    val message: TimedResult
+    val result: TimedResult
 ) : FrameworkMessage

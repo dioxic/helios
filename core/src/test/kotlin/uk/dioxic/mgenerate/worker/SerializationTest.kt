@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.put
 import uk.dioxic.mgenerate.buildTemplate
 import uk.dioxic.mgenerate.operators.Operator
+import uk.dioxic.mgenerate.test.defaultExecutor
 import uk.dioxic.mgenerate.test.readResource
 import uk.dioxic.mgenerate.worker.model.*
 import kotlin.time.Duration.Companion.milliseconds
@@ -27,6 +28,7 @@ class SerializationTest : FunSpec({
         val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload(
+                    executor = defaultExecutor,
                     count = Long.MAX_VALUE
                 )
             }
@@ -104,16 +106,21 @@ class SerializationTest : FunSpec({
     test("basic") {
         val benchmark = buildBenchmark {
             sequentialStage {
-                rateWorkload()
+                rateWorkload(
+                    executor = defaultExecutor,
+                )
             }
             parallelStage(timeout = 5.milliseconds) {
                 rateWorkload(
+                    executor = defaultExecutor,
                     rate = TpsRate(tps = 500),
                 )
                 rateWorkload(
+                    executor = defaultExecutor,
                     rate = UnlimitedRate
                 )
                 rateWorkload(
+                    executor = defaultExecutor,
                     rate = RampedRate(
                         from = PeriodRate(period = 1.seconds),
                         to = TpsRate(tps = 9000),
@@ -121,6 +128,7 @@ class SerializationTest : FunSpec({
                     )
                 )
                 weightedWorkload(
+                    executor = defaultExecutor,
                     weight = 10
                 )
             }
@@ -138,6 +146,7 @@ class SerializationTest : FunSpec({
         val benchmark = buildBenchmark {
             sequentialStage {
                 rateWorkload(
+                    executor = defaultExecutor,
                     count = Long.MAX_VALUE
                 )
             }
