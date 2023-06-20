@@ -1,22 +1,7 @@
 package uk.dioxic.mgenerate.worker
 
-import kotlinx.serialization.json.put
-import uk.dioxic.mgenerate.buildTemplate
 import uk.dioxic.mgenerate.worker.model.*
 import kotlin.time.Duration
-
-val defaultTemplate = buildTemplate {
-    put("name", "\$name")
-//    put("date", LocalDateTime.now())
-//    put("uuid", UUID.randomUUID())
-//    put("long", Long.MAX_VALUE)
-}
-
-val defaultExecutor = InsertOneExecutor(
-    database = "myDB",
-    collection = "myCollection",
-    template = defaultTemplate
-)
 
 fun buildBenchmark(name: String = "benchmark", init: BenchmarkBuilder.() -> Unit): Benchmark {
     val builder = BenchmarkBuilder(name)
@@ -52,7 +37,7 @@ class SequentialStageBuilder(private val name: String) {
 
     fun rateWorkload(
         name: String? = null,
-        executor: Executor = defaultExecutor,
+        executor: Executor,
         count: Long = 1,
         rate: Rate = UnlimitedRate,
     ) {
@@ -78,7 +63,7 @@ class ParallelStageBuilder(
 
     fun rateWorkload(
         name: String? = null,
-        executor: Executor = defaultExecutor,
+        executor: Executor,
         count: Long = 1,
         rate: Rate = UnlimitedRate,
     ) {
@@ -93,7 +78,7 @@ class ParallelStageBuilder(
     }
 
     fun weightedWorkload(
-        executor: Executor = defaultExecutor,
+        executor: Executor,
         name: String? = null,
         weight: Int = 1,
         count: Long = 1,
@@ -111,18 +96,3 @@ class ParallelStageBuilder(
     fun build() =
         ParallelStage(name = name, timeout = timeout, workloads = workloads)
 }
-
-//class WorkloadBuilder(val name: String, val weight: Int, val rate: Rate, val count: Long) {
-//    var executor: Executor? = null
-//
-//    fun insertOne(database: String, collection: String, template: String) {
-//        executor = InsertOneExecutor(database, collection, template)
-//    }
-//
-//    fun build(): Workload {
-//        executor.let {
-//            require(it != null) { "executor not set!" }
-//            return Workload(name, it)
-//        }
-//    }
-//}
