@@ -104,7 +104,7 @@ fun produceRated(
 }
 
 suspend fun delay(context: ExecutionContext) {
-    val delay = context.rate.calculateDelay(context.state)
+    val delay = context.rate.calculateDelay(context)
     when {
         delay == Duration.ZERO -> return
         delay < 100.milliseconds -> {
