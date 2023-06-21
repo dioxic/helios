@@ -73,7 +73,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                 }
 
                 is TimedResult -> {
-                    emit("\n${it.workload} completed in ${it.duration}\n")
+                    emit("\n${it.context} completed in ${it.duration}\n")
                 }
             }
         }

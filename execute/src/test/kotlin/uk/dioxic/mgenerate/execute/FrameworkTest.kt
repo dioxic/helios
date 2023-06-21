@@ -2,11 +2,11 @@ package uk.dioxic.mgenerate.execute
 
 import io.kotest.core.spec.style.FunSpec
 import uk.dioxic.mgenerate.execute.model.PeriodRate
+import uk.dioxic.mgenerate.execute.model.ProgressMessage
 import uk.dioxic.mgenerate.execute.model.StageCompleteMessage
 import uk.dioxic.mgenerate.execute.model.StageStartMessage
-import uk.dioxic.mgenerate.execute.model.WorkloadProgressMessage
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 
 class FrameworkTest : FunSpec({
 
@@ -15,7 +15,7 @@ class FrameworkTest : FunSpec({
             sequentialStage {
                 rateWorkload(
                     executor = defaultExecutor,
-                    rate = PeriodRate(1.seconds, 0.5),
+                    rate = PeriodRate(100.milliseconds, 0.5),
                     count = 5,
                 )
                 rateWorkload(
@@ -31,7 +31,7 @@ class FrameworkTest : FunSpec({
             println(when(it) {
                 is StageStartMessage -> "stage start"
                 is StageCompleteMessage -> "stage complete"
-                is WorkloadProgressMessage -> it.result.value
+                is ProgressMessage -> it.result
                 else -> error("unexpected message")
             })
         }

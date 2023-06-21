@@ -1,9 +1,10 @@
 package uk.dioxic.mgenerate.execute.results
 
+import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import kotlin.time.Duration
 
 sealed interface SummarizedResult {
-    val workloadName: String
+    val context: ExecutionContext
     val latencies: SummarizedLatencies
 }
 
@@ -16,7 +17,7 @@ data class SummarizedLatencies(
 )
 
 data class SummarizedWriteResult(
-    override val workloadName: String,
+    override val context: ExecutionContext,
     val insertCount: Long = 0,
     val matchedCount: Long = 0,
     val modifiedCount: Long = 0,
@@ -26,20 +27,20 @@ data class SummarizedWriteResult(
 ) : SummarizedResult
 
 data class SummarizedReadResult(
-    override val workloadName: String,
+    override val context: ExecutionContext,
     val docReturned: Int = 0,
     val queryCount: Int = 0,
     override val latencies: SummarizedLatencies
 ) : SummarizedResult
 
 data class SummarizedMessageResult(
-    override val workloadName: String,
+    override val context: ExecutionContext,
     val msgCount: Int = 0,
     override val latencies: SummarizedLatencies
 ) : SummarizedResult
 
 data class SummarizedCommandResult(
-    override val workloadName: String,
+    override val context: ExecutionContext,
     val successes: Int = 0,
     val failures: Int = 0,
     override val latencies: SummarizedLatencies

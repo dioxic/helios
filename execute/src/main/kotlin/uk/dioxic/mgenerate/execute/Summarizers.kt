@@ -1,6 +1,7 @@
 package uk.dioxic.mgenerate.execute
 
 import org.apache.commons.math3.stat.StatUtils
+import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import uk.dioxic.mgenerate.execute.results.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -26,9 +27,9 @@ fun List<Double>.percentile(percentile: Double) =
         .toDuration(DurationUnit.MILLISECONDS)
 
 
-fun List<TimedWriteResult>.summarize(workloadName: String) =
+fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
     SummarizedWriteResult(
-        workloadName = workloadName,
+        context = context,
         insertCount = sumOf { it.value.insertCount },
         matchedCount = sumOf { it.value.matchedCount },
         modifiedCount = sumOf { it.value.modifiedCount },
@@ -37,34 +38,34 @@ fun List<TimedWriteResult>.summarize(workloadName: String) =
         latencies = map { it.duration }.summarize()
     )
 
-fun List<TimedReadResult>.summarize(workloadName: String) =
+fun List<TimedReadResult>.summarize(context: ExecutionContext) =
     SummarizedReadResult(
-        workloadName = workloadName,
+        context = context,
         docReturned = sumOf { it.value.docReturned },
         queryCount = size,
         latencies = map { it.duration }.summarize()
     )
 
-fun List<TimedMessageResult>.summarize(workloadName: String) =
+fun List<TimedMessageResult>.summarize(context: ExecutionContext) =
     SummarizedMessageResult(
-        workloadName = workloadName,
+        context = context,
         msgCount = size,
         latencies = map { it.duration }.summarize()
     )
 
-fun List<TimedCommandResult>.summarize(workloadName: String) =
+fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
     SummarizedCommandResult(
-        workloadName = workloadName,
+        context = context,
         successes = count { it.value.success },
         failures = count { !it.value.success },
         latencies = map { it.duration }.summarize()
     )
 
 @Suppress("UNCHECKED_CAST")
-fun List<TimedResult>.summarize(workloadName: String): SummarizedResult =
+fun List<TimedResult>.summarize(context: ExecutionContext): SummarizedResult =
     when (first()) {
-        is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(workloadName)
-        is TimedReadResult -> (this as List<TimedReadResult>).summarize(workloadName)
-        is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(workloadName)
-        is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(workloadName)
+        is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(context)
+        is TimedReadResult -> (this as List<TimedReadResult>).summarize(context)
+        is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(context)
+        is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(context)
     }

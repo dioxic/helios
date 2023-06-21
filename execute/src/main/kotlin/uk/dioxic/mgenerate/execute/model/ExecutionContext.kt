@@ -12,7 +12,7 @@ data class ExecutionContext(
     val executionCount: Long = 0,
     val startTimeMillis: Long = System.currentTimeMillis()
 ) {
-    fun invoke(resourceRegistry: ResourceRegistry): TimedResult = measureTimedResult(workload) {
+    fun invoke(resourceRegistry: ResourceRegistry): TimedResult = measureTimedResult(this) {
         executor.execute(this, resourceRegistry)
     }
 }

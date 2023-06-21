@@ -1,6 +1,6 @@
 package uk.dioxic.mgenerate.execute.model
 
-import uk.dioxic.mgenerate.execute.results.TimedResult
+import uk.dioxic.mgenerate.execute.results.OutputResult
 import kotlin.time.Duration
 
 sealed interface FrameworkMessage
@@ -22,7 +22,7 @@ data class StageCompleteMessage(
     val duration: Duration
 ) : FrameworkMessage
 
-data class WorkloadProgressMessage(
-    val workload: Workload,
-    val result: TimedResult
+data class ProgressMessage(
+    val stage: Stage,
+    val result: OutputResult
 ) : FrameworkMessage

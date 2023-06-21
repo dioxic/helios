@@ -13,35 +13,37 @@ import uk.dioxic.mgenerate.template.extensions.nextElementIndex
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
 @OptIn(ExperimentalTime::class, FlowPreview::class)
-fun executeBenchmark(benchmark: Benchmark, registry: ResourceRegistry, workers: Int = 4): Flow<FrameworkMessage> =
+fun executeBenchmark(
+    benchmark: Benchmark,
+    registry: ResourceRegistry,
+    workers: Int = 4,
+    interval: Duration = 1.seconds,
+): Flow<FrameworkMessage> =
     flow {
-
         benchmark.stages.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 when (stage) {
                     is SequentialStage -> {
-                        stage.workloads
-                            .forEach { workload ->
-                                produceRated(benchmark, stage, workload)
-                                    .parMapUnordered(workers) { it.invoke(registry) }
-                                    .map { WorkloadProgressMessage(workload, it) }
-                                    .collect { emit(it) }
-                            }
+                        stage.workloads.forEach { workload ->
+                            produceRated(benchmark, stage, workload)
+                                .parMapUnordered(workers) { it.invoke(registry) }
+                                .summarize(interval)
+                                .map { ProgressMessage(stage, it) }
+                                .collect { emit(it) }
+                        }
                     }
 
                     is ParallelStage -> {
                         buildList {
-                            // weighted workloads
                             addAll(stage.workloads.filterIsInstance<RateWorkload>()
                                 .map { produceRated(benchmark, stage, it) })
-
-                            // rate workloads
                             add(
                                 produceWeighted(
                                     benchmark = benchmark,
@@ -51,7 +53,8 @@ fun executeBenchmark(benchmark: Benchmark, registry: ResourceRegistry, workers: 
                             )
                         }.merge()
                             .parMapUnordered(workers) { it.invoke(registry) }
-                            .map { WorkloadProgressMessage(it.workload, it) }
+                            .summarize(interval)
+                            .map { ProgressMessage(stage, it) }
                             .collect { emit(it) }
                     }
                 }
@@ -113,12 +116,12 @@ suspend fun delay(context: ExecutionContext) {
 }
 
 @OptIn(ExperimentalTime::class)
-inline fun measureTimedResult(workload: Workload, block: () -> Result): TimedResult {
+inline fun measureTimedResult(context: ExecutionContext, block: () -> Result): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
     return when (val value = block()) {
-        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), workload)
-        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), workload)
-        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), workload)
-        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), workload)
+        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), context)
+        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), context)
+        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), context)
+        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), context)
     }
 }

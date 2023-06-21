@@ -1,8 +1,7 @@
 package uk.dioxic.mgenerate.execute
 
 import kotlinx.serialization.json.put
-import uk.dioxic.mgenerate.execute.model.InsertOneExecutor
-import uk.dioxic.mgenerate.execute.model.MessageExecutor
+import uk.dioxic.mgenerate.execute.model.*
 import uk.dioxic.mgenerate.template.buildTemplate
 import uk.dioxic.mgenerate.template.put
 import java.time.LocalDateTime
@@ -16,6 +15,30 @@ val defaultTemplate = buildTemplate {
 }
 
 val defaultExecutor = MessageExecutor("hello world!")
+
+val defaultWorkload = RateWorkload(
+    name = "workload0",
+    executor = defaultExecutor
+)
+
+val defaultParallelStage = ParallelStage(
+    name= "stage0",
+    workloads = listOf(defaultWorkload)
+)
+
+val defaultSequentialStage = SequentialStage(
+    name= "stage0",
+    workloads = listOf(defaultWorkload)
+)
+
+val defaultStage = defaultSequentialStage
+
+val defaultBenchmark = Benchmark(
+    name = "benchmark0",
+    stages = listOf(defaultStage)
+)
+
+val defaultExecutionContext = defaultWorkload.createContext(defaultBenchmark, defaultStage)
 
 val defaultMongoExecutor = InsertOneExecutor(
     database = "myDB",
