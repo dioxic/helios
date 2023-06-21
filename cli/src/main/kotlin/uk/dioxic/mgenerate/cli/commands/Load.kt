@@ -1,5 +1,6 @@
 package uk.dioxic.mgenerate.cli.commands
 
+import arrow.fx.coroutines.resourceScope
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.output.CliktHelpFormatter
@@ -15,15 +16,22 @@ import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
 import com.mongodb.MongoClientSettings
-import com.mongodb.client.MongoClients
 import kotlinx.coroutines.runBlocking
-import uk.dioxic.mgenerate.Template
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.put
 import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
-import uk.dioxic.mgenerate.worker.*
-import uk.dioxic.mgenerate.worker.report.ReportFormat
-import uk.dioxic.mgenerate.worker.report.ReportFormatter
-import uk.dioxic.mgenerate.worker.report.format
+import uk.dioxic.mgenerate.execute.buildBenchmark
+import uk.dioxic.mgenerate.execute.execute
+import uk.dioxic.mgenerate.execute.model.CommandExecutor
+import uk.dioxic.mgenerate.execute.model.InsertOneExecutor
+import uk.dioxic.mgenerate.execute.model.TpsRate
+import uk.dioxic.mgenerate.execute.model.UnlimitedRate
+import uk.dioxic.mgenerate.execute.resources.MongoResource
+import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
+import uk.dioxic.mgenerate.execute.resources.mongoClient
+import uk.dioxic.mgenerate.template.Template
+import uk.dioxic.mgenerate.template.buildTemplate
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
@@ -51,68 +59,67 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
-    ).convert { Template.parse(it.readText()) }
+    ).convert { Json.decodeFromString<Template>(it.readText()) }
 
     @OptIn(ExperimentalTime::class)
     override fun run() {
 
-        val client = MongoClients.create(
-            MongoClientSettings.builder()
-                .applyAuthOptions(authOptions)
-                .applyConnectionOptions(connOptions)
-                .codecRegistry(Template.defaultRegistry)
-                .build()
-        )
-
-        if (!checkConnection(client)) { return }
+        val mcs = MongoClientSettings.builder()
+            .applyAuthOptions(authOptions)
+            .applyConnectionOptions(connOptions)
+            .codecRegistry(Template.defaultRegistry)
+            .build()
 
         val amendedBatchSize = min(batchSize, number.toInt())
-        val amendedRate = tps?.div(amendedBatchSize)?.let { Rate.of(it) } ?: Rate.MAX
+        val amendedRate = tps?.div(amendedBatchSize)?.let { TpsRate(it) } ?: UnlimitedRate
 
-        val loadStage = MultiExecutionStage(
-            name = "load stage",
-            workers = workers,
-            workloads = listOf(
-                Workload(
-                    name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
-                    rate = amendedRate,
-                    count = number / amendedBatchSize,
-                    executor = InsertManyExecutor(
-                        client = client,
-                        db = namespaceOptions.database,
-                        collection = namespaceOptions.collection,
-                        number = amendedBatchSize,
-                        ordered = ordered,
-                        template = template,
-                    ),
-                )
-            ),
-        )
-
-        val stages = if (drop) {
-            arrayOf(
-                SingleExecutionStage(
-                    name = "Drop ${namespaceOptions.collection} collection",
-                    executor = DropExecutor(
-                        client = client,
-                        db = namespaceOptions.database,
-                        collection = namespaceOptions.collection
+        val benchmark = buildBenchmark {
+            sequentialStage("main") {
+                if (drop) {
+                    rateWorkload(
+                        name = "drop ${namespaceOptions.collection}",
+                        count = 1,
+                        executor = CommandExecutor(
+                            database = namespaceOptions.database,
+                            command = buildTemplate {
+                                put("drop", namespaceOptions.collection)
+                            }
+                        )
                     )
-                ), loadStage
-            )
-        } else {
-            arrayOf(loadStage)
+                }
+                rateWorkload(
+                    name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
+                    count = number / amendedBatchSize,
+                    rate = amendedRate,
+                    executor = InsertOneExecutor(
+                        database = namespaceOptions.database,
+                        collection = namespaceOptions.collection,
+                        template = template,
+//                        number = amendedBatchSize,
+//                        ordered = ordered,
+                    )
+                )
+            }
         }
 
         println("Starting load...")
 
+
         val duration = runBlocking {
-            measureTime {
-                executeStages(*stages)
-                    .format(ReportFormatter.create(ReportFormat.TEXT))
-                    .collect {
-                        print(it)
-                    }
+            resourceScope {
+                val client = mongoClient(mcs)
+                val registry = ResourceRegistry(MongoResource(client))
+
+                if (!checkConnection(client)) {
+                    error("Can't connect!")
+                }
+                measureTime {
+                    benchmark.execute(registry, workers)
+    //                    .format(ReportFormatter.create(ReportFormat.TEXT))
+    //                    .collect {
+    //                        print(it)
+    //                    }
+                }
             }
         }
 

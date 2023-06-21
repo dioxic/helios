@@ -15,5 +15,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-include("core")
+include("template")
 include("cli")
+include("execute")
