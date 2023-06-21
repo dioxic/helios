@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @Serializable(RateSerializer::class)
 sealed class Rate {
-    abstract fun calculateDelay(state: State): Duration
+    abstract fun calculateDelay(context: ExecutionContext): Duration
 }
 
 @Serializable(FixedRateSerializer::class)
@@ -19,7 +19,7 @@ sealed class FixedRate: Rate()
 
 @Serializable
 object UnlimitedRate : FixedRate() {
-    override fun calculateDelay(state: State): Duration = ZERO
+    override fun calculateDelay(context: ExecutionContext): Duration = ZERO
 }
 
 @Serializable
@@ -28,7 +28,7 @@ data class TpsRate(
     val tps: Int,
     val fuzzy: Double = 0.0
 ) : FixedRate() {
-    override fun calculateDelay(state: State): Duration =
+    override fun calculateDelay(context: ExecutionContext): Duration =
         1.seconds.div(
             when (fuzzy) {
                 0.0 -> tps.toDouble()
@@ -43,7 +43,7 @@ data class PeriodRate(
     val period: Duration,
     val fuzzy: Double = 0.0
 ) : FixedRate() {
-    override fun calculateDelay(state: State): Duration =
+    override fun calculateDelay(context: ExecutionContext): Duration =
         when (fuzzy) {
             0.0 -> period
             else -> period + (period * Random.nextDouble(-fuzzy, fuzzy))
@@ -57,7 +57,7 @@ data class RampedRate(
     val to: FixedRate = UnlimitedRate,
     val rampDuration: Duration
 ) : Rate() {
-    override fun calculateDelay(state: State): Duration {
+    override fun calculateDelay(context: ExecutionContext): Duration {
         TODO("Not yet implemented")
     }
 }
