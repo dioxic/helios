@@ -19,21 +19,21 @@ import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
 @OptIn(ExperimentalTime::class, FlowPreview::class)
-fun executeBenchmark(
-    benchmark: Benchmark,
-    registry: ResourceRegistry,
-    workers: Int = 4,
+fun Benchmark.execute(
+    registry: ResourceRegistry = ResourceRegistry(),
+    concurrency: Int = 4,
     interval: Duration = 1.seconds,
 ): Flow<FrameworkMessage> =
     flow {
-        benchmark.stages.forEach { stage ->
+        stages.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 when (stage) {
                     is SequentialStage -> {
                         stage.workloads.forEach { workload ->
-                            produceRated(benchmark, stage, workload)
-                                .parMapUnordered(workers) { it.invoke(registry) }
+                            produceRated(this@execute, stage, workload)
+                                .buffer(100)
+                                .parMapUnordered(concurrency) { it.invoke(registry) }
                                 .summarize(interval)
                                 .map { ProgressMessage(stage, it) }
                                 .collect { emit(it) }
@@ -41,21 +41,23 @@ fun executeBenchmark(
                     }
 
                     is ParallelStage -> {
-                        buildList {
-                            addAll(stage.workloads.filterIsInstance<RateWorkload>()
-                                .map { produceRated(benchmark, stage, it) })
-                            add(
-                                produceWeighted(
-                                    benchmark = benchmark,
-                                    stage = stage,
-                                    workloads = stage.workloads.filterIsInstance<WeightedWorkload>()
+                        withTimeoutOrNull(stage.timeout) {
+                            buildList {
+                                addAll(stage.workloads.filterIsInstance<RateWorkload>()
+                                    .map { produceRated(this@execute, stage, it) })
+                                add(
+                                    produceWeighted(
+                                        benchmark = this@execute,
+                                        stage = stage,
+                                        workloads = stage.workloads.filterIsInstance<WeightedWorkload>()
+                                    )
                                 )
-                            )
-                        }.merge()
-                            .parMapUnordered(workers) { it.invoke(registry) }
-                            .summarize(interval)
-                            .map { ProgressMessage(stage, it) }
-                            .collect { emit(it) }
+                            }.merge().buffer(100)
+                                .parMapUnordered(concurrency) { it.invoke(registry) }
+                                .summarize(interval)
+                                .map { ProgressMessage(stage, it) }
+                                .collect { emit(it) }
+                        }
                     }
                 }
             }
@@ -111,7 +113,7 @@ suspend fun delay(context: ExecutionContext) {
             }
         }
 
-        else -> kotlinx.coroutines.delay(delay)
+        else -> delay(delay)
     }
 }
 

@@ -22,7 +22,7 @@ import kotlinx.serialization.json.put
 import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
 import uk.dioxic.mgenerate.execute.buildBenchmark
-import uk.dioxic.mgenerate.execute.executeBenchmark
+import uk.dioxic.mgenerate.execute.execute
 import uk.dioxic.mgenerate.execute.model.CommandExecutor
 import uk.dioxic.mgenerate.execute.model.InsertOneExecutor
 import uk.dioxic.mgenerate.execute.model.TpsRate
@@ -114,7 +114,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                     error("Can't connect!")
                 }
                 measureTime {
-                    executeBenchmark(benchmark, registry, workers)
+                    benchmark.execute(registry, workers)
     //                    .format(ReportFormatter.create(ReportFormat.TEXT))
     //                    .collect {
     //                        print(it)
