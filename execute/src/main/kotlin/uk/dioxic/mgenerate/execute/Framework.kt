@@ -1,11 +1,11 @@
 package uk.dioxic.mgenerate.execute
 
 import arrow.fx.coroutines.parMapUnordered
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.withTimeoutOrNull
 import uk.dioxic.mgenerate.execute.model.*
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.results.*
@@ -61,7 +61,7 @@ fun executeBenchmark(
             }
             emit(StageCompleteMessage(stage, duration))
         }
-    }
+    }.flowOn(Dispatchers.Default)
 
 fun produceWeighted(
     benchmark: Benchmark,
