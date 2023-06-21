@@ -20,14 +20,15 @@ enum class ColumnHeader(val display: String) {
     LATENCY_P95("latency P95"),
     LATENCY_P99("latency P99"),
     LATENCY_MAX("latency max"),
-    LATENCY_MIN("latency min");
+    LATENCY_MIN("latency min"),
+    PROGRESS("progress");
 
     val length: Int
         get() = display.length
 }
 
 fun SummarizedResult.toReportColumns(duration: Duration): Map<ColumnHeader, String> = with(duration) {
-    workloadColumn() + percentileColumns() + when (this@toReportColumns) {
+    contextColumn() + percentileColumns() + when (this@toReportColumns) {
         is SummarizedWriteResult -> scalarColumns()
         is SummarizedCommandResult -> scalarColumns()
         is SummarizedMessageResult -> scalarColumns()
@@ -37,8 +38,9 @@ fun SummarizedResult.toReportColumns(duration: Duration): Map<ColumnHeader, Stri
     }
 }
 
-private fun SummarizedResult.workloadColumn() = mapOf(
-    ColumnHeader.WORKLOAD to workloadName,
+private fun SummarizedResult.contextColumn() = mapOf(
+    ColumnHeader.WORKLOAD to context.workload.name,
+    ColumnHeader.PROGRESS to context.executionCount.percentOf(context.workload.count)
 )
 
 private fun SummarizedResult.percentileColumns() = mapOf(
@@ -82,3 +84,7 @@ private fun Long.toRate(): Int =
 context(Duration)
 private fun Int.toRate(): Int =
     (this / toDouble(DurationUnit.SECONDS)).toInt()
+
+infix fun Int.percentOf(divisor: Int) = "${(this * 100) / divisor}%"
+
+infix fun Long.percentOf(divisor: Long) = "${(this * 100) / divisor}%"
