@@ -2,25 +2,25 @@ package uk.dioxic.mgenerate.execute.results
 
 import org.bson.Document
 
-sealed interface Result
+sealed interface ExecutionResult
 
-data class CommandResult(val document: Document): Result {
+data class CommandResult(val document: Document): ExecutionResult {
     val success: Boolean
         get() = document["ok"] == 1
 }
 
 data class WriteResult(
-    val insertCount: Long = 0,
+    val insertedCount: Long = 0,
     val matchedCount: Long = 0,
     val modifiedCount: Long = 0,
     val deletedCount: Long = 0,
     val upsertedCount: Long = 0,
-) : Result
+) : ExecutionResult
 
 data class ReadResult(
     val docReturned: Int = 0,
-) : Result
+) : ExecutionResult
 
 data class MessageResult(
     val msg: String
-) : Result
+) : ExecutionResult

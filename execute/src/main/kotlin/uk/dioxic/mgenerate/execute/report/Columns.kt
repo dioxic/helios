@@ -56,7 +56,7 @@ private fun SummarizedResult.scalarColumns() = when (this) {
 
 context(Duration)
 private fun SummarizedWriteResult.scalarColumns() = mapOf(
-    ColumnHeader.INSERT to insertCount.toRate(),
+    ColumnHeader.INSERT to insertedCount.toRate(),
     ColumnHeader.MATCHED to matchedCount.toRate(),
     ColumnHeader.MODIFIED to modifiedCount.toRate(),
     ColumnHeader.DELETED to deletedCount.toRate(),
@@ -65,8 +65,8 @@ private fun SummarizedWriteResult.scalarColumns() = mapOf(
 
 context(Duration)
 private fun SummarizedReadResult.scalarColumns() = mapOf(
-    ColumnHeader.DOC_RETURNED to docReturned.toRate(),
-    ColumnHeader.QUERIES to queryCount.toRate(),
+    ColumnHeader.DOC_RETURNED to docsReturned.toRate(),
+    ColumnHeader.QUERIES to operationCount.toRate(),
 )
 
 context(Duration)
@@ -88,9 +88,9 @@ context(Duration)
 private fun Int.toRate(): Int =
     (this / toDouble(DurationUnit.SECONDS)).toInt()
 
-infix fun Int.percentOf(divisor: Int) = "${(this * 100) / divisor}%"
+private infix fun Int.percentOf(divisor: Int) = "${(this * 100) / divisor}%"
 
-infix fun Long.percentOf(divisor: Long) = "${(this * 100) / divisor}%"
+private infix fun Long.percentOf(divisor: Long) = "${(this * 100) / divisor}%"
 
 fun Duration.toStringMillis() =
     toString(DurationUnit.MILLISECONDS, 1)

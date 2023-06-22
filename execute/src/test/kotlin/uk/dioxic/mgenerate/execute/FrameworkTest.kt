@@ -25,7 +25,6 @@ class FrameworkTest : FunSpec({
 
     val executor = mockk<MessageExecutor>()
 
-
     afterTest {
         clearMocks(executor)
     }

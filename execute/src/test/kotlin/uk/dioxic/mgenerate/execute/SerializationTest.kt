@@ -66,7 +66,7 @@ class SerializationTest : FunSpec({
                         "database": "myDB",
                         "collection": "myCollection",
                         "template": {
-                            "name": "Bob"
+                            "name": "${'$'}name"
                         }
                     },
                     "weight": 1

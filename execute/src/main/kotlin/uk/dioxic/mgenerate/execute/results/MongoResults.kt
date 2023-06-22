@@ -17,15 +17,15 @@ fun DeleteResult.standardize() = WriteResult(
 )
 
 fun InsertOneResult.standardize() = WriteResult(
-    insertCount = if (insertedId == null) 0 else 1
+    insertedCount = if (insertedId == null) 0 else 1
 )
 
 fun InsertManyResult.standardize() = WriteResult(
-    insertCount = insertedIds.size.toLong()
+    insertedCount = insertedIds.size.toLong()
 )
 
 fun BulkWriteResult.standardize() = WriteResult(
-    insertCount = insertedCount.toLong(),
+    insertedCount = insertedCount.toLong(),
     upsertedCount = upserts.size.toLong(),
     modifiedCount = modifiedCount.toLong(),
     matchedCount = matchedCount.toLong(),

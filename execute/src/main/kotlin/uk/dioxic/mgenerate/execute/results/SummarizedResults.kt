@@ -11,6 +11,7 @@ data class SummarizedResultsBatch(
 sealed interface SummarizedResult {
     val context: ExecutionContext
     val latencies: SummarizedLatencies
+    val operationCount: Int
 }
 
 data class SummarizedLatencies(
@@ -22,31 +23,34 @@ data class SummarizedLatencies(
 )
 
 data class SummarizedWriteResult(
-    override val context: ExecutionContext,
-    val insertCount: Long = 0,
+    val insertedCount: Long = 0,
     val matchedCount: Long = 0,
     val modifiedCount: Long = 0,
     val deletedCount: Long = 0,
     val upsertedCount: Long = 0,
-    override val latencies: SummarizedLatencies
+    override val context: ExecutionContext,
+    override val latencies: SummarizedLatencies,
+    override val operationCount: Int = 0,
 ) : SummarizedResult
 
 data class SummarizedReadResult(
+    val docsReturned: Int = 0,
     override val context: ExecutionContext,
-    val docReturned: Int = 0,
-    val queryCount: Int = 0,
-    override val latencies: SummarizedLatencies
+    override val latencies: SummarizedLatencies,
+    override val operationCount: Int = 0,
 ) : SummarizedResult
 
 data class SummarizedMessageResult(
-    override val context: ExecutionContext,
     val msgCount: Int = 0,
-    override val latencies: SummarizedLatencies
+    override val context: ExecutionContext,
+    override val latencies: SummarizedLatencies,
+    override val operationCount: Int = 0,
 ) : SummarizedResult
 
 data class SummarizedCommandResult(
-    override val context: ExecutionContext,
     val successes: Int = 0,
     val failures: Int = 0,
-    override val latencies: SummarizedLatencies
+    override val context: ExecutionContext,
+    override val latencies: SummarizedLatencies,
+    override val operationCount: Int = 0,
 ) : SummarizedResult

@@ -112,8 +112,9 @@ suspend fun delay(context: ExecutionContext) {
 }
 
 @OptIn(ExperimentalTime::class)
-inline fun measureTimedResult(context: ExecutionContext, block: () -> Result): TimedResult {
+inline fun measureTimedResult(context: ExecutionContext, block: () -> ExecutionResult): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
+
     return when (val value = block()) {
         is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), context)
         is ReadResult -> TimedReadResult(value, mark.elapsedNow(), context)

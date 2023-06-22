@@ -16,7 +16,7 @@ import uk.dioxic.mgenerate.template.operators.Operator
 import uk.dioxic.mgenerate.template.serialization.TemplateSerializer
 
 @Serializable(TemplateSerializer::class)
-class Template(map: Map<String, *>, val definition: JsonObject? = null) : Document(map) {
+open class Template(map: Map<String, *>, val definition: JsonObject? = null) : Document(map) {
 
     private val defaultJsonWriter = JsonWriterSettings.builder()
         .indent(true)

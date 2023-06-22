@@ -5,14 +5,14 @@ import kotlinx.serialization.Serializable
 import uk.dioxic.mgenerate.execute.resources.MongoResource
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.results.CommandResult
+import uk.dioxic.mgenerate.execute.results.ExecutionResult
 import uk.dioxic.mgenerate.execute.results.MessageResult
-import uk.dioxic.mgenerate.execute.results.Result
 import uk.dioxic.mgenerate.execute.results.standardize
 import uk.dioxic.mgenerate.template.Template
 
 @Serializable
 sealed interface Executor {
-    fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry): Result
+    fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry): ExecutionResult
 }
 
 @Serializable

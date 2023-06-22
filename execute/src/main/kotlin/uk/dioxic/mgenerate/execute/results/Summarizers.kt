@@ -25,11 +25,18 @@ fun List<Double>.percentile(percentile: Double) =
     StatUtils.percentile(toDoubleArray(), percentile)
         .toDuration(DurationUnit.MILLISECONDS)
 
+fun List<WriteResult>.sumOf() = WriteResult(
+    insertedCount = sumOf { it.insertedCount },
+    matchedCount = sumOf { it.matchedCount },
+    modifiedCount = sumOf { it.modifiedCount },
+    deletedCount = sumOf { it.deletedCount },
+    upsertedCount = sumOf { it.upsertedCount },
+)
 
-fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
+private fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
     SummarizedWriteResult(
         context = context,
-        insertCount = sumOf { it.value.insertCount },
+        insertedCount = sumOf { it.value.insertedCount },
         matchedCount = sumOf { it.value.matchedCount },
         modifiedCount = sumOf { it.value.modifiedCount },
         deletedCount = sumOf { it.value.deletedCount },
@@ -37,22 +44,22 @@ fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
         latencies = map { it.duration }.summarize()
     )
 
-fun List<TimedReadResult>.summarize(context: ExecutionContext) =
+private fun List<TimedReadResult>.summarize(context: ExecutionContext) =
     SummarizedReadResult(
         context = context,
-        docReturned = sumOf { it.value.docReturned },
-        queryCount = size,
+        docsReturned = sumOf { it.value.docReturned },
+        operationCount = size,
         latencies = map { it.duration }.summarize()
     )
 
-fun List<TimedMessageResult>.summarize(context: ExecutionContext) =
+private fun List<TimedMessageResult>.summarize(context: ExecutionContext) =
     SummarizedMessageResult(
         context = context,
         msgCount = size,
         latencies = map { it.duration }.summarize()
     )
 
-fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
+private fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
     SummarizedCommandResult(
         context = context,
         successes = count { it.value.success },
@@ -62,13 +69,14 @@ fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
 
 @Suppress("UNCHECKED_CAST")
 fun List<TimedResult>.summarize() =
-    groupBy(TimedResult::context)
-        .map { (k, v) ->
+    groupBy { it.context.workload.name }
+        .map { (_, v) ->
+            val context = v.last().context
             when (v.first()) {
-                is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(k)
-                is TimedReadResult -> (this as List<TimedReadResult>).summarize(k)
-                is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(k)
-                is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(k)
+                is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(context)
+                is TimedReadResult -> (this as List<TimedReadResult>).summarize(context)
+                is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(context)
+                is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(context)
             }
         }
         .sortedBy { it.context.workload.name }
