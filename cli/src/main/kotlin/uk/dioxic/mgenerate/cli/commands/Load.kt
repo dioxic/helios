@@ -27,6 +27,9 @@ import uk.dioxic.mgenerate.execute.model.CommandExecutor
 import uk.dioxic.mgenerate.execute.model.InsertOneExecutor
 import uk.dioxic.mgenerate.execute.model.TpsRate
 import uk.dioxic.mgenerate.execute.model.UnlimitedRate
+import uk.dioxic.mgenerate.execute.report.ReportFormat
+import uk.dioxic.mgenerate.execute.report.ReportFormatter
+import uk.dioxic.mgenerate.execute.report.format
 import uk.dioxic.mgenerate.execute.resources.MongoResource
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.resources.mongoClient
@@ -115,10 +118,10 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 }
                 measureTime {
                     benchmark.execute(registry, workers)
-    //                    .format(ReportFormatter.create(ReportFormat.TEXT))
-    //                    .collect {
-    //                        print(it)
-    //                    }
+                        .format(ReportFormatter.create(ReportFormat.TEXT))
+                        .collect {
+                            print(it)
+                        }
                 }
             }
         }
