@@ -15,7 +15,7 @@ class Cli : CliktCommand() {
 fun checkConnection(client: MongoClient): Boolean =
     try {
         println("Checking connection...")
-        client.getDatabase("test").runCommand(Document("hello", 1))
+        client.getDatabase("test").runCommand(Document("ping", 1))
         true
     } catch (e: MongoException) {
         client.clusterDescription.srvResolutionException?.let {
