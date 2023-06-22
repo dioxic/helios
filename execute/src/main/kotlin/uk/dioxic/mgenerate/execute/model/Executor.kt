@@ -34,6 +34,7 @@ sealed class DatabaseExecutor : Executor {
 }
 
 @Serializable
+@SerialName("message")
 data class MessageExecutor(
     val message: String
 ): Executor {
