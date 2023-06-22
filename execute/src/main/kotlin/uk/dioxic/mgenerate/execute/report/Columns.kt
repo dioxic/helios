@@ -28,14 +28,7 @@ enum class ColumnHeader(val display: String) {
 }
 
 fun SummarizedResult.toReportColumns(duration: Duration): Map<ColumnHeader, String> = with(duration) {
-    contextColumn() + percentileColumns() + when (this@toReportColumns) {
-        is SummarizedWriteResult -> scalarColumns()
-        is SummarizedCommandResult -> scalarColumns()
-        is SummarizedMessageResult -> scalarColumns()
-        is SummarizedReadResult -> scalarColumns()
-    }.mapValues { (_, v) ->
-        v.toString()
-    }
+    contextColumn() + percentileColumns() + scalarColumns()
 }
 
 private fun SummarizedResult.contextColumn() = mapOf(
@@ -44,12 +37,22 @@ private fun SummarizedResult.contextColumn() = mapOf(
 )
 
 private fun SummarizedResult.percentileColumns() = mapOf(
-    ColumnHeader.LATENCY_P50 to latencies.p50.toString(DurationUnit.MILLISECONDS, 1),
-    ColumnHeader.LATENCY_P95 to latencies.p95.toString(DurationUnit.MILLISECONDS, 1),
-    ColumnHeader.LATENCY_P99 to latencies.p99.toString(DurationUnit.MILLISECONDS, 1),
-    ColumnHeader.LATENCY_MAX to latencies.max.toString(DurationUnit.MILLISECONDS, 1),
-    ColumnHeader.LATENCY_MIN to latencies.min.toString(DurationUnit.MILLISECONDS, 1),
+    ColumnHeader.LATENCY_P50 to latencies.p50.toStringMillis(),
+    ColumnHeader.LATENCY_P95 to latencies.p95.toStringMillis(),
+    ColumnHeader.LATENCY_P99 to latencies.p99.toStringMillis(),
+    ColumnHeader.LATENCY_MAX to latencies.max.toStringMillis(),
+    ColumnHeader.LATENCY_MIN to latencies.min.toStringMillis(),
 )
+
+context(Duration)
+private fun SummarizedResult.scalarColumns() = when (this) {
+    is SummarizedWriteResult -> scalarColumns()
+    is SummarizedCommandResult -> scalarColumns()
+    is SummarizedMessageResult -> scalarColumns()
+    is SummarizedReadResult -> scalarColumns()
+}.mapValues { (_, v) ->
+    v.toString()
+}
 
 context(Duration)
 private fun SummarizedWriteResult.scalarColumns() = mapOf(
@@ -88,3 +91,6 @@ private fun Int.toRate(): Int =
 infix fun Int.percentOf(divisor: Int) = "${(this * 100) / divisor}%"
 
 infix fun Long.percentOf(divisor: Long) = "${(this * 100) / divisor}%"
+
+fun Duration.toStringMillis() =
+    toString(DurationUnit.MILLISECONDS, 1)
