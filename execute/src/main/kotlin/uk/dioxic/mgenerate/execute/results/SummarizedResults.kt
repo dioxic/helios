@@ -3,6 +3,11 @@ package uk.dioxic.mgenerate.execute.results
 import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import kotlin.time.Duration
 
+data class SummarizedResultsBatch(
+    val duration: Duration,
+    val results: List<SummarizedResult>
+): OutputResult
+
 sealed interface SummarizedResult {
     val context: ExecutionContext
     val latencies: SummarizedLatencies
