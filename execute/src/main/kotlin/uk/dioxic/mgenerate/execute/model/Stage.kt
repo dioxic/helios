@@ -11,6 +11,7 @@ import kotlin.time.Duration
 @Serializable
 sealed class Stage : Named, Stateful {
     abstract val workloads: List<Workload>
+    abstract val timeout: Duration
 }
 
 @Serializable
@@ -19,6 +20,7 @@ data class SequentialStage(
     override val name: String,
     override val state: Template = Template.EMPTY,
     override val workloads: List<RateWorkload>,
+    override val timeout: Duration = Duration.INFINITE,
 ) : Stage() {
 
     @Transient
@@ -29,9 +31,9 @@ data class SequentialStage(
 @SerialName("parallel")
 data class ParallelStage(
     override val name: String,
-    override val workloads: List<Workload>,
     override val state: Template = Template.EMPTY,
-    val timeout: Duration = Duration.INFINITE,
+    override val workloads: List<Workload>,
+    override val timeout: Duration = Duration.INFINITE,
     val weightedWorkloadRate: Rate = UnlimitedRate
 ) : Stage() {
 

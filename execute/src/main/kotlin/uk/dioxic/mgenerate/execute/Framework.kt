@@ -1,11 +1,8 @@
 package uk.dioxic.mgenerate.execute
 
 import arrow.fx.coroutines.parMapUnordered
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.withTimeoutOrNull
 import uk.dioxic.mgenerate.execute.model.*
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.results.*
@@ -18,7 +15,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
-@OptIn(ExperimentalTime::class, FlowPreview::class)
+@OptIn(ExperimentalTime::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
 fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry(),
     concurrency: Int = 4,
@@ -28,42 +25,48 @@ fun Benchmark.execute(
         stages.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
-                when (stage) {
-                    is SequentialStage -> {
-                        stage.workloads.forEach { workload ->
-                            produceRated(this@execute, stage, workload)
-                                .buffer(100)
-                                .parMapUnordered(concurrency) { it.invoke(registry) }
-                                .summarize(interval)
-                                .map { ProgressMessage(stage, it) }
-                                .collect { emit(it) }
-                        }
-                    }
-
-                    is ParallelStage -> {
-                        withTimeoutOrNull(stage.timeout) {
-                            buildList {
-                                addAll(stage.workloads.filterIsInstance<RateWorkload>()
-                                    .map { produceRated(this@execute, stage, it) })
-                                add(
-                                    produceWeighted(
-                                        benchmark = this@execute,
-                                        stage = stage,
-                                        workloads = stage.workloads.filterIsInstance<WeightedWorkload>()
-                                    )
-                                )
-                            }.merge().buffer(100)
-                                .parMapUnordered(concurrency) { it.invoke(registry) }
-                                .summarize(interval)
-                                .map { ProgressMessage(stage, it) }
-                                .collect { emit(it) }
-                        }
-                    }
+                withTimeoutOrNull(stage.timeout) {
+                    produceExecutions(stage)
+                        .buffer(100)
+                        .parMapUnordered(concurrency) { it.invoke(registry) }
+                        .summarize(interval)
+                        .map { ProgressMessage(stage, it) }
+                        .collect { emit(it) }
                 }
             }
             emit(StageCompleteMessage(stage, duration))
         }
     }.flowOn(Dispatchers.Default)
+
+fun Benchmark.produceExecutions(stage: Stage): Flow<ExecutionContext> =
+    when (stage) {
+        is SequentialStage -> produceSequential(this, stage)
+        is ParallelStage -> produceParallel(this, stage)
+    }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+fun produceSequential(
+    benchmark: Benchmark,
+    stage: SequentialStage,
+): Flow<ExecutionContext> =
+    stage.workloads.asFlow().flatMapConcat { workload ->
+        produceRated(benchmark, stage, workload)
+    }
+
+fun produceParallel(
+    benchmark: Benchmark,
+    stage: ParallelStage,
+): Flow<ExecutionContext> = buildList {
+    addAll(stage.workloads.filterIsInstance<RateWorkload>()
+        .map { produceRated(benchmark, stage, it) })
+    add(
+        produceWeighted(
+            benchmark = benchmark,
+            stage = stage,
+            workloads = stage.workloads.filterIsInstance<WeightedWorkload>()
+        )
+    )
+}.merge()
 
 fun produceWeighted(
     benchmark: Benchmark,
