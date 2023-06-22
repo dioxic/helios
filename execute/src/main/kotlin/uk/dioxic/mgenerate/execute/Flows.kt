@@ -8,9 +8,10 @@ import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.selects.whileSelect
-import uk.dioxic.mgenerate.execute.results.OutputResult
+import uk.dioxic.mgenerate.execute.results.FrameworkResult
 import uk.dioxic.mgenerate.execute.results.SummarizedResultsBatch
 import uk.dioxic.mgenerate.execute.results.TimedResult
+import uk.dioxic.mgenerate.execute.results.summarize
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
@@ -31,7 +32,7 @@ suspend fun Flow<Number>.average(): Double {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class, ObsoleteCoroutinesApi::class)
-fun Flow<TimedResult>.summarize(interval: Duration): Flow<OutputResult> = channelFlow {
+fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> = channelFlow {
     require(interval.isPositive()) {
         "interval must be positive, but was $interval"
     }
@@ -43,19 +44,20 @@ fun Flow<TimedResult>.summarize(interval: Duration): Flow<OutputResult> = channe
     try {
         whileSelect {
             flowChannel.onReceive {
-                if (it.isSingleExecution ){
+                if (it.isSingleExecution) {
                     send(it)
                     true
-                }
-                else {
+                } else {
                     results.add(it)
                 }
             }
             tickerChannel.onReceive {
-                send(SummarizedResultsBatch(
-                    duration = lastSummaryTime.elapsedNow(),
-                    results = results.summarize()
-                ))
+                send(
+                    SummarizedResultsBatch(
+                        duration = lastSummaryTime.elapsedNow(),
+                        results = results.summarize()
+                    )
+                )
                 lastSummaryTime = TimeSource.Monotonic.markNow()
                 results.clear()
                 true
@@ -63,10 +65,12 @@ fun Flow<TimedResult>.summarize(interval: Duration): Flow<OutputResult> = channe
         }
     } catch (e: ClosedReceiveChannelException) {
         if (results.isNotEmpty()) {
-            send(SummarizedResultsBatch(
-                duration = lastSummaryTime.elapsedNow(),
-                results = results.summarize()
-            ))
+            send(
+                SummarizedResultsBatch(
+                    duration = lastSummaryTime.elapsedNow(),
+                    results = results.summarize()
+                )
+            )
         }
     } finally {
         tickerChannel.cancel()
@@ -75,8 +79,3 @@ fun Flow<TimedResult>.summarize(interval: Duration): Flow<OutputResult> = channe
 
 private val TimedResult.isSingleExecution
     get() = (context.workload.count == 1L)
-
-private fun List<TimedResult>.summarize() =
-    groupBy(TimedResult::context)
-        .map { (k, v) -> v.summarize(k) }
-        .sortedBy { it.context.workload.name }

@@ -15,65 +15,57 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
-@OptIn(ExperimentalTime::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalTime::class, FlowPreview::class)
 fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry(),
     concurrency: Int = 4,
     interval: Duration = 1.seconds,
-): Flow<FrameworkMessage> =
-    flow {
-        stages.forEach { stage ->
-            emit(StageStartMessage(stage))
-            val duration = measureTime {
-                withTimeoutOrNull(stage.timeout) {
-                    produceExecutions(stage)
-                        .buffer(100)
-                        .parMapUnordered(concurrency) { it.invoke(registry) }
-                        .summarize(interval)
-                        .map { ProgressMessage(stage, it) }
-                        .collect { emit(it) }
-                }
+): Flow<FrameworkMessage> = flow {
+    stages.forEach { stage ->
+        emit(StageStartMessage(stage))
+        val duration = measureTime {
+            withTimeoutOrNull(stage.timeout) {
+                produceExecutions(stage)
+                    .buffer(100)
+                    .parMapUnordered(concurrency) { it.invoke(registry) }
+                    .chunked(interval)
+                    .map { ProgressMessage(stage, it) }
+                    .collect { emit(it) }
             }
-            emit(StageCompleteMessage(stage, duration))
         }
-    }.flowOn(Dispatchers.Default)
+        emit(StageCompleteMessage(stage, duration))
+    }
+}.flowOn(Dispatchers.Default)
 
 fun Benchmark.produceExecutions(stage: Stage): Flow<ExecutionContext> =
     when (stage) {
-        is SequentialStage -> produceSequential(this, stage)
-        is ParallelStage -> produceParallel(this, stage)
+        is SequentialStage -> produceSequential(stage)
+        is ParallelStage -> produceParallel(stage)
     }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun produceSequential(
-    benchmark: Benchmark,
+fun Benchmark.produceSequential(
     stage: SequentialStage,
 ): Flow<ExecutionContext> =
     stage.workloads.asFlow().flatMapConcat { workload ->
-        produceRated(benchmark, stage, workload)
+        produceRated(stage, workload)
     }
 
-fun produceParallel(
-    benchmark: Benchmark,
+fun Benchmark.produceParallel(
     stage: ParallelStage,
 ): Flow<ExecutionContext> = buildList {
-    addAll(stage.workloads.filterIsInstance<RateWorkload>()
-        .map { produceRated(benchmark, stage, it) })
-    add(
-        produceWeighted(
-            benchmark = benchmark,
-            stage = stage,
-            workloads = stage.workloads.filterIsInstance<WeightedWorkload>()
-        )
-    )
+    val rateWorkloads = stage.workloads.filterIsInstance<RateWorkload>()
+    val weightedWorkloads = stage.workloads.filterIsInstance<WeightedWorkload>()
+
+    addAll(rateWorkloads.map { produceRated(stage, it) })
+    add(produceWeighted(stage, weightedWorkloads))
 }.merge()
 
-fun produceWeighted(
-    benchmark: Benchmark,
+fun Benchmark.produceWeighted(
     stage: Stage,
     workloads: List<WeightedWorkload>
 ): Flow<ExecutionContext> = flow {
-    val contexts = workloads.map { it.createContext(benchmark, stage) }
+    val contexts = workloads.map { it.createContext(this@produceWeighted, stage) }
     val weights = workloads.map { it.weight }.toMutableList()
     val counts = MutableList(workloads.size) { 0L }
 
@@ -92,12 +84,11 @@ fun produceWeighted(
     }
 }
 
-fun produceRated(
-    benchmark: Benchmark,
+fun Benchmark.produceRated(
     stage: Stage,
     workload: RateWorkload
 ): Flow<ExecutionContext> = flow {
-    val context = workload.createContext(benchmark, stage)
+    val context = workload.createContext(this@produceRated, stage)
     for (i in 1..context.workload.count) {
         context.copy(executionCount = i).also {
             emit(it)

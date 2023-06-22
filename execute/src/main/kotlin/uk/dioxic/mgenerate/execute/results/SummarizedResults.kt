@@ -6,7 +6,7 @@ import kotlin.time.Duration
 data class SummarizedResultsBatch(
     val duration: Duration,
     val results: List<SummarizedResult>
-): OutputResult
+): FrameworkResult
 
 sealed interface SummarizedResult {
     val context: ExecutionContext

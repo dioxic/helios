@@ -22,7 +22,7 @@ class FlowTest : FunSpec({
                     emit(timedResult)
                     delay(20.milliseconds)
                 }
-            }.summarize(500.milliseconds)
+            }.chunked(500.milliseconds)
                 .flowOn(Dispatchers.Default)
                 .collect {
                     println(it)

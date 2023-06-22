@@ -1,8 +1,7 @@
-package uk.dioxic.mgenerate.execute
+package uk.dioxic.mgenerate.execute.results
 
 import org.apache.commons.math3.stat.StatUtils
 import uk.dioxic.mgenerate.execute.model.ExecutionContext
-import uk.dioxic.mgenerate.execute.results.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -62,10 +61,14 @@ fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
     )
 
 @Suppress("UNCHECKED_CAST")
-fun List<TimedResult>.summarize(context: ExecutionContext): SummarizedResult =
-    when (first()) {
-        is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(context)
-        is TimedReadResult -> (this as List<TimedReadResult>).summarize(context)
-        is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(context)
-        is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(context)
-    }
+fun List<TimedResult>.summarize() =
+    groupBy(TimedResult::context)
+        .map { (k, v) ->
+            when (v.first()) {
+                is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(k)
+                is TimedReadResult -> (this as List<TimedReadResult>).summarize(k)
+                is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(k)
+                is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(k)
+            }
+        }
+        .sortedBy { it.context.workload.name }

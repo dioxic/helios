@@ -7,7 +7,7 @@ import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.results.CommandResult
 import uk.dioxic.mgenerate.execute.results.MessageResult
 import uk.dioxic.mgenerate.execute.results.Result
-import uk.dioxic.mgenerate.execute.standardize
+import uk.dioxic.mgenerate.execute.results.standardize
 import uk.dioxic.mgenerate.template.Template
 
 @Serializable

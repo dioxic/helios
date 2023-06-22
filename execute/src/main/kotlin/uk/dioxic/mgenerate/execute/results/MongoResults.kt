@@ -1,11 +1,10 @@
-package uk.dioxic.mgenerate.execute
+package uk.dioxic.mgenerate.execute.results
 
 import com.mongodb.bulk.BulkWriteResult
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.InsertManyResult
 import com.mongodb.client.result.InsertOneResult
 import com.mongodb.client.result.UpdateResult
-import uk.dioxic.mgenerate.execute.results.WriteResult
 
 fun UpdateResult.standardize() = WriteResult(
     matchedCount = matchedCount,

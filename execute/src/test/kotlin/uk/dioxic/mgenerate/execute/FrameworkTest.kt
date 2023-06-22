@@ -11,7 +11,6 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.withTimeout
 import uk.dioxic.mgenerate.execute.model.MessageExecutor
-import uk.dioxic.mgenerate.execute.model.ProgressMessage
 import uk.dioxic.mgenerate.execute.model.TpsRate
 import uk.dioxic.mgenerate.execute.results.MessageResult
 import uk.dioxic.mgenerate.execute.results.SummarizedResultsBatch
