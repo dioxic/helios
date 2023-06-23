@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import uk.dioxic.mgenerate.execute.results.*
+import uk.dioxic.mgenerate.execute.serialization.DurationSerializer
 import kotlin.time.Duration
 
 typealias ResultsMap =  List<Map<String, String>>
@@ -14,7 +15,7 @@ data class JsonResult(
     @SerialName("workload") val workloadName: String,
     @SerialName("operations") val operationCount: Int,
     @SerialName("progress") val progress: Int,
-    @SerialName("elapsed") val elapsed: Duration,
+    @SerialName("elapsed") @Serializable(DurationSerializer::class) val elapsed: Duration,
     @SerialName("inserted") val insertedCount: Long = 0L,
     @SerialName("matched") val matchedCount: Long = 0L,
     @SerialName("modified") val modifiedCount: Long = 0L,
