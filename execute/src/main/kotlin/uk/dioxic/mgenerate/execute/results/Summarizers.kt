@@ -73,10 +73,10 @@ fun List<TimedResult>.summarize() =
         .map { (_, v) ->
             val context = v.last().context
             when (v.first()) {
-                is TimedWriteResult -> (this as List<TimedWriteResult>).summarize(context)
-                is TimedReadResult -> (this as List<TimedReadResult>).summarize(context)
-                is TimedMessageResult -> (this as List<TimedMessageResult>).summarize(context)
-                is TimedCommandResult -> (this as List<TimedCommandResult>).summarize(context)
+                is TimedWriteResult -> (v as List<TimedWriteResult>).summarize(context)
+                is TimedReadResult -> (v as List<TimedReadResult>).summarize(context)
+                is TimedMessageResult -> (v as List<TimedMessageResult>).summarize(context)
+                is TimedCommandResult -> (v as List<TimedCommandResult>).summarize(context)
             }
         }
         .sortedBy { it.context.workload.name }
