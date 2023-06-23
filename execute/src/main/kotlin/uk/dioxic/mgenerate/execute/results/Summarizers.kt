@@ -49,7 +49,7 @@ private fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
 private fun List<TimedReadResult>.summarize(context: ExecutionContext) =
     SummarizedReadResult(
         context = context,
-        docsReturned = sumOf { it.value.docReturned },
+        docsReturned = sumOf { it.value.docsReturned },
         operationCount = size,
         latencies = map { it.duration }.summarize(),
         elapsedTime = maxOf { it.elapsedTime },
