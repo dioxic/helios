@@ -26,6 +26,16 @@ data class JsonResult(
     @SerialName("failures") val failureCount: Int = 0,
 )
 
+val resultFieldOrder = JsonResult(
+    workloadName = "",
+    operationCount = 0,
+    elapsed = Duration.ZERO,
+    progress = 100
+).toMap(Json { encodeDefaults = true })
+    .map { (k, _) -> k }
+    .mapIndexed { i, s -> s to i }
+    .toMap()
+
 private val json = Json {
     encodeDefaults = false
 }

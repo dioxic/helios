@@ -93,7 +93,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         results
             .flatMap { it.keys }
             .distinct()
-            .sorted()
+            .sortedBy { resultFieldOrder[it] }
             .map { column ->
                 column to max(
                     results.maxOf { it[column]?.length ?: 0 },
