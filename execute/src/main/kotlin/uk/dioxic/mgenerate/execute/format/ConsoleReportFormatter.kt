@@ -71,7 +71,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                                 !lastWorkloads.containsAll(workloads) || workloads.size != lastWorkloads.size
 
                             if (headerTick || workloadChange || workloads.size > 1) {
-                                columns = getColumnLengths(resultsMap)
+                                columns = getColumns(resultsMap)
                                 count = 0
                                 emit(formatHeader(columns))
                             }
@@ -90,7 +90,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         }
     }
 
-    private fun getColumnLengths(results: ResultsMap): Columns =
+    private fun getColumns(results: ResultsMap): Columns =
         results
             .flatMap { it.keys }
             .distinct()
