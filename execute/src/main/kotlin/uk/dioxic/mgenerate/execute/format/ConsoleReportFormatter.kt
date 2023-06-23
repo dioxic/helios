@@ -17,7 +17,8 @@ import uk.dioxic.mgenerate.execute.serialization.IntPercentSerializer
 import kotlin.math.max
 import kotlin.time.Duration
 
-typealias Columns = List<Pair<String, Int>>
+private typealias Columns = List<Pair<String, Int>>
+private typealias ResultsMap =  List<Map<String, String>>
 
 internal object ConsoleReportFormatter : ReportFormatter() {
     private const val padding = 3
