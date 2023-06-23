@@ -1,5 +1,7 @@
 package uk.dioxic.mgenerate.execute.results
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import kotlin.time.Duration
 
@@ -15,12 +17,12 @@ sealed interface SummarizedResult {
     val elapsedTime: Duration
 }
 
+@Serializable
 data class SummarizedLatencies(
-    val p50: Duration,
-    val p95: Duration,
-    val p99: Duration,
-    val max: Duration,
-    val min: Duration,
+    @Contextual val p50: Duration,
+    @Contextual val p95: Duration,
+    @Contextual val p99: Duration,
+    @Contextual val max: Duration,
 )
 
 data class SummarizedWriteResult(

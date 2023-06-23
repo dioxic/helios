@@ -10,6 +10,7 @@ import uk.dioxic.mgenerate.execute.ProgressMessage
 import uk.dioxic.mgenerate.execute.StageCompleteMessage
 import uk.dioxic.mgenerate.execute.StageStartMessage
 import uk.dioxic.mgenerate.execute.model.Workload
+import uk.dioxic.mgenerate.execute.results.SummarizedLatencies
 import uk.dioxic.mgenerate.execute.results.SummarizedResultsBatch
 import uk.dioxic.mgenerate.execute.results.TimedResult
 import uk.dioxic.mgenerate.execute.serialization.DurationConsoleSerializer
@@ -17,7 +18,8 @@ import uk.dioxic.mgenerate.execute.serialization.IntPercentSerializer
 import kotlin.math.max
 import kotlin.time.Duration
 
-typealias Columns = List<Pair<String, Int>>
+private typealias Columns = List<Pair<String, Int>>
+private typealias ResultsMap = List<Map<String, String>>
 
 internal object ConsoleReportFormatter : ReportFormatter() {
     private const val padding = 3
@@ -64,14 +66,14 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                     when (val fRes = msg.result) {
                         is TimedResult -> emit("\n${fRes.context.workload.name} completed in ${fRes.duration}")
                         is SummarizedResultsBatch -> {
-                            val resultsMap = fRes.toMap()
+                            val resultsMap = fRes.toFlatMap()
                             val workloads = fRes.results.map { it.context.workload }
                             val headerTick = count % printHeaderEvery == 0L
                             val workloadChange =
                                 !lastWorkloads.containsAll(workloads) || workloads.size != lastWorkloads.size
 
                             if (headerTick || workloadChange || workloads.size > 1) {
-                                columns = getColumnLengths(resultsMap)
+                                columns = getColumns(resultsMap)
                                 count = 0
                                 emit(formatHeader(columns))
                             }
@@ -90,7 +92,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         }
     }
 
-    private fun getColumnLengths(results: ResultsMap): Columns =
+    private fun getColumns(results: ResultsMap): Columns =
         results
             .flatMap { it.keys }
             .distinct()
@@ -119,12 +121,18 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         }
     }
 
-    private fun OutputResult.toMap(json: Json): Map<String, JsonElement> =
-        json.encodeToJsonElement(this).jsonObject.toMap()
+    private fun OutputResult.toFlatMap(json: Json): Map<String, JsonElement> =
+        json.encodeToJsonElement(this).jsonObject.flatten(' ')
 
-    private fun SummarizedResultsBatch.toMap(stageName: String = ""): ResultsMap = results.map { sr ->
+    private fun SummarizedResultsBatch.toFlatMap(stageName: String = ""): ResultsMap = results.map { sr ->
         with(batchDuration) {
-            sr.toOutputResult(stageName).toMap(json).mapValues { (_, v) -> v.jsonPrimitive.content }
+            sr.toOutputResult(stageName).toFlatMap(json).mapValues { (_, v) ->
+                when (v) {
+                    is JsonPrimitive -> v.content
+//                    is kotlinx.serialization.json.JsonObject -> {              }
+                    else -> error("${v::class} not supported")
+                }
+            }
         }
     }
 
@@ -132,8 +140,14 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         workloadName = "",
         operationCount = 0,
         elapsed = Duration.ZERO,
-        progress = 100
-    ).toMap(Json { encodeDefaults = true })
+        progress = 100,
+        latencies = SummarizedLatencies(
+            p50 = Duration.ZERO,
+            p95 = Duration.ZERO,
+            p99 = Duration.ZERO,
+            max = Duration.ZERO
+        )
+    ).toFlatMap(Json { encodeDefaults = true })
         .map { (k, _) -> k }
         .mapIndexed { i, s -> s to i }
         .toMap()
