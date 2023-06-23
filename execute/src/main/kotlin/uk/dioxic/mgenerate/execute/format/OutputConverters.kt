@@ -72,6 +72,7 @@ private fun SummarizedWriteResult.toOutputResult(stageName: String) = OutputResu
     operationCount = operationCount,
     progress = context.executionProgress,
     elapsed = elapsedTime,
+    latencies = latencies,
 )
 
 context(Duration)
@@ -82,6 +83,7 @@ private fun SummarizedReadResult.toOutputResult(stageName: String) = OutputResul
     operationCount = operationCount,
     progress = context.executionProgress,
     elapsed = elapsedTime,
+    latencies = latencies,
 )
 
 context(Duration)
@@ -93,6 +95,7 @@ private fun SummarizedCommandResult.toOutputResult(stageName: String) = OutputRe
     operationCount = operationCount,
     progress = context.executionProgress,
     elapsed = elapsedTime,
+    latencies = latencies,
 )
 
 context(Duration)
@@ -103,6 +106,7 @@ private fun SummarizedMessageResult.toOutputResult(stageName: String) = OutputRe
     operationCount = operationCount,
     progress = context.executionProgress,
     elapsed = elapsedTime,
+    latencies = latencies,
 )
 
 private val ExecutionContext.executionProgress

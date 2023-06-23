@@ -1,23 +1,39 @@
 package uk.dioxic.mgenerate.execute.format
 
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import org.bson.BsonDocument
+import org.bson.BsonValue
+
 fun Map<String, Any>.flatten(separator: Char) =
     mutableMapOf<String, Any>().also {
         flatten(it, this, separator)
-    }
+    }.toMap()
 
-private fun flatten(map: MutableMap<String, Any>, value: Any, separator: Char, key: String = ""): Any {
+fun JsonObject.flatten(separator: Char) =
+    mutableMapOf<String, JsonElement>().also {
+        flatten(it, this, separator)
+    }.toMap()
+
+fun BsonDocument.flatten(separator: Char) =
+    mutableMapOf<String, BsonValue>().also {
+        flatten(it, this, separator)
+    }.toMap()
+
+@Suppress("UNCHECKED_CAST")
+private fun <T> flatten(map: MutableMap<String, T>, value: T, separator: Char, key: String = "") {
     return when (value) {
         is Map<*, *> -> {
             value.filterValues { it != null }.forEach { (k, v) ->
                 val newKey = getKey(key, separator, k.toString())
-                flatten(map, v!!, separator, newKey)
+                flatten(map, v as T, separator, newKey)
             }
         }
 
         is Iterable<*> -> {
             value.filterNotNull().forEachIndexed { i, v ->
                 val newKey = getKey(key, separator, i.toString())
-                flatten(map, v, separator, newKey)
+                flatten(map, v as T, separator, newKey)
             }
         }
 

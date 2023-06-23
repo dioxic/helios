@@ -3,6 +3,7 @@ package uk.dioxic.mgenerate.execute.format
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import uk.dioxic.mgenerate.execute.results.SummarizedLatencies
 import kotlin.time.Duration
 
 typealias Percent = Int
@@ -22,5 +23,6 @@ data class OutputResult (
     @SerialName("failures") val failureCount: Int = 0,
     @SerialName("elapsed") @Contextual val elapsed: Duration,
     @SerialName("progress") @Contextual val progress: Percent,
+    val latencies: SummarizedLatencies? = null
 )
 
