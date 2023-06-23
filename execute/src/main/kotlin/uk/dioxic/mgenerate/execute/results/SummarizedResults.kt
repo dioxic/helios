@@ -4,7 +4,7 @@ import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import kotlin.time.Duration
 
 data class SummarizedResultsBatch(
-    val duration: Duration,
+    val batchDuration: Duration,
     val results: List<SummarizedResult>
 ): FrameworkResult
 
@@ -12,6 +12,7 @@ sealed interface SummarizedResult {
     val context: ExecutionContext
     val latencies: SummarizedLatencies
     val operationCount: Int
+    val elapsedTime: Duration
 }
 
 data class SummarizedLatencies(
@@ -31,6 +32,7 @@ data class SummarizedWriteResult(
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
     override val operationCount: Int = 0,
+    override val elapsedTime: Duration,
 ) : SummarizedResult
 
 data class SummarizedReadResult(
@@ -38,6 +40,7 @@ data class SummarizedReadResult(
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
     override val operationCount: Int = 0,
+    override val elapsedTime: Duration,
 ) : SummarizedResult
 
 data class SummarizedMessageResult(
@@ -45,6 +48,7 @@ data class SummarizedMessageResult(
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
     override val operationCount: Int = 0,
+    override val elapsedTime: Duration,
 ) : SummarizedResult
 
 data class SummarizedCommandResult(
@@ -53,4 +57,5 @@ data class SummarizedCommandResult(
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
     override val operationCount: Int = 0,
+    override val elapsedTime: Duration,
 ) : SummarizedResult

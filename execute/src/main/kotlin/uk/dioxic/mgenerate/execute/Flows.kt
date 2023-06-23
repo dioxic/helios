@@ -54,7 +54,7 @@ fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> = chann
             tickerChannel.onReceive {
                 send(
                     SummarizedResultsBatch(
-                        duration = lastSummaryTime.elapsedNow(),
+                        batchDuration = lastSummaryTime.elapsedNow(),
                         results = results.summarize()
                     )
                 )
@@ -67,7 +67,7 @@ fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> = chann
         if (results.isNotEmpty()) {
             send(
                 SummarizedResultsBatch(
-                    duration = lastSummaryTime.elapsedNow(),
+                    batchDuration = lastSummaryTime.elapsedNow(),
                     results = results.summarize()
                 )
             )

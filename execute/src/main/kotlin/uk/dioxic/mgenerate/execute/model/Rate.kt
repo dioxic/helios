@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package uk.dioxic.mgenerate.execute.model
 
 import kotlinx.serialization.SerialName
@@ -9,6 +11,7 @@ import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 @Serializable(RateSerializer::class)
 sealed class Rate {
@@ -86,8 +89,8 @@ data class RampedRate(
     private val rateOffset = fromRate - to.calculateBaseDelay()
 
     override fun calculateDelay(context: ExecutionContext): Duration {
-        val currentOffset = System.currentTimeMillis() - context.startTimeMillis
-        val rampPercentage = min(currentOffset.toDouble() / rampDuration.inWholeMilliseconds.toDouble(), 1.0)
+        val currentOffset = context.startTime.elapsedNow()
+        val rampPercentage = min(currentOffset / rampDuration, 1.0)
 
         return fromRate - rateOffset.times(rampPercentage)
     }

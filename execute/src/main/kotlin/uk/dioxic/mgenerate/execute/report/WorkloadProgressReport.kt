@@ -2,15 +2,12 @@ package uk.dioxic.mgenerate.execute.report
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import uk.dioxic.mgenerate.execute.results.*
 import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+
+typealias ResultsMap =  List<Map<String, String>>
 
 @Serializable
 data class WorkloadProgressReport(
@@ -32,11 +29,11 @@ private val json = Json {
     encodeDefaults = false
 }
 
-fun WorkloadProgressReport.toMap() =
+fun WorkloadProgressReport.toMap(): Map<String, JsonElement> =
     json.encodeToJsonElement(this).jsonObject.toMap()
 
-fun SummarizedResultsBatch.toMap() = results.map { sr ->
-    with(duration) {
+fun SummarizedResultsBatch.toMap(): ResultsMap = results.map { sr ->
+    with(batchDuration) {
         sr.toReport().toMap().mapValues { (_,v) -> v.jsonPrimitive.content }
     }
 }
@@ -59,7 +56,7 @@ private fun SummarizedWriteResult.toReport() = WorkloadProgressReport(
     upsertedCount = upsertedCount,
     operationCount = operationCount,
     progress = context.executionProgress,
-    elapsed = context.elapsed,
+    elapsed = elapsedTime,
 )
 
 context(Duration)
@@ -68,7 +65,7 @@ private fun SummarizedReadResult.toReport() = WorkloadProgressReport(
     docsReturned = docsReturned,
     operationCount = operationCount,
     progress = context.executionProgress,
-    elapsed = context.elapsed,
+    elapsed = elapsedTime,
 )
 
 context(Duration)
@@ -78,7 +75,7 @@ private fun SummarizedCommandResult.toReport() = WorkloadProgressReport(
     failureCount = failures,
     operationCount = operationCount,
     progress = context.executionProgress,
-    elapsed = context.elapsed,
+    elapsed = elapsedTime,
 )
 
 context(Duration)
@@ -87,14 +84,11 @@ private fun SummarizedMessageResult.toReport() = WorkloadProgressReport(
     successCount = msgCount,
     operationCount = operationCount,
     progress = context.executionProgress,
-    elapsed = context.elapsed,
+    elapsed = elapsedTime,
 )
 
 val ExecutionContext.executionProgress
     get() = executionCount.percentOf(workload.count)
-
-val ExecutionContext.elapsed
-    get() = (System.currentTimeMillis() - startTimeMillis).toDuration(DurationUnit.MILLISECONDS)
 
 private infix fun Int.percentOf(divisor: Int): Int = (this * 100) / divisor
 private infix fun Long.percentOf(divisor: Long): Int = ((this * 100) / divisor).toInt()

@@ -10,7 +10,7 @@ import com.mongodb.client.MongoDatabase
 sealed interface Resource
 
 class MongoResource(private val client: MongoClient) : Resource {
-    val cache = CollectionCache(client)
+    private val cache = CollectionCache(client)
 
     private fun getDatabaseInternal(database: String): MongoDatabase =
         client.getDatabase(database)
@@ -25,7 +25,7 @@ class MongoResource(private val client: MongoClient) : Resource {
         cache[database, collections, documentClass]
 
     inline fun <reified TDocument> getCollection(database: String, collections: String): MongoCollection<TDocument> =
-        cache[database, collections, TDocument::class.java]
+        getCollection(database, collections, TDocument::class.java)
 }
 
 class CollectionCache(private val client: MongoClient) {

@@ -41,7 +41,8 @@ private fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
         modifiedCount = sumOf { it.value.modifiedCount },
         deletedCount = sumOf { it.value.deletedCount },
         upsertedCount = sumOf { it.value.upsertedCount },
-        latencies = map { it.duration }.summarize()
+        latencies = map { it.duration }.summarize(),
+        elapsedTime = maxOf { it.elapsedTime },
     )
 
 private fun List<TimedReadResult>.summarize(context: ExecutionContext) =
@@ -49,14 +50,16 @@ private fun List<TimedReadResult>.summarize(context: ExecutionContext) =
         context = context,
         docsReturned = sumOf { it.value.docReturned },
         operationCount = size,
-        latencies = map { it.duration }.summarize()
+        latencies = map { it.duration }.summarize(),
+        elapsedTime = maxOf { it.elapsedTime },
     )
 
 private fun List<TimedMessageResult>.summarize(context: ExecutionContext) =
     SummarizedMessageResult(
         context = context,
         msgCount = size,
-        latencies = map { it.duration }.summarize()
+        latencies = map { it.duration }.summarize(),
+        elapsedTime = maxOf { it.elapsedTime },
     )
 
 private fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
@@ -64,7 +67,8 @@ private fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
         context = context,
         successes = count { it.value.success },
         failures = count { !it.value.success },
-        latencies = map { it.duration }.summarize()
+        latencies = map { it.duration }.summarize(),
+        elapsedTime = maxOf { it.elapsedTime },
     )
 
 @Suppress("UNCHECKED_CAST")

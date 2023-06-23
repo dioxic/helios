@@ -1,3 +1,4 @@
+
 package uk.dioxic.mgenerate.execute
 
 import arrow.fx.coroutines.parMapUnordered
@@ -49,7 +50,7 @@ fun Benchmark.produceSequential(
 ): Flow<ExecutionContext> =
     stage.workloads.asFlow().flatMapConcat { workload ->
         produceRated(stage, workload)
-    }
+    }.flowOn(Dispatchers.Default)
 
 fun Benchmark.produceParallel(
     stage: ParallelStage,
@@ -59,8 +60,9 @@ fun Benchmark.produceParallel(
 
     addAll(rateWorkloads.map { produceRated(stage, it) })
     add(produceWeighted(stage, weightedWorkloads))
-}.merge()
+}.merge().flowOn(Dispatchers.Default)
 
+@OptIn(ExperimentalTime::class)
 fun Benchmark.produceWeighted(
     stage: Stage,
     workloads: List<WeightedWorkload>
@@ -84,6 +86,7 @@ fun Benchmark.produceWeighted(
     }
 }
 
+@OptIn(ExperimentalTime::class)
 fun Benchmark.produceRated(
     stage: Stage,
     workload: RateWorkload

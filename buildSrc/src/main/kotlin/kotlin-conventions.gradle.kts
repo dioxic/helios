@@ -10,6 +10,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.apply {
+                optIn("kotlin.time.ExperimentalTime")
 //                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
 //                optIn("kotlinx.coroutines.FlowPreview")
 //                optIn("kotlin.Experimental")
