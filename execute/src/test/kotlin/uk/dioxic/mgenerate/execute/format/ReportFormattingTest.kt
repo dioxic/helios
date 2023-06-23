@@ -18,7 +18,6 @@ import uk.dioxic.mgenerate.execute.model.TpsRate
 import uk.dioxic.mgenerate.execute.resources.MongoResource
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.template.Template
-import kotlin.time.Duration.Companion.seconds
 
 class ReportFormattingTest : FunSpec({
 
@@ -56,20 +55,5 @@ class ReportFormattingTest : FunSpec({
             }
 //        }
     }
-
-    test("scratch") {
-
-        val wpr = JsonResult(
-            workloadName = "workload1",
-            insertedCount = 100,
-            progress = 50,
-            operationCount = 200,
-            elapsed = 4.seconds
-        ).toMap()
-
-        println(wpr)
-
-    }
-
 
 })
