@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.execute.report
+package uk.dioxic.mgenerate.execute.format
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -10,7 +10,7 @@ import kotlin.time.Duration
 typealias ResultsMap =  List<Map<String, String>>
 
 @Serializable
-data class WorkloadProgressReport(
+data class JsonResult(
     @SerialName("workload") val workloadName: String,
     @SerialName("operations") val operationCount: Int,
     @SerialName("progress") val progress: Int,
@@ -29,7 +29,7 @@ private val json = Json {
     encodeDefaults = false
 }
 
-fun WorkloadProgressReport.toMap(): Map<String, JsonElement> =
+fun JsonResult.toMap(): Map<String, JsonElement> =
     json.encodeToJsonElement(this).jsonObject.toMap()
 
 fun SummarizedResultsBatch.toMap(): ResultsMap = results.map { sr ->
@@ -47,7 +47,7 @@ private fun SummarizedResult.toReport() = when (this) {
 }
 
 context(Duration)
-private fun SummarizedWriteResult.toReport() = WorkloadProgressReport(
+private fun SummarizedWriteResult.toReport() = JsonResult(
     workloadName = context.workload.name,
     insertedCount = insertedCount,
     matchedCount = matchedCount,
@@ -60,7 +60,7 @@ private fun SummarizedWriteResult.toReport() = WorkloadProgressReport(
 )
 
 context(Duration)
-private fun SummarizedReadResult.toReport() = WorkloadProgressReport(
+private fun SummarizedReadResult.toReport() = JsonResult(
     workloadName = context.workload.name,
     docsReturned = docsReturned,
     operationCount = operationCount,
@@ -69,7 +69,7 @@ private fun SummarizedReadResult.toReport() = WorkloadProgressReport(
 )
 
 context(Duration)
-private fun SummarizedCommandResult.toReport() = WorkloadProgressReport(
+private fun SummarizedCommandResult.toReport() = JsonResult(
     workloadName = context.workload.name,
     successCount = successes,
     failureCount = failures,
@@ -79,7 +79,7 @@ private fun SummarizedCommandResult.toReport() = WorkloadProgressReport(
 )
 
 context(Duration)
-private fun SummarizedMessageResult.toReport() = WorkloadProgressReport(
+private fun SummarizedMessageResult.toReport() = JsonResult(
     workloadName = context.workload.name,
     successCount = msgCount,
     operationCount = operationCount,

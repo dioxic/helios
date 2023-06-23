@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.execute.report
+package uk.dioxic.mgenerate.execute.format
 
 import uk.dioxic.mgenerate.execute.results.*
 import kotlin.time.Duration

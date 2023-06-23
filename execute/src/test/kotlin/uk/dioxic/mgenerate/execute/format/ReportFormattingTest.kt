@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.execute.report
+package uk.dioxic.mgenerate.execute.format
 
 import com.mongodb.client.result.InsertOneResult
 import io.kotest.core.spec.style.FunSpec
@@ -59,7 +59,7 @@ class ReportFormattingTest : FunSpec({
 
     test("scratch") {
 
-        val wpr = WorkloadProgressReport(
+        val wpr = JsonResult(
             workloadName = "workload1",
             insertedCount = 100,
             progress = 50,

@@ -1,4 +1,4 @@
-package uk.dioxic.mgenerate.execute.report
+package uk.dioxic.mgenerate.execute.format
 
 import kotlinx.coroutines.flow.Flow
 import uk.dioxic.mgenerate.execute.FrameworkMessage

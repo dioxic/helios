@@ -23,13 +23,13 @@ import uk.dioxic.mgenerate.cli.checkConnection
 import uk.dioxic.mgenerate.cli.options.*
 import uk.dioxic.mgenerate.execute.buildBenchmark
 import uk.dioxic.mgenerate.execute.execute
+import uk.dioxic.mgenerate.execute.format.ReportFormat
+import uk.dioxic.mgenerate.execute.format.ReportFormatter
+import uk.dioxic.mgenerate.execute.format.format
 import uk.dioxic.mgenerate.execute.model.CommandExecutor
 import uk.dioxic.mgenerate.execute.model.InsertOneExecutor
 import uk.dioxic.mgenerate.execute.model.TpsRate
 import uk.dioxic.mgenerate.execute.model.UnlimitedRate
-import uk.dioxic.mgenerate.execute.report.ReportFormat
-import uk.dioxic.mgenerate.execute.report.ReportFormatter
-import uk.dioxic.mgenerate.execute.report.format
 import uk.dioxic.mgenerate.execute.resources.MongoResource
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.resources.mongoClient
