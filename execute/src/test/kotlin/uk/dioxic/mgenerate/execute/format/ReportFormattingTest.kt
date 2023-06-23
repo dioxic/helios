@@ -7,8 +7,6 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.buffer
 import org.bson.BsonObjectId
-import org.bson.Document
-import org.bson.conversions.Bson
 import uk.dioxic.mgenerate.execute.buildBenchmark
 import uk.dioxic.mgenerate.execute.defaultExecutor
 import uk.dioxic.mgenerate.execute.defaultMongoExecutor
@@ -17,15 +15,13 @@ import uk.dioxic.mgenerate.execute.model.MessageExecutor
 import uk.dioxic.mgenerate.execute.model.TpsRate
 import uk.dioxic.mgenerate.execute.resources.MongoResource
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
+import uk.dioxic.mgenerate.execute.test.IS_NOT_GH_ACTION
 import uk.dioxic.mgenerate.template.Template
 
 class ReportFormattingTest : FunSpec({
 
     val executor = mockk<MessageExecutor>()
     val mongoResource = mockk<MongoResource> {
-        every { getDatabase(any()) } returns mockk {
-            every { runCommand(any<Bson>()) } returns Document("ok", 1)
-        }
         every { getCollection<Template>(any(), any()) } returns mockk {
             every { insertOne(any()) } returns InsertOneResult.acknowledged(BsonObjectId())
         }
@@ -35,7 +31,7 @@ class ReportFormattingTest : FunSpec({
         clearMocks(executor)
     }
 
-    test("print multiple workloads") {
+    test("print multiple workloads").config(enabled = IS_NOT_GH_ACTION) {
 //        runBlocking {
         buildBenchmark {
             parallelStage {

@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Encoder
 import uk.dioxic.mgenerate.execute.format.toFormatString
 import kotlin.time.Duration
 
-internal object DurationSerializer : KSerializer<Duration> {
+internal object DurationConsoleSerializer : KSerializer<Duration> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("kotlin.time.Duration", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: Duration) {
