@@ -84,7 +84,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                     }
                 }
 
-                is StageCompleteMessage -> emit(lineBreak("Completed ${msg.stage.name}"))
+                is StageCompleteMessage -> emit(lineBreak("Completed ${msg.stage.name} in ${msg.duration.toFormatString()}"))
             }
         }
     }
