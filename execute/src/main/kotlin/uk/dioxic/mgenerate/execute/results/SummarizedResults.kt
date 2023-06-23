@@ -31,7 +31,7 @@ data class SummarizedWriteResult(
     val upsertedCount: Long = 0,
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
-    override val operationCount: Int = 0,
+    override val operationCount: Int,
     override val elapsedTime: Duration,
 ) : SummarizedResult
 
@@ -39,7 +39,7 @@ data class SummarizedReadResult(
     val docsReturned: Int = 0,
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
-    override val operationCount: Int = 0,
+    override val operationCount: Int,
     override val elapsedTime: Duration,
 ) : SummarizedResult
 
@@ -47,7 +47,7 @@ data class SummarizedMessageResult(
     val msgCount: Int = 0,
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
-    override val operationCount: Int = 0,
+    override val operationCount: Int,
     override val elapsedTime: Duration,
 ) : SummarizedResult
 
@@ -56,6 +56,6 @@ data class SummarizedCommandResult(
     val failures: Int = 0,
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
-    override val operationCount: Int = 0,
+    override val operationCount: Int,
     override val elapsedTime: Duration,
 ) : SummarizedResult

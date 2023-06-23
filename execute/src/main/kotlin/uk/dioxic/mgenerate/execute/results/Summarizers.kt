@@ -43,6 +43,7 @@ private fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
         upsertedCount = sumOf { it.value.upsertedCount },
         latencies = map { it.duration }.summarize(),
         elapsedTime = maxOf { it.elapsedTime },
+        operationCount = size,
     )
 
 private fun List<TimedReadResult>.summarize(context: ExecutionContext) =
@@ -60,6 +61,7 @@ private fun List<TimedMessageResult>.summarize(context: ExecutionContext) =
         msgCount = size,
         latencies = map { it.duration }.summarize(),
         elapsedTime = maxOf { it.elapsedTime },
+        operationCount = size,
     )
 
 private fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
@@ -69,6 +71,7 @@ private fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
         failures = count { !it.value.success },
         latencies = map { it.duration }.summarize(),
         elapsedTime = maxOf { it.elapsedTime },
+        operationCount = size,
     )
 
 @Suppress("UNCHECKED_CAST")
