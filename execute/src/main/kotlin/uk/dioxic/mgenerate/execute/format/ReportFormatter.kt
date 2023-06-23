@@ -6,7 +6,8 @@ import uk.dioxic.mgenerate.execute.FrameworkMessage
 fun Flow<FrameworkMessage>.format(formatter: ReportFormatter) = formatter.format(this)
 
 enum class ReportFormat {
-    TEXT
+    TEXT,
+    JSON
 }
 
 sealed class ReportFormatter {
@@ -15,6 +16,7 @@ sealed class ReportFormatter {
     companion object {
         fun create(format: ReportFormat): ReportFormatter = when (format) {
             ReportFormat.TEXT -> ConsoleReportFormatter
+            ReportFormat.JSON -> JsonReportFormatter
         }
     }
 }

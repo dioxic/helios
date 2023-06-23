@@ -18,7 +18,7 @@ data class WriteResult(
 ) : ExecutionResult
 
 data class ReadResult(
-    val docReturned: Int = 0,
+    val docsReturned: Int = 0,
 ) : ExecutionResult
 
 data class MessageResult(

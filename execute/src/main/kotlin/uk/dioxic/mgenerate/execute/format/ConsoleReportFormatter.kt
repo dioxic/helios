@@ -2,6 +2,9 @@ package uk.dioxic.mgenerate.execute.format
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.*
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import uk.dioxic.mgenerate.execute.FrameworkMessage
 import uk.dioxic.mgenerate.execute.ProgressMessage
 import uk.dioxic.mgenerate.execute.StageCompleteMessage
@@ -9,38 +12,35 @@ import uk.dioxic.mgenerate.execute.StageStartMessage
 import uk.dioxic.mgenerate.execute.model.Workload
 import uk.dioxic.mgenerate.execute.results.SummarizedResultsBatch
 import uk.dioxic.mgenerate.execute.results.TimedResult
+import uk.dioxic.mgenerate.execute.serialization.DurationConsoleSerializer
+import uk.dioxic.mgenerate.execute.serialization.IntPercentSerializer
 import kotlin.math.max
+import kotlin.time.Duration
 
-typealias ColumnLengths = List<Pair<String, Int>>
+typealias Columns = List<Pair<String, Int>>
 
 internal object ConsoleReportFormatter : ReportFormatter() {
     private const val padding = 3
     private const val printHeaderEvery = 10
 
-    private fun format(resultsMap: ResultsMap, columnLengths: ColumnLengths, printHeader: Boolean) = buildString {
-        // print column headers
-        if (printHeader) {
-            val lineLength = columnLengths.sumOf { it.second + padding } - padding
-            appendLine()
-            columnLengths.forEachIndexed { index, (column, length) ->
-                val pad = if (index == columnLengths.lastIndex) 0 else padding
-                appendPaddedAfter(column, length + pad)
-            }
-            appendLine()
-            append("".padEnd(lineLength, '-'))
-            appendLine()
+    private fun formatHeader(columns: Columns) = buildString {
+        val lineLength = columns.sumOf { it.second + padding } - padding
+        appendLine()
+        columns.forEachIndexed { index, (column, length) ->
+            val pad = if (index == columns.lastIndex) 0 else padding
+            appendPaddedAfter(column, length + pad)
         }
+        appendLine()
+        append("".padEnd(lineLength, '-'))
+    }
 
-        // print results
-        resultsMap.forEach { result ->
-            columnLengths.forEachIndexed { index, (column, length) ->
-                val pad = if (index == columnLengths.lastIndex) 0 else padding
+    private fun formatResult(result: Map<String, String>, columns: Columns) =
+        buildString {
+            columns.forEachIndexed { index, (column, length) ->
+                val pad = if (index == columns.lastIndex) 0 else padding
                 appendPaddedAfter(result[column] ?: "0", length + pad)
             }
-            appendLine()
         }
-
-    }
 
     private fun lineBreak(s: String, length: Int = 100) = buildString {
         val before = (length - s.length).div(2)
@@ -50,34 +50,35 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         append(s)
         appendSpace()
         appendChar(length - before - s.length, "-")
-        appendLine()
     }
 
     override fun format(results: Flow<FrameworkMessage>) = flow {
         var lastWorkloads: List<Workload> = emptyList()
-        var columnLengths: ColumnLengths = emptyList()
+        var columns: Columns = emptyList()
         var count: Long = 0
 
         results.collect { msg ->
             when (msg) {
                 is StageStartMessage -> emit(lineBreak("Starting ${msg.stage.name}"))
                 is ProgressMessage -> {
-                    when (msg.result) {
-                        is TimedResult -> emit("\n${msg.result.context.workload.name} completed in ${msg.result.duration}\n")
+                    when (val fRes = msg.result) {
+                        is TimedResult -> emit("\n${fRes.context.workload.name} completed in ${fRes.duration}")
                         is SummarizedResultsBatch -> {
-                            val resultsMap = msg.result.toMap()
-                            val workloads = msg.result.results.map { it.context.workload }
+                            val resultsMap = fRes.toMap()
+                            val workloads = fRes.results.map { it.context.workload }
                             val headerTick = count % printHeaderEvery == 0L
-                            val workloadChange = !lastWorkloads.containsAll(workloads) || workloads.size != lastWorkloads.size
+                            val workloadChange =
+                                !lastWorkloads.containsAll(workloads) || workloads.size != lastWorkloads.size
 
-                            val printHeader = (headerTick || workloadChange || workloads.size > 1).also {
-                                if (it) {
-                                    columnLengths = getColumnLengths(resultsMap)
-                                    count = 0
-                                }
+                            if (headerTick || workloadChange || workloads.size > 1) {
+                                columns = getColumnLengths(resultsMap)
+                                count = 0
+                                emit(formatHeader(columns))
                             }
 
-                            emit(format(resultsMap, columnLengths, printHeader))
+                            resultsMap.forEach { result ->
+                                emit(formatResult(result, columns))
+                            }
                             lastWorkloads = workloads
                             count++
                         }
@@ -89,11 +90,11 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         }
     }
 
-    private fun getColumnLengths(results: ResultsMap): ColumnLengths =
+    private fun getColumnLengths(results: ResultsMap): Columns =
         results
             .flatMap { it.keys }
             .distinct()
-            .sortedBy { resultFieldOrder[it] }
+            .sortedBy { fieldOrder[it] }
             .map { column ->
                 column to max(
                     results.maxOf { it[column]?.length ?: 0 },
@@ -109,5 +110,32 @@ internal object ConsoleReportFormatter : ReportFormatter() {
 
     private fun StringBuilder.appendPaddedAfter(value: String, length: Int, padChar: Char = ' '): StringBuilder =
         append(value).appendChar(length - value.length, padChar.toString())
+
+    private val json = Json {
+        encodeDefaults = false
+        serializersModule = SerializersModule {
+            contextual(DurationConsoleSerializer)
+            contextual(IntPercentSerializer)
+        }
+    }
+
+    private fun OutputResult.toMap(json: Json): Map<String, JsonElement> =
+        json.encodeToJsonElement(this).jsonObject.toMap()
+
+    private fun SummarizedResultsBatch.toMap(stageName: String = ""): ResultsMap = results.map { sr ->
+        with(batchDuration) {
+            sr.toOutputResult(stageName).toMap(json).mapValues { (_, v) -> v.jsonPrimitive.content }
+        }
+    }
+
+    private val fieldOrder = OutputResult(
+        workloadName = "",
+        operationCount = 0,
+        elapsed = Duration.ZERO,
+        progress = 100
+    ).toMap(Json { encodeDefaults = true })
+        .map { (k, _) -> k }
+        .mapIndexed { i, s -> s to i }
+        .toMap()
 
 }
