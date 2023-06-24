@@ -30,7 +30,7 @@ import uk.dioxic.mgenerate.execute.model.CommandExecutor
 import uk.dioxic.mgenerate.execute.model.InsertOneExecutor
 import uk.dioxic.mgenerate.execute.model.TpsRate
 import uk.dioxic.mgenerate.execute.model.UnlimitedRate
-import uk.dioxic.mgenerate.execute.resources.MongoResource
+import uk.dioxic.mgenerate.execute.mongodb.cached
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.resources.mongoClient
 import uk.dioxic.mgenerate.template.Template
@@ -111,7 +111,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         val duration = runBlocking {
             resourceScope {
                 val client = mongoClient(mcs)
-                val registry = ResourceRegistry(MongoResource(client))
+                val registry = ResourceRegistry(client.cached())
 
                 if (!checkConnection(client)) {
                     error("Can't connect!")

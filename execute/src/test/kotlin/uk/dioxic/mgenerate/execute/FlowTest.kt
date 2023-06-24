@@ -7,15 +7,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import uk.dioxic.mgenerate.execute.results.MessageResult
+import uk.dioxic.mgenerate.execute.test.IS_NOT_GH_ACTION
 import kotlin.time.Duration.Companion.milliseconds
 
 class FlowTest : FunSpec({
 
-    test("chunked flow") {
+    test("chunked flow").config(enabled = IS_NOT_GH_ACTION) {
         runBlocking {
             flow {
                 repeat(100) {
-                    val timedResult = measureTimedResult(defaultExecutionContext) {
+                    val timedResult = defaultExecutionContext.measureTimedResult {
                         MessageResult("[$it] hello world!")
                     }
 

@@ -22,19 +22,21 @@ fun Benchmark.execute(
     concurrency: Int = 4,
     interval: Duration = 1.seconds,
 ): Flow<FrameworkMessage> = flow {
-    stages.forEach { stage ->
-        emit(StageStartMessage(stage))
-        val duration = measureTime {
-            withTimeoutOrNull(stage.timeout) {
-                produceExecutions(stage)
-                    .buffer(100)
-                    .parMapUnordered(concurrency) { it.invoke(registry) }
-                    .chunked(interval)
-                    .map { ProgressMessage(stage, it) }
-                    .collect { emit(it) }
+    with(registry) {
+        stages.forEach { stage ->
+            emit(StageStartMessage(stage))
+            val duration = measureTime {
+                withTimeoutOrNull(stage.timeout) {
+                    produceExecutions(stage)
+                        .buffer(100)
+                        .parMapUnordered(concurrency) { it() }
+                        .chunked(interval)
+                        .map { ProgressMessage(stage, it) }
+                        .collect { emit(it) }
+                }
             }
+            emit(StageCompleteMessage(stage, duration))
         }
-        emit(StageCompleteMessage(stage, duration))
     }
 }.flowOn(Dispatchers.Default)
 
@@ -82,7 +84,7 @@ fun Benchmark.produceWeighted(
             contexts[it].copy(executionCount = count)
         }
         emit(context)
-        delay(context)
+        context.delay()
     }
 }
 
@@ -95,13 +97,13 @@ fun Benchmark.produceRated(
     for (i in 1..context.workload.count) {
         context.copy(executionCount = i).also {
             emit(it)
-            delay(it)
+            it.delay()
         }
     }
 }
 
-suspend fun delay(context: ExecutionContext) {
-    val delay = context.rate.calculateDelay(context)
+suspend fun ExecutionContext.delay() {
+    val delay = this.rate.calculateDelay()
     when {
         delay == Duration.ZERO -> return
         delay < 100.milliseconds -> {
@@ -115,13 +117,13 @@ suspend fun delay(context: ExecutionContext) {
 }
 
 @OptIn(ExperimentalTime::class)
-inline fun measureTimedResult(context: ExecutionContext, block: () -> ExecutionResult): TimedResult {
+inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
 
     return when (val value = block()) {
-        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), context)
-        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), context)
-        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), context)
-        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), context)
+        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), this)
+        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), this)
+        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), this)
+        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), this)
     }
 }

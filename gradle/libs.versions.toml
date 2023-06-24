@@ -20,7 +20,7 @@ kotlinSerialization = "1.5.1"
 ksp = "1.8.22-1.0.11"
 log4j = "2.20.0"
 mockk = "1.13.5"
-mongodb = "4.9.1"
+mongodb = "4.10.1"
 reflections = "0.10.2"
 slf4j = "2.0.7"
 statistics = "1.2.1"
@@ -65,7 +65,7 @@ log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "lo
 log4j-kotlin = { module = "org.apache.logging.log4j:log4j-api-kotlin", version = "1.2.0" }
 log4j-slf4j = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-mongodb-async = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
+#mongodb-async = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 mongodb-sync = { module = "org.mongodb:mongodb-driver-sync", version.ref = "mongodb" }
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }

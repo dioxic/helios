@@ -15,7 +15,8 @@ import kotlin.time.ExperimentalTime
 
 @Serializable(RateSerializer::class)
 sealed class Rate {
-    abstract fun calculateDelay(context: ExecutionContext): Duration
+    context(ExecutionContext)
+    abstract fun calculateDelay(): Duration
 }
 
 @Serializable(FixedRateSerializer::class)
@@ -26,7 +27,7 @@ sealed class FixedRate: Rate() {
 @Serializable
 object UnlimitedRate : FixedRate() {
     override fun calculateBaseDelay(): Duration = ZERO
-    override fun calculateDelay(context: ExecutionContext): Duration = ZERO
+    override fun calculateDelay(): Duration = ZERO
 }
 
 @Serializable
@@ -43,7 +44,7 @@ data class TpsRate(
 
     override fun calculateBaseDelay(): Duration = 1.seconds.div(tps)
 
-    override fun calculateDelay(context: ExecutionContext): Duration =
+    override fun calculateDelay(): Duration =
         1.seconds.div(
             when (fuzzy) {
                 0.0 -> tps.toDouble()
@@ -66,7 +67,7 @@ data class PeriodRate(
 
     override fun calculateBaseDelay(): Duration = period
 
-    override fun calculateDelay(context: ExecutionContext): Duration =
+    override fun calculateDelay(): Duration =
         when (fuzzy) {
             0.0 -> period
             else -> period + (period * Random.nextDouble(-fuzzy, fuzzy))
@@ -88,8 +89,9 @@ data class RampedRate(
     private val fromRate = from.calculateBaseDelay()
     private val rateOffset = fromRate - to.calculateBaseDelay()
 
-    override fun calculateDelay(context: ExecutionContext): Duration {
-        val currentOffset = context.startTime.elapsedNow()
+    context(ExecutionContext)
+    override fun calculateDelay(): Duration {
+        val currentOffset = startTime.elapsedNow()
         val rampPercentage = min(currentOffset / rampDuration, 1.0)
 
         return fromRate - rateOffset.times(rampPercentage)

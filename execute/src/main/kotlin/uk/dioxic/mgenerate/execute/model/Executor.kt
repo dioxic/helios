@@ -1,8 +1,10 @@
 package uk.dioxic.mgenerate.execute.model
 
+import com.mongodb.client.MongoClient
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.MongoDatabase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import uk.dioxic.mgenerate.execute.resources.MongoResource
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
 import uk.dioxic.mgenerate.execute.results.CommandResult
 import uk.dioxic.mgenerate.execute.results.ExecutionResult
@@ -12,7 +14,8 @@ import uk.dioxic.mgenerate.template.Template
 
 @Serializable
 sealed interface Executor {
-    fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry): ExecutionResult
+    context(ExecutionContext, ResourceRegistry)
+    fun execute(): ExecutionResult
 }
 
 @Serializable
@@ -20,8 +23,9 @@ sealed class CollectionExecutor : Executor {
     abstract val database: String
     abstract val collection: String
 
-    inline fun <reified TDocument> getCollection(resourceRegistry: ResourceRegistry) =
-        resourceRegistry[MongoResource::class].getCollection<TDocument>(database, collection)
+    context(ResourceRegistry)
+    inline fun <reified TDocument> getCollection(): MongoCollection<TDocument> =
+        getResource<MongoClient>().getDatabase(database).getCollection(collection, TDocument::class.java)
 
 }
 
@@ -29,17 +33,19 @@ sealed class CollectionExecutor : Executor {
 sealed class DatabaseExecutor : Executor {
     abstract val database: String
 
-    fun getDatabase(resourceRegistry: ResourceRegistry) =
-        resourceRegistry[MongoResource::class].getDatabase(database)
+    context(ResourceRegistry)
+    fun getDatabase(): MongoDatabase = getResource<MongoClient>().getDatabase(database)
 }
 
 @Serializable
 @SerialName("message")
 data class MessageExecutor(
     val message: String
-): Executor {
-    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) =
-        MessageResult(message)
+) : Executor {
+
+    context(ExecutionContext)
+    override fun execute() =
+        MessageResult("$message - count: $executionCount")
 
 }
 
@@ -49,8 +55,10 @@ data class CommandExecutor(
     override val database: String,
     val command: Template
 ) : DatabaseExecutor() {
-    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) = CommandResult(
-        getDatabase(resourceRegistry).runCommand(command)
+
+    context(ExecutionContext, ResourceRegistry)
+    override fun execute() = CommandResult(
+        getDatabase().runCommand(command)
     )
 }
 
@@ -61,7 +69,9 @@ data class InsertOneExecutor(
     override val collection: String,
     val template: Template
 ) : CollectionExecutor() {
-    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) =
-        getCollection<Template>(resourceRegistry).insertOne(template).standardize()
+
+    context(ExecutionContext, ResourceRegistry)
+    override fun execute() =
+        getCollection<Template>().insertOne(template).standardize()
 
 }

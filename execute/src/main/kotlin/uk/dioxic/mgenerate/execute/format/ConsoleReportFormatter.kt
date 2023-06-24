@@ -12,6 +12,7 @@ import uk.dioxic.mgenerate.execute.StageStartMessage
 import uk.dioxic.mgenerate.execute.model.Workload
 import uk.dioxic.mgenerate.execute.results.SummarizedLatencies
 import uk.dioxic.mgenerate.execute.results.SummarizedResultsBatch
+import uk.dioxic.mgenerate.execute.results.TimedMessageResult
 import uk.dioxic.mgenerate.execute.results.TimedResult
 import uk.dioxic.mgenerate.execute.serialization.DurationConsoleSerializer
 import uk.dioxic.mgenerate.execute.serialization.IntPercentSerializer
@@ -64,7 +65,14 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                 is StageStartMessage -> emit(lineBreak("Starting ${msg.stage.name}"))
                 is ProgressMessage -> {
                     when (val fRes = msg.result) {
-                        is TimedResult -> emit("\n${fRes.context.workload.name} completed in ${fRes.duration}")
+                        is TimedResult -> {
+                            val outMsg = "\n${fRes.context.workload.name} completed in ${fRes.duration}"
+                            when (fRes) {
+                                is TimedMessageResult -> emit("$outMsg [msg: ${fRes.value.msg}]")
+                                else -> emit(outMsg)
+                            }
+                        }
+
                         is SummarizedResultsBatch -> {
                             val resultsMap = fRes.toFlatMap()
                             val workloads = fRes.results.map { it.context.workload }
@@ -126,13 +134,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
 
     private fun SummarizedResultsBatch.toFlatMap(stageName: String = ""): ResultsMap = results.map { sr ->
         with(batchDuration) {
-            sr.toOutputResult(stageName).toFlatMap(json).mapValues { (_, v) ->
-                when (v) {
-                    is JsonPrimitive -> v.content
-//                    is kotlinx.serialization.json.JsonObject -> {              }
-                    else -> error("${v::class} not supported")
-                }
-            }
+            sr.toOutputResult(stageName).toFlatMap(json).mapValues { (_, v) -> v.jsonPrimitive.content }
         }
     }
 

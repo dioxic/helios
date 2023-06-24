@@ -21,7 +21,9 @@ class RateTests : FunSpec({
         val rampRate = RampedRate(from = TpsRate(100), to = UnlimitedRate, rampDuration = 2.seconds)
 
         val rampDelays = (0..5).asFlow().map { _ ->
-            val rampDelay = rampRate.calculateDelay(context)
+            val rampDelay = with(context) {
+                 rampRate.calculateDelay()
+            }
             delay(500.milliseconds)
             rampDelay
         }.toList()

@@ -16,7 +16,8 @@ data class ExecutionContext(
     val executionCount: Long = 0,
     val startTime: ValueTimeMark = TimeSource.Monotonic.markNow()
 ) {
-    fun invoke(resourceRegistry: ResourceRegistry): TimedResult = measureTimedResult(this) {
-        executor.execute(this, resourceRegistry)
+    context(ResourceRegistry)
+    operator fun invoke(): TimedResult = measureTimedResult {
+        executor.execute()
     }
 }
