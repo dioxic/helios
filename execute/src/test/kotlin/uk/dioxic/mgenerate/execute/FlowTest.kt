@@ -1,6 +1,5 @@
 package uk.dioxic.mgenerate.execute
 
-import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FunSpec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -13,22 +12,20 @@ import kotlin.time.Duration.Companion.milliseconds
 class FlowTest : FunSpec({
 
     test("chunked flow").config(enabled = IS_NOT_GH_ACTION) {
-        runBlocking {
-            flow {
-                repeat(100) {
-                    val timedResult = defaultExecutionContext.measureTimedResult {
-                        MessageResult("[$it] hello world!")
-                    }
+        flow {
+            repeat(100) {
+                val timedResult = defaultExecutionContext.measureTimedResult {
+                    MessageResult("[$it] hello world!")
+                }
 
-                    emit(timedResult)
-                    delay(20.milliseconds)
-                }
-            }.chunked(500.milliseconds)
-                .flowOn(Dispatchers.Default)
-                .collect {
-                    println(it)
-                }
-        }
+                emit(timedResult)
+                delay(20.milliseconds)
+            }
+        }.chunked(500.milliseconds)
+            .flowOn(Dispatchers.Default)
+            .collect {
+                println(it)
+            }
     }
 
 })
