@@ -9,6 +9,7 @@ fun TimedResult.toOutputResult(stageName: String) = when(this) {
     is TimedCommandResult -> this.toOutputResult(stageName)
     is TimedMessageResult -> this.toOutputResult(stageName)
     is TimedReadResult -> this.toOutputResult(stageName)
+    is TimedTransactionResult -> TODO()
 }
 
 private fun TimedWriteResult.toOutputResult(stageName: String) = OutputResult(

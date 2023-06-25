@@ -83,6 +83,7 @@ fun List<TimedResult>.summarize() =
                 is TimedReadResult -> (v as List<TimedReadResult>).summarize(context)
                 is TimedMessageResult -> (v as List<TimedMessageResult>).summarize(context)
                 is TimedCommandResult -> (v as List<TimedCommandResult>).summarize(context)
+                is TimedTransactionResult -> TODO()
             }
         }
         .sortedBy { it.context.workload.name }

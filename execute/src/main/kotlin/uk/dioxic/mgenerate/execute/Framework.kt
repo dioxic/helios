@@ -125,5 +125,6 @@ inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): Ti
         is ReadResult -> TimedReadResult(value, mark.elapsedNow(), this)
         is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), this)
         is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), this)
+        is TransactionResult -> TODO()
     }
 }

@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.arrow.core)
     implementation(libs.arrow.optics)
     implementation(libs.arrow.fx.coroutines)
+    implementation(libs.arrow.resilience)
     implementation(libs.kotlin.datetime)
     implementation(libs.kotlin.coroutines.core)
     implementation(libs.kotlin.serialization.core)

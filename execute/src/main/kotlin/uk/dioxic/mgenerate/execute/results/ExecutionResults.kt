@@ -24,3 +24,7 @@ data class ReadResult(
 data class MessageResult(
     val msg: String
 ) : ExecutionResult
+
+data class TransactionResult(
+    val executionResults: List<ExecutionResult>
+): ExecutionResult

@@ -6,9 +6,9 @@ import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.clearMocks
-import io.mockk.every
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.withTimeout
 import uk.dioxic.mgenerate.execute.model.ExecutionContext
@@ -37,7 +37,7 @@ class FrameworkTest : FunSpec({
     context("execution counts") {
 
         test("sequential stage has correct execution count") {
-            every {
+            coEvery {
                 with(any<ExecutionContext>()) { executor.execute() }
             } returns MessageResult("hello world!")
 
@@ -48,13 +48,13 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            verify(exactly = 10) {
+            coVerify(exactly = 10) {
                 with(any<ExecutionContext>()) { executor.execute() }
             }
         }
 
         test("parallel stage with rate workloads has correct execution count") {
-            every {
+            coEvery {
                 with(any<ExecutionContext>()) { executor.execute() }
             } returns MessageResult("hello world!")
 
@@ -65,13 +65,13 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            verify(exactly = 10) {
+            coVerify(exactly = 10) {
                 with(any<ExecutionContext>()) { executor.execute() }
             }
         }
 
         test("parallel stage with weighted workloads has correct execution count") {
-            every {
+            coEvery {
                 with(any<ExecutionContext>()) { executor.execute() }
             } returns MessageResult("hello world!")
 
@@ -82,13 +82,13 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            verify(exactly = 10) {
+            coVerify(exactly = 10) {
                 with(any<ExecutionContext>()) { executor.execute() }
             }
         }
 
         test("parallel stage with mixed workloads has correct execution count") {
-            every {
+            coEvery {
                 with(any<ExecutionContext>()) { executor.execute() }
             } returns MessageResult("hello world!")
 
@@ -100,14 +100,14 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            verify(exactly = 15) {
+            coVerify(exactly = 15) {
                 with(any<ExecutionContext>()) { executor.execute() }
             }
         }
     }
 
     test("workload tps rate is roughly correct for single execution").config(enabled = IS_NOT_GH_ACTION) {
-        every {
+        coEvery {
             with(any<ExecutionContext>()) { executor.execute() }
         } returns MessageResult("hello world!")
 
@@ -128,7 +128,7 @@ class FrameworkTest : FunSpec({
     }
 
     test("workload tps rate is roughly correct for parallel execution").config(enabled = IS_NOT_GH_ACTION) {
-        every {
+        coEvery {
             with(any<ExecutionContext>()) { executor.execute() }
         } returns MessageResult("hello world!")
 
@@ -152,7 +152,7 @@ class FrameworkTest : FunSpec({
     }
 
     test("single executions don't get summarized") {
-        every {
+        coEvery {
             with(any<ExecutionContext>()) { executor.execute() }
         } returns MessageResult("hello world!")
 
@@ -168,7 +168,7 @@ class FrameworkTest : FunSpec({
     }
 
     test("multiple executions get summarized") {
-        every {
+        coEvery {
             with(any<ExecutionContext>()) { executor.execute() }
         } returns MessageResult("hello world!")
 
@@ -184,7 +184,7 @@ class FrameworkTest : FunSpec({
     }
 
     test("parallel stage time limit is enforced") {
-        every {
+        coEvery {
             with(any<ExecutionContext>()) { executor.execute() }
         } returns MessageResult("hello world!")
 
@@ -206,7 +206,7 @@ class FrameworkTest : FunSpec({
     test("mongo executor is successful") {
         val insertOneExecutor = mockk<InsertOneExecutor>()
 
-        every {
+        coEvery {
             with(any<ExecutionContext>()) {
                 with(any<ResourceRegistry>()) {
                     insertOneExecutor.execute()
@@ -226,8 +226,8 @@ class FrameworkTest : FunSpec({
 
     }
 
-    xtest("errors are handled") {
-        every {
+    test("errors are handled") {
+        coEvery {
             with(any<ExecutionContext>()) { executor.execute() }
         } throws MongoException("error")
 
