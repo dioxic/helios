@@ -246,6 +246,36 @@ class RetryTests : FunSpec({
             verify(exactly = 1) { session.close() }
         }
 
+        test("fails when commit always throws unknown commit result ex") {
+            every {
+                collection.insertOne(any<ClientSession>(), any())
+            } returns InsertOneResult.acknowledged(BsonObjectId())
+
+            every { session.hasActiveTransaction() } returns true
+            every { session.commitTransaction() } throws mongoUnknownTxnCommitResultEx
+
+            val registry = ResourceRegistry(client)
+
+            val txExecutor = TransactionExecutor(
+                executors = listOf(defaultMongoExecutor),
+                options = TransactionOptions.builder().build(),
+                maxRetryAttempts = 20
+            )
+
+            shouldThrowExactly<MongoException> {
+                with(defaultExecutionContext) {
+                    with(registry) {
+                        txExecutor.execute()
+                    }
+                }
+            }
+
+            verify(exactly = 1) { session.abortTransaction() }
+            verify(exactly = 21) { session.commitTransaction() }
+            verify(exactly = 1) { session.startTransaction(any()) }
+            verify(exactly = 1) { session.close() }
+        }
+
         test("fails immediately on non-mongo exception") {
             every {
                 collection.insertOne(any<ClientSession>(), any())

@@ -27,7 +27,7 @@ suspend fun <T> ClientSession.withTransaction(
     val startTime = TimeSource.Monotonic.markNow()
 
     val res = Schedule.recurs<Throwable>(maxRetryAttempts.toLong())
-        .zipRight(Schedule.doWhile<Throwable> { e, _ ->
+        .zipRight(Schedule.doWhile { e, _ ->
             if (hasActiveTransaction()) {
                 abortTransaction()
             }
@@ -37,14 +37,15 @@ suspend fun <T> ClientSession.withTransaction(
         }).retry {
             startTransaction(options)
             val retVal = body.invoke()
-            Schedule.doWhile<Throwable> { e, _ ->
-                e is MongoException
-                        && e !is MongoExecutionTimeoutException
-                        && e.hasErrorLabel(MongoException.UNKNOWN_TRANSACTION_COMMIT_RESULT_LABEL)
-                        && startTime.elapsedNow() < maxRetryLimit
-            }.retry {
-                commitTransaction()
-            }
+            Schedule.recurs<Throwable>(maxRetryAttempts.toLong())
+                .zipRight(Schedule.doWhile { e, _ ->
+                    e is MongoException
+                            && e !is MongoExecutionTimeoutException
+                            && e.hasErrorLabel(MongoException.UNKNOWN_TRANSACTION_COMMIT_RESULT_LABEL)
+                            && startTime.elapsedNow() < maxRetryLimit
+                }).retry {
+                    commitTransaction()
+                }
             retVal
         }
 
