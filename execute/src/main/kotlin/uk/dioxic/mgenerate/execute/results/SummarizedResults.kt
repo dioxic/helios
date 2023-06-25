@@ -54,10 +54,26 @@ data class SummarizedMessageResult(
 ) : SummarizedResult
 
 data class SummarizedCommandResult(
-    val successes: Int = 0,
-    val failures: Int = 0,
+    val successCount: Int = 0,
+    val failureCount: Int = 0,
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
     override val operationCount: Int,
     override val elapsedTime: Duration,
 ) : SummarizedResult
+
+data class SummarizedTransactionResult(
+    val insertedCount: Long = 0,
+    val matchedCount: Long = 0,
+    val modifiedCount: Long = 0,
+    val deletedCount: Long = 0,
+    val upsertedCount: Long = 0,
+    val docsReturned: Int = 0,
+    val successCount: Int = 0,
+    val failureCount: Int = 0,
+    override val context: ExecutionContext,
+    override val latencies: SummarizedLatencies,
+    override val operationCount: Int,
+    override val elapsedTime: Duration,
+) : SummarizedResult
+

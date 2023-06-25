@@ -4,10 +4,29 @@ import org.bson.Document
 
 sealed interface ExecutionResult
 
-data class CommandResult(val document: Document): ExecutionResult {
-    val success: Boolean
-        get() = document["ok"] == 1
+data class CommandResult(
+    val successCount: Int,
+    val failureCount: Int,
+    val document: Document? = null,
+) : ExecutionResult {
+    companion object {
+        operator fun invoke(document: Document): CommandResult =
+            CommandResult(
+                successCount = document.isSuccess.toInt(),
+                failureCount = (!document.isSuccess).toInt(),
+                document = document
+            )
+    }
 }
+
+val Document.isSuccess: Boolean
+    get() = getBoolean("ok", false)
+
+fun Boolean.toInt() =
+    when (this) {
+        true -> 1
+        false -> 0
+    }
 
 data class WriteResult(
     val insertedCount: Long = 0,
@@ -27,4 +46,4 @@ data class MessageResult(
 
 data class TransactionResult(
     val executionResults: List<ExecutionResult>
-): ExecutionResult
+) : ExecutionResult
