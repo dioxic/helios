@@ -53,7 +53,7 @@ data class MessageExecutor(
     val message: String
 ) : Executor {
 
-    context(ExecutionContext)
+    context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
         MessageResult("$message - count: $executionCount")
 

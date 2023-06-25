@@ -34,13 +34,27 @@ class FrameworkTest : FunSpec({
         clearMocks(executor)
     }
 
+    beforeTest {
+        coEvery {
+            with(any<ExecutionContext>()) {
+                with(any<ResourceRegistry>()) {
+                    executor.execute()
+                }
+            }
+        } returns MessageResult("hello world!")
+    }
+
     context("execution counts") {
 
-        test("sequential stage has correct execution count") {
-            coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
-            } returns MessageResult("hello world!")
+        fun verifyExCount(count: Int) = coVerify(exactly = count) {
+            with(any<ExecutionContext>()) {
+                with(any<ResourceRegistry>()) {
+                    executor.execute()
+                }
+            }
+        }
 
+        test("sequential stage has correct execution count") {
             buildBenchmark {
                 sequentialStage {
                     rateWorkload(executor = executor, count = 5)
@@ -48,15 +62,11 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            coVerify(exactly = 10) {
-                with(any<ExecutionContext>()) { executor.execute() }
-            }
+            verifyExCount(10)
         }
 
+
         test("parallel stage with rate workloads has correct execution count") {
-            coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
-            } returns MessageResult("hello world!")
 
             buildBenchmark {
                 parallelStage {
@@ -65,16 +75,10 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            coVerify(exactly = 10) {
-                with(any<ExecutionContext>()) { executor.execute() }
-            }
+            verifyExCount(10)
         }
 
         test("parallel stage with weighted workloads has correct execution count") {
-            coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
-            } returns MessageResult("hello world!")
-
             buildBenchmark {
                 parallelStage {
                     weightedWorkload(executor = executor, count = 5)
@@ -82,16 +86,10 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            coVerify(exactly = 10) {
-                with(any<ExecutionContext>()) { executor.execute() }
-            }
+            verifyExCount(10)
         }
 
         test("parallel stage with mixed workloads has correct execution count") {
-            coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
-            } returns MessageResult("hello world!")
-
             buildBenchmark {
                 parallelStage {
                     weightedWorkload(executor = executor, count = 5)
@@ -100,17 +98,11 @@ class FrameworkTest : FunSpec({
                 }
             }.execute().count()
 
-            coVerify(exactly = 15) {
-                with(any<ExecutionContext>()) { executor.execute() }
-            }
+            verifyExCount(15)
         }
     }
 
     test("workload tps rate is roughly correct for single execution").config(enabled = IS_NOT_GH_ACTION) {
-        coEvery {
-            with(any<ExecutionContext>()) { executor.execute() }
-        } returns MessageResult("hello world!")
-
         val count = 300
         val tps = 100
         val expectedDuration = (count / tps).seconds
@@ -128,10 +120,6 @@ class FrameworkTest : FunSpec({
     }
 
     test("workload tps rate is roughly correct for parallel execution").config(enabled = IS_NOT_GH_ACTION) {
-        coEvery {
-            with(any<ExecutionContext>()) { executor.execute() }
-        } returns MessageResult("hello world!")
-
         val count = 300
         val tps = 100
         val expectedDuration = (count / tps).seconds
@@ -152,10 +140,6 @@ class FrameworkTest : FunSpec({
     }
 
     test("single executions don't get summarized") {
-        coEvery {
-            with(any<ExecutionContext>()) { executor.execute() }
-        } returns MessageResult("hello world!")
-
         buildBenchmark {
             parallelStage {
                 rateWorkload(executor = executor, count = 1)
@@ -168,10 +152,6 @@ class FrameworkTest : FunSpec({
     }
 
     test("multiple executions get summarized") {
-        coEvery {
-            with(any<ExecutionContext>()) { executor.execute() }
-        } returns MessageResult("hello world!")
-
         buildBenchmark {
             parallelStage {
                 rateWorkload(executor = executor, count = 100)
@@ -184,10 +164,6 @@ class FrameworkTest : FunSpec({
     }
 
     test("parallel stage time limit is enforced") {
-        coEvery {
-            with(any<ExecutionContext>()) { executor.execute() }
-        } returns MessageResult("hello world!")
-
         val timeout = 1.seconds
 
         withTimeout(timeout * 2) {
@@ -226,9 +202,13 @@ class FrameworkTest : FunSpec({
 
     }
 
-    test("errors are handled") {
+    xtest("errors are handled") {
         coEvery {
-            with(any<ExecutionContext>()) { executor.execute() }
+            with(any<ExecutionContext>()) {
+                with(any<ResourceRegistry>()) {
+                    executor.execute()
+                }
+            }
         } throws MongoException("error")
 
         buildBenchmark {

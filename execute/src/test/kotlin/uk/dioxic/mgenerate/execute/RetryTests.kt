@@ -55,16 +55,28 @@ class RetryTests : FunSpec({
             val executor = mockk<MessageExecutor>()
 
             coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
             } throws mongoTransientTxnEx andThen MessageResult("hello")
 
             val res = schedule.retry {
                 with(defaultExecutionContext) {
-                    executor.execute()
+                    with(ResourceRegistry()) {
+                        executor.execute()
+                    }
                 }
             }
 
-            coVerify(exactly = 2) { with(any<ExecutionContext>()) { executor.execute() } }
+            coVerify(exactly = 2) {
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
+            }
 
             println(res)
         }
@@ -73,52 +85,88 @@ class RetryTests : FunSpec({
             val executor = mockk<MessageExecutor>()
 
             coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
             } throws mongoTransientTxnEx
 
             shouldThrowExactly<MongoException> {
                 schedule.retry {
                     with(defaultExecutionContext) {
-                        executor.execute()
+                        with(ResourceRegistry()) {
+                            executor.execute()
+                        }
                     }
                 }
             }
 
-            coVerify(exactly = 4) { with(any<ExecutionContext>()) { executor.execute() } }
+            coVerify(exactly = 4) {
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
+            }
         }
 
         test("fails for a non-mongo exception") {
             val executor = mockk<MessageExecutor>()
 
             coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
             } throws mongoTransientTxnEx andThenThrows RuntimeException("rte")
 
             shouldThrowExactly<RuntimeException> {
                 schedule.retry {
                     with(defaultExecutionContext) {
-                        executor.execute()
+                        with(ResourceRegistry()) {
+                            executor.execute()
+                        }
                     }
                 }
             }
 
-            coVerify(exactly = 2) { with(any<ExecutionContext>()) { executor.execute() } }
+            coVerify(exactly = 2) {
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
+            }
         }
 
         test("recurs mongo tx") {
             val executor = mockk<MessageExecutor>()
 
             coEvery {
-                with(any<ExecutionContext>()) { executor.execute() }
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
             } throws mongoTransientTxnEx andThen MessageResult("hello")
 
             schedule.retry {
                 with(defaultExecutionContext) {
-                    executor.execute()
+                    with(ResourceRegistry()) {
+                        executor.execute()
+                    }
                 }
             }.shouldBeInstanceOf<MessageResult>()
 
-            coVerify(exactly = 2) { with(any<ExecutionContext>()) { executor.execute() } }
+            coVerify(exactly = 2) {
+                with(any<ExecutionContext>()) {
+                    with(any<ResourceRegistry>()) {
+                        executor.execute()
+                    }
+                }
+            }
         }
     }
 
