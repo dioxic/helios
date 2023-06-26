@@ -1,18 +1,31 @@
 package uk.dioxic.mgenerate.execute.model
 
+import arrow.fx.coroutines.resourceScope
+import com.mongodb.TransactionOptions
+import com.mongodb.client.ClientSession
+import com.mongodb.client.MongoClient
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.MongoDatabase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import uk.dioxic.mgenerate.execute.resources.MongoResource
+import uk.dioxic.mgenerate.execute.mongodb.withTransaction
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
-import uk.dioxic.mgenerate.execute.results.CommandResult
-import uk.dioxic.mgenerate.execute.results.ExecutionResult
-import uk.dioxic.mgenerate.execute.results.MessageResult
-import uk.dioxic.mgenerate.execute.results.standardize
+import uk.dioxic.mgenerate.execute.resources.mongoSession
+import uk.dioxic.mgenerate.execute.results.*
+import uk.dioxic.mgenerate.execute.serialization.TransactionOptionsSerializer
 import uk.dioxic.mgenerate.template.Template
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Serializable
 sealed interface Executor {
-    fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry): ExecutionResult
+    context(ExecutionContext, ResourceRegistry)
+    suspend fun execute(): ExecutionResult
+}
+
+sealed interface MongoSessionExecutor : Executor {
+    context(ExecutionContext, ResourceRegistry)
+    suspend fun execute(session: ClientSession): ExecutionResult
 }
 
 @Serializable
@@ -20,8 +33,9 @@ sealed class CollectionExecutor : Executor {
     abstract val database: String
     abstract val collection: String
 
-    inline fun <reified TDocument> getCollection(resourceRegistry: ResourceRegistry) =
-        resourceRegistry[MongoResource::class].getCollection<TDocument>(database, collection)
+    context(ResourceRegistry)
+    inline fun <reified TDocument> getCollection(): MongoCollection<TDocument> =
+        getResource<MongoClient>().getDatabase(database).getCollection(collection, TDocument::class.java)
 
 }
 
@@ -29,17 +43,19 @@ sealed class CollectionExecutor : Executor {
 sealed class DatabaseExecutor : Executor {
     abstract val database: String
 
-    fun getDatabase(resourceRegistry: ResourceRegistry) =
-        resourceRegistry[MongoResource::class].getDatabase(database)
+    context(ResourceRegistry)
+    fun getDatabase(): MongoDatabase = getResource<MongoClient>().getDatabase(database)
 }
 
 @Serializable
 @SerialName("message")
 data class MessageExecutor(
     val message: String
-): Executor {
-    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) =
-        MessageResult(message)
+) : Executor {
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute() =
+        MessageResult("$message - count: $executionCount")
 
 }
 
@@ -49,8 +65,10 @@ data class CommandExecutor(
     override val database: String,
     val command: Template
 ) : DatabaseExecutor() {
-    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) = CommandResult(
-        getDatabase(resourceRegistry).runCommand(command)
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute() = CommandResult(
+        getDatabase().runCommand(command)
     )
 }
 
@@ -60,8 +78,40 @@ data class InsertOneExecutor(
     override val database: String,
     override val collection: String,
     val template: Template
-) : CollectionExecutor() {
-    override fun execute(context: ExecutionContext, resourceRegistry: ResourceRegistry) =
-        getCollection<Template>(resourceRegistry).insertOne(template).standardize()
+) : CollectionExecutor(), MongoSessionExecutor {
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(session: ClientSession): ExecutionResult =
+        getCollection<Template>().insertOne(session, template).standardize()
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute() =
+        getCollection<Template>().insertOne(template).standardize()
+
+}
+
+@Serializable
+@SerialName("transaction")
+data class TransactionExecutor(
+    val executors: List<MongoSessionExecutor>,
+    @Serializable(TransactionOptionsSerializer::class) val options: TransactionOptions,
+    val maxRetryTimeout: Duration = 120.seconds,
+    val maxRetryAttempts: Int = 100,
+) : Executor {
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(): ExecutionResult =
+        resourceScope {
+            val session = mongoSession(getResource<MongoClient>())
+//            val txnBody = TransactionBody {
+//                runBlocking {
+//                    TransactionResult(executors.map { it.execute(session) })
+//                }
+//            }
+//            val results = session.withTransaction(txnBody, options)
+            session.withTransaction(options, maxRetryTimeout, maxRetryAttempts) {
+                TransactionResult(executors.map { it.execute(session) })
+            }
+        }
 
 }

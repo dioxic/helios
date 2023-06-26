@@ -34,8 +34,22 @@ data class TimedReadResult(
     override val elapsedTime: Duration = context.startTime.elapsedNow(),
 ): TimedResult
 
+data class TimedTransactionResult(
+    override val value: TransactionResult,
+    override val duration: Duration,
+    override val context: ExecutionContext,
+    override val elapsedTime: Duration = context.startTime.elapsedNow(),
+): TimedResult
+
 data class TimedMessageResult(
     override val value: MessageResult,
+    override val duration: Duration,
+    override val context: ExecutionContext,
+    override val elapsedTime: Duration = context.startTime.elapsedNow(),
+): TimedResult
+
+data class TimedErrorResult(
+    override val value: ErrorResult,
     override val duration: Duration,
     override val context: ExecutionContext,
     override val elapsedTime: Duration = context.startTime.elapsedNow(),

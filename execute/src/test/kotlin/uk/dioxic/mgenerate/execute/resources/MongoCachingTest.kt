@@ -5,12 +5,15 @@ import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.bson.Document
+import uk.dioxic.mgenerate.execute.mongodb.CachedMongoDatabase
+import uk.dioxic.mgenerate.execute.mongodb.cached
 
-class MongoResourceTest : FunSpec({
+class MongoCachingTest : FunSpec({
 
     test("mongo database is cached") {
 
@@ -21,13 +24,13 @@ class MongoResourceTest : FunSpec({
         every { client.getDatabase("db1") } returns database1
         every { client.getDatabase("db2") } returns database2
 
-        val resource = MongoResource(client)
+        val resource = client.cached()
 
         repeat(5) {
-            resource.getDatabase("db1") shouldBe database1
+            resource.getDatabase("db1").shouldBeInstanceOf<CachedMongoDatabase>()
         }
         repeat(5) {
-            resource.getDatabase("db2") shouldBe database2
+            resource.getDatabase("db2").shouldBeInstanceOf<CachedMongoDatabase>()
         }
 
         verify(exactly = 1) { client.getDatabase("db1") }
@@ -51,16 +54,20 @@ class MongoResourceTest : FunSpec({
             database.getCollection("collection2", Document::class.java)
         } returns collection2
 
-        val resource = MongoResource(client)
+        val resource = client.cached()
 
         repeat(5) {
-            resource.getCollection<Document>("db", "collection1") shouldBe collection1
+            resource
+                .getDatabase("db")
+                .getCollection("collection1", Document::class.java) shouldBe collection1
         }
         repeat(5) {
-            resource.getCollection<Document>("db", "collection2") shouldBe collection2
+            resource
+                .getDatabase("db")
+                .getCollection("collection2", Document::class.java) shouldBe collection2
         }
 
-        verify(exactly = 2) { client.getDatabase(any()) }
+        verify(exactly = 1) { client.getDatabase(any()) }
         verify(exactly = 1) { database.getCollection("collection1", Document::class.java) }
         verify(exactly = 1) { database.getCollection("collection2", Document::class.java) }
     }

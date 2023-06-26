@@ -1,7 +1,6 @@
 package uk.dioxic.mgenerate.execute.results
 
 import org.apache.commons.math3.stat.StatUtils
-import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -24,65 +23,83 @@ fun List<Double>.percentile(percentile: Double) =
     StatUtils.percentile(toDoubleArray(), percentile)
         .toDuration(DurationUnit.MILLISECONDS)
 
-fun List<WriteResult>.sumOf() = WriteResult(
-    insertedCount = sumOf { it.insertedCount },
-    matchedCount = sumOf { it.matchedCount },
-    modifiedCount = sumOf { it.modifiedCount },
-    deletedCount = sumOf { it.deletedCount },
-    upsertedCount = sumOf { it.upsertedCount },
-)
-
-private fun List<TimedWriteResult>.summarize(context: ExecutionContext) =
-    SummarizedWriteResult(
-        context = context,
-        insertedCount = sumOf { it.value.insertedCount },
-        matchedCount = sumOf { it.value.matchedCount },
-        modifiedCount = sumOf { it.value.modifiedCount },
-        deletedCount = sumOf { it.value.deletedCount },
-        upsertedCount = sumOf { it.value.upsertedCount },
-        latencies = map { it.duration }.summarize(),
-        elapsedTime = maxOf { it.elapsedTime },
-        operationCount = size,
-    )
-
-private fun List<TimedReadResult>.summarize(context: ExecutionContext) =
-    SummarizedReadResult(
-        context = context,
-        docsReturned = sumOf { it.value.docsReturned },
-        operationCount = size,
-        latencies = map { it.duration }.summarize(),
-        elapsedTime = maxOf { it.elapsedTime },
-    )
-
-private fun List<TimedMessageResult>.summarize(context: ExecutionContext) =
-    SummarizedMessageResult(
-        context = context,
-        msgCount = size,
-        latencies = map { it.duration }.summarize(),
-        elapsedTime = maxOf { it.elapsedTime },
-        operationCount = size,
-    )
-
-private fun List<TimedCommandResult>.summarize(context: ExecutionContext) =
-    SummarizedCommandResult(
-        context = context,
-        successes = count { it.value.success },
-        failures = count { !it.value.success },
-        latencies = map { it.duration }.summarize(),
-        elapsedTime = maxOf { it.elapsedTime },
-        operationCount = size,
-    )
-
-@Suppress("UNCHECKED_CAST")
 fun List<TimedResult>.summarize() =
     groupBy { it.context.workload.name }
         .map { (_, v) ->
-            val context = v.last().context
+            val acc = v.fold(ResultAccumulator()) { acc, r -> acc.add(r) }
+
             when (v.first()) {
-                is TimedWriteResult -> (v as List<TimedWriteResult>).summarize(context)
-                is TimedReadResult -> (v as List<TimedReadResult>).summarize(context)
-                is TimedMessageResult -> (v as List<TimedMessageResult>).summarize(context)
-                is TimedCommandResult -> (v as List<TimedCommandResult>).summarize(context)
+                is TimedWriteResult -> SummarizedWriteResult(acc)
+                is TimedReadResult -> SummarizedReadResult(acc)
+                is TimedMessageResult -> SummarizedMessageResult(acc)
+                is TimedCommandResult -> SummarizedCommandResult(acc)
+                is TimedTransactionResult -> SummarizedTransactionResult(acc)
+                is TimedErrorResult -> SummarizedErrorResult(acc)
             }
-        }
-        .sortedBy { it.context.workload.name }
+        }.sortedBy { it.context.workload.name }
+
+operator fun SummarizedMessageResult.Companion.invoke(accumulator: ResultAccumulator) =
+    SummarizedMessageResult(
+        context = accumulator.context!!,
+        latencies = accumulator.durations.summarize(),
+        elapsedTime = accumulator.elapsedTime,
+        operationCount = accumulator.operationCount,
+    )
+
+operator fun SummarizedWriteResult.Companion.invoke(accumulator: ResultAccumulator) =
+    SummarizedWriteResult(
+        context = accumulator.context!!,
+        insertedCount = accumulator.insertedCount,
+        matchedCount = accumulator.matchedCount,
+        modifiedCount = accumulator.modifiedCount,
+        deletedCount = accumulator.deletedCount,
+        upsertedCount = accumulator.upsertedCount,
+        latencies = accumulator.durations.summarize(),
+        elapsedTime = accumulator.elapsedTime,
+        operationCount = accumulator.operationCount,
+    )
+
+operator fun SummarizedReadResult.Companion.invoke(accumulator: ResultAccumulator) =
+    SummarizedReadResult(
+        context = accumulator.context!!,
+        docsReturned = accumulator.docsReturned,
+        latencies = accumulator.durations.summarize(),
+        elapsedTime = accumulator.elapsedTime,
+        operationCount = accumulator.operationCount,
+    )
+
+operator fun SummarizedCommandResult.Companion.invoke(accumulator: ResultAccumulator) =
+    SummarizedCommandResult(
+        context = accumulator.context!!,
+        successCount = accumulator.successCount,
+        failureCount = accumulator.failureCount,
+        latencies = accumulator.durations.summarize(),
+        elapsedTime = accumulator.elapsedTime,
+        operationCount = accumulator.operationCount,
+    )
+
+operator fun SummarizedErrorResult.Companion.invoke(accumulator: ResultAccumulator) =
+    SummarizedErrorResult(
+        context = accumulator.context!!,
+        errorCount = accumulator.errors.size,
+        distinctErrors = accumulator.errors.distinctBy { it::class to it.message },
+        latencies = accumulator.durations.summarize(),
+        elapsedTime = accumulator.elapsedTime,
+        operationCount = accumulator.operationCount,
+    )
+
+operator fun SummarizedTransactionResult.Companion.invoke(accumulator: ResultAccumulator) =
+    SummarizedTransactionResult(
+        context = accumulator.context!!,
+        insertedCount = accumulator.insertedCount,
+        matchedCount = accumulator.matchedCount,
+        modifiedCount = accumulator.modifiedCount,
+        deletedCount = accumulator.deletedCount,
+        upsertedCount = accumulator.upsertedCount,
+        docsReturned = accumulator.docsReturned,
+        successCount = accumulator.successCount,
+        failureCount = accumulator.failureCount,
+        latencies = accumulator.durations.summarize(),
+        elapsedTime = accumulator.elapsedTime,
+        operationCount = accumulator.operationCount,
+    )

@@ -16,6 +16,12 @@ val defaultTemplate = buildTemplate {
 
 val defaultExecutor = MessageExecutor("hello world!")
 
+val defaultMongoExecutor = InsertOneExecutor(
+    database = "myDB",
+    collection = "myCollection",
+    template = defaultTemplate
+)
+
 val defaultWorkload = RateWorkload(
     name = "workload0",
     executor = defaultExecutor
@@ -40,8 +46,3 @@ val defaultBenchmark = Benchmark(
 
 val defaultExecutionContext = defaultWorkload.createContext(defaultBenchmark, defaultStage)
 
-val defaultMongoExecutor = InsertOneExecutor(
-    database = "myDB",
-    collection = "myCollection",
-    template = defaultTemplate
-)
