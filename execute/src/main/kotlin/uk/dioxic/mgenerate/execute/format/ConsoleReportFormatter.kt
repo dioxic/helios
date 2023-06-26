@@ -25,6 +25,22 @@ private typealias ResultsMap = List<Map<String, String>>
 internal object ConsoleReportFormatter : ReportFormatter() {
     private const val padding = 3
     private const val printHeaderEvery = 10
+    private val defaultOutputMap = OutputResult(
+        workloadName = "",
+        operationCount = 0,
+        elapsed = Duration.ZERO,
+        progress = 100,
+        latencies = SummarizedLatencies(
+            p50 = Duration.ZERO,
+            p95 = Duration.ZERO,
+            p99 = Duration.ZERO,
+            max = Duration.ZERO
+        )
+    ).toFlatMap(Json { encodeDefaults = true })
+    private val fieldOrder = defaultOutputMap
+        .map { (k, _) -> k }
+        .mapIndexed { i, s -> s to i }
+        .toMap()
 
     private fun formatHeader(columns: Columns) = buildString {
         val lineLength = columns.sumOf { it.second + padding } - padding
@@ -37,11 +53,21 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         append("".padEnd(lineLength, '-'))
     }
 
+    private fun getDefaultValue(key: String) =
+        when (val v = defaultOutputMap[key]) {
+            is JsonPrimitive -> v.content
+            is JsonElement -> ("Default not supported for type ${v::class}")
+            else -> error("Default value not found")
+        }
+
+    private fun Map<String,String>.getOrDefault(key: String) =
+        this.getOrDefault(key, getDefaultValue(key))
+
     private fun formatResult(result: Map<String, String>, columns: Columns) =
         buildString {
             columns.forEachIndexed { index, (column, length) ->
                 val pad = if (index == columns.lastIndex) 0 else padding
-                appendPaddedAfter(result[column] ?: "0", length + pad)
+                appendPaddedAfter(result.getOrDefault(column), length + pad)
             }
         }
 
@@ -137,21 +163,5 @@ internal object ConsoleReportFormatter : ReportFormatter() {
             sr.toOutputResult(stageName).toFlatMap(json).mapValues { (_, v) -> v.jsonPrimitive.content }
         }
     }
-
-    private val fieldOrder = OutputResult(
-        workloadName = "",
-        operationCount = 0,
-        elapsed = Duration.ZERO,
-        progress = 100,
-        latencies = SummarizedLatencies(
-            p50 = Duration.ZERO,
-            p95 = Duration.ZERO,
-            p99 = Duration.ZERO,
-            max = Duration.ZERO
-        )
-    ).toFlatMap(Json { encodeDefaults = true })
-        .map { (k, _) -> k }
-        .mapIndexed { i, s -> s to i }
-        .toMap()
 
 }

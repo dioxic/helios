@@ -202,7 +202,7 @@ class FrameworkTest : FunSpec({
 
     }
 
-    xtest("errors are handled") {
+    test("errors are handled") {
         coEvery {
             with(any<ExecutionContext>()) {
                 with(any<ResourceRegistry>()) {

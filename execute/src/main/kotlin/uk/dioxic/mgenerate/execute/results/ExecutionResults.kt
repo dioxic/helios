@@ -1,5 +1,6 @@
 package uk.dioxic.mgenerate.execute.results
 
+import com.mongodb.MongoException
 import org.bson.Document
 
 sealed interface ExecutionResult
@@ -46,4 +47,8 @@ data class MessageResult(
 
 data class TransactionResult(
     val executionResults: List<ExecutionResult>
+) : ExecutionResult
+
+data class ErrorResult(
+    val error: MongoException
 ) : ExecutionResult

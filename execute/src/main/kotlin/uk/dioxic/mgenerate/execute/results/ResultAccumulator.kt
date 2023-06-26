@@ -1,5 +1,9 @@
 package uk.dioxic.mgenerate.execute.results
 
+import com.mongodb.MongoException
+import uk.dioxic.mgenerate.execute.model.ExecutionContext
+import kotlin.time.Duration
+
 class ResultAccumulator {
     var insertedCount: Long = 0
     var matchedCount: Long = 0
@@ -10,9 +14,21 @@ class ResultAccumulator {
     var successCount: Int = 0
     var failureCount: Int = 0
     var operationCount: Int = 0
+    var elapsedTime: Duration = Duration.ZERO
+    var durations: MutableList<Duration> = mutableListOf()
+    var errors: MutableList<MongoException> = mutableListOf()
+    var context: ExecutionContext? = null
 
-    fun add(executionResult: ExecutionResult) = apply {
+    fun add(timedResult: TimedResult): ResultAccumulator = apply {
+        durations.add(timedResult.duration)
+        elapsedTime = maxOf(elapsedTime, timedResult.elapsedTime)
+        context = timedResult.context
+        add(timedResult.value)
+    }
+
+    fun add(executionResult: ExecutionResult): ResultAccumulator = apply {
         operationCount++
+
         when (executionResult) {
             is WriteResult -> {
                 insertedCount += executionResult.insertedCount
@@ -21,13 +37,24 @@ class ResultAccumulator {
                 deletedCount += executionResult.deletedCount
                 upsertedCount += executionResult.upsertedCount
             }
+
             is CommandResult -> {
                 successCount += executionResult.successCount
                 failureCount += executionResult.failureCount
             }
+
             is ReadResult -> {
                 docsReturned += executionResult.docsReturned
             }
+
+            is ErrorResult -> {
+                errors.add(executionResult.error)
+            }
+
+            is TransactionResult -> {
+                executionResult.executionResults.forEach(::add)
+            }
+
             else -> {}
         }
     }

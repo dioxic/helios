@@ -1,7 +1,9 @@
 package uk.dioxic.mgenerate.execute.model
 
+import com.mongodb.MongoException
 import uk.dioxic.mgenerate.execute.measureTimedResult
 import uk.dioxic.mgenerate.execute.resources.ResourceRegistry
+import uk.dioxic.mgenerate.execute.results.ErrorResult
 import uk.dioxic.mgenerate.execute.results.TimedResult
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
@@ -18,6 +20,10 @@ data class ExecutionContext(
 ) {
     context(ResourceRegistry)
     suspend operator fun invoke(): TimedResult = measureTimedResult {
-        executor.execute()
+        try {
+            executor.execute()
+        } catch (e: MongoException) {
+            ErrorResult(e)
+        }
     }
 }

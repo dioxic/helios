@@ -23,6 +23,7 @@ data class OutputResult (
     @SerialName("failures") val failureCount: Int = 0,
     @SerialName("elapsed") @Contextual val elapsed: Duration,
     @SerialName("progress") @Contextual val progress: Percent,
-    val latencies: SummarizedLatencies? = null
+    val latencies: SummarizedLatencies? = null,
+    @SerialName("errors") val errorString: String = "",
 )
 

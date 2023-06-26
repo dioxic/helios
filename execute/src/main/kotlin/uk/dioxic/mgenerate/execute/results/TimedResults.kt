@@ -47,3 +47,10 @@ data class TimedMessageResult(
     override val context: ExecutionContext,
     override val elapsedTime: Duration = context.startTime.elapsedNow(),
 ): TimedResult
+
+data class TimedErrorResult(
+    override val value: ErrorResult,
+    override val duration: Duration,
+    override val context: ExecutionContext,
+    override val elapsedTime: Duration = context.startTime.elapsedNow(),
+): TimedResult

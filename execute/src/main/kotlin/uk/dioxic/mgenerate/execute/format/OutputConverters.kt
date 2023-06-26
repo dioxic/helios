@@ -1,5 +1,6 @@
 package uk.dioxic.mgenerate.execute.format
 
+import com.mongodb.MongoException
 import uk.dioxic.mgenerate.execute.model.ExecutionContext
 import uk.dioxic.mgenerate.execute.results.*
 import kotlin.time.Duration
@@ -10,7 +11,18 @@ fun TimedResult.toOutputResult(stageName: String) = when (this) {
     is TimedMessageResult -> this.toOutputResult(stageName)
     is TimedReadResult -> this.toOutputResult(stageName)
     is TimedTransactionResult -> this.toOutputResult(stageName)
+    is TimedErrorResult -> this.toOutputResult(stageName)
 }
+
+private fun TimedErrorResult.toOutputResult(stageName: String) = OutputResult(
+    stageName = stageName,
+    workloadName = context.workload.name,
+    operationCount = 1,
+    progress = 100,
+    elapsed = duration,
+    failureCount = 1,
+    errorString =  value.error.toOutputString()
+)
 
 private fun TimedTransactionResult.toOutputResult(stageName: String): OutputResult {
     val accumulator = value.executionResults.fold(ResultAccumulator()) { acc, res ->
@@ -82,7 +94,20 @@ fun SummarizedResult.toOutputResult(stageName: String) = when (this) {
     is SummarizedMessageResult -> toOutputResult(stageName)
     is SummarizedReadResult -> toOutputResult(stageName)
     is SummarizedTransactionResult -> toOutputResult(stageName)
+    is SummarizedErrorResult -> toOutputResult(stageName)
 }
+
+context(Duration)
+private fun SummarizedErrorResult.toOutputResult(stageName: String): OutputResult = OutputResult(
+    stageName = stageName,
+    workloadName = context.workload.name,
+    failureCount = errorCount,
+    errorString = distinctErrors.joinToString(", ") { it.toOutputString() },
+    operationCount = operationCount,
+    progress = context.executionProgress,
+    elapsed = elapsedTime,
+    latencies = latencies,
+)
 
 context(Duration)
 private fun SummarizedTransactionResult.toOutputResult(stageName: String) = OutputResult(
@@ -144,7 +169,7 @@ context(Duration)
 private fun SummarizedMessageResult.toOutputResult(stageName: String) = OutputResult(
     stageName = stageName,
     workloadName = context.workload.name,
-    successCount = msgCount,
+    successCount = operationCount,
     operationCount = operationCount,
     progress = context.executionProgress,
     elapsed = elapsedTime,
@@ -156,3 +181,6 @@ private val ExecutionContext.executionProgress
 
 private infix fun Int.percentOf(divisor: Int): Percent = (this * 100) / divisor
 private infix fun Long.percentOf(divisor: Long): Percent = ((this * 100) / divisor).toInt()
+
+private fun MongoException.toOutputString() =
+    "${this::class.simpleName!!}[${this.message.orEmpty()}]"
