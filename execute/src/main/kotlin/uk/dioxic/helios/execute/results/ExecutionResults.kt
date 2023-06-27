@@ -21,7 +21,12 @@ data class CommandResult(
 }
 
 val Document.isSuccess: Boolean
-    get() = getBoolean("ok", false)
+    get() = get("ok")?.let {
+        when (it) {
+            is Number -> (it.toInt() == 1)
+            else -> false
+        }
+    } ?: false
 
 fun Boolean.toInt() =
     when (this) {
