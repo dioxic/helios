@@ -6,9 +6,9 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 fun List<Duration>.summarize() = SummarizedLatencies(
-    p50 = percentile(0.5),
-    p95 = percentile(0.95),
-    p99 = percentile(0.99),
+    p50 = percentile(50.0),
+    p95 = percentile(95.0),
+    p99 = percentile(99.0),
     max = max(),
 )
 
