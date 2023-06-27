@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":template"))
+    implementation(project(":generate"))
     implementation(project(":execute"))
     implementation(libs.arrow.fx.coroutines)
     implementation(libs.bson)
@@ -31,7 +31,7 @@ tasks.test {
 }
 
 application {
-    mainClass.set("uk.dioxic.mgenerate.cli.CliKt")
+    mainClass.set("uk.dioxic.helios.cli.CliKt")
 }
 
 distributions {

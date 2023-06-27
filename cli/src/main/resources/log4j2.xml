@@ -9,7 +9,7 @@
         <Root level="INFO">
             <AppenderRef ref="Console" />
         </Root>
-        <Logger name="uk.dioxic.mgenerate" level="DEBUG"/>
+        <Logger name="uk.dioxic.helios" level="DEBUG"/>
         <Logger name="org.reflections.Reflections" level="WARN"/>
         <Logger name="org.mongodb.driver" level="WARN"/>
     </Loggers>

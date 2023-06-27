@@ -9,7 +9,7 @@ internal fun MavenPublication.configurePom(
     pom {
         name.set(project.name)
         description.set(project.description)
-        url.set("https://github.com/dioxic/mgenerate4k")
+        url.set("https://github.com/dioxic/helios")
 
         licenses {
             license {
@@ -29,9 +29,9 @@ internal fun MavenPublication.configurePom(
         }
 
         scm {
-            connection.set("scm:git:git://github.com/dioxic/mgenerate4k.git")
-            developerConnection.set("scm:git:git@github.com:dioxic/mgenerate4k.git")
-            url.set("https://github.com/dioxic/mgenerate4k")
+            connection.set("scm:git:git://github.com/dioxic/helios.git")
+            developerConnection.set("scm:git:git@github.com:dioxic/helios.git")
+            url.set("https://github.com/dioxic/helios")
         }
     }
 }

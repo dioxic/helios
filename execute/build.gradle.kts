@@ -8,7 +8,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":template"))
+    implementation(project(":generate"))
     ksp(libs.arrow.optics.ksp.plugin)
     implementation(libs.bson)
     implementation(libs.mongodb.sync)
