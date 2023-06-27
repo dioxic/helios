@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-rootProject.name = "mgenerate4k"
+rootProject.name = "helios"
 
 
 pluginManagement {
@@ -15,6 +15,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-include("template")
+include("generate")
 include("cli")
 include("execute")

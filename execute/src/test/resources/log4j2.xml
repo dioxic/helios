@@ -9,6 +9,6 @@
         <Root level="INFO">
             <AppenderRef ref="Console" />
         </Root>
-        <Logger name="uk.dioxic.mgenerate" level="DEBUG"/>
+        <Logger name="uk.dioxic.helios" level="DEBUG"/>
     </Loggers>
 </Configuration>

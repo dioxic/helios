@@ -1,3 +1,3 @@
 
 
-group = "uk.dioxic.mgenerate"
+group = "uk.dioxic.helios"
