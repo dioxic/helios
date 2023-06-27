@@ -68,7 +68,7 @@ class SerializationTest : FunSpec({
         val str = json.encodeToString(benchmark)
         println(str)
         val decoded = json.decodeFromString<Benchmark>(str)
-        decoded.stages[0].workloads.first().executor.shouldBeInstanceOf<CommandExecutor>()
+        decoded.stages[0].workloads.first().executor.shouldBeInstanceOf<InsertOneExecutor>()
     }
 
     test("polymorphic deserialization works without type") {
