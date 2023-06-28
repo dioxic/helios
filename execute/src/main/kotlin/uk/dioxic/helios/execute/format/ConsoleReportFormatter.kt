@@ -88,7 +88,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
 
         results.collect { msg ->
             when (msg) {
-                is StageStartMessage -> emit(lineBreak("Starting ${msg.stage.name}"))
+                is StageStartMessage -> emit(lineBreak("Starting ${msg.stage.name} stage"))
                 is ProgressMessage -> {
                     when (val fRes = msg.result) {
                         is TimedResult -> {
@@ -121,7 +121,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                     }
                 }
 
-                is StageCompleteMessage -> emit(lineBreak("Completed ${msg.stage.name} in ${msg.duration.toFormatString()}"))
+                is StageCompleteMessage -> emit(lineBreak("Completed ${msg.stage.name} stage in ${msg.duration.toFormatString()}"))
             }
         }
     }

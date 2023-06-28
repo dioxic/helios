@@ -24,6 +24,7 @@ import uk.dioxic.helios.execute.execute
 import uk.dioxic.helios.execute.format.ReportFormat
 import uk.dioxic.helios.execute.format.ReportFormatter
 import uk.dioxic.helios.execute.format.format
+import uk.dioxic.helios.execute.format.toFormatString
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoClient
 import uk.dioxic.helios.generate.Template
@@ -69,7 +70,7 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
                                 println(it)
                             }
                     }
-                    println("\nCompleted benchmark in $duration")
+                    println("\nCompleted benchmark in ${duration.toFormatString()}")
                 }
             }
         }
