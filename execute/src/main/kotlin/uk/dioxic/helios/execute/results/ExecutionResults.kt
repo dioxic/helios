@@ -1,6 +1,5 @@
 package uk.dioxic.helios.execute.results
 
-import com.mongodb.MongoException
 import org.bson.Document
 
 sealed interface ExecutionResult
@@ -55,5 +54,5 @@ data class TransactionResult(
 ) : ExecutionResult
 
 data class ErrorResult(
-    val error: MongoException
+    val error: Throwable
 ) : ExecutionResult

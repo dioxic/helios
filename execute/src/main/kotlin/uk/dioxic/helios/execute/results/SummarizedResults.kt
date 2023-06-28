@@ -1,6 +1,5 @@
 package uk.dioxic.helios.execute.results
 
-import com.mongodb.MongoException
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import uk.dioxic.helios.execute.model.ExecutionContext
@@ -28,7 +27,7 @@ data class SummarizedLatencies(
 
 data class SummarizedErrorResult(
     val errorCount: Int = 0,
-    val distinctErrors: List<MongoException>,
+    val distinctErrors: List<Throwable>,
     override val context: ExecutionContext,
     override val latencies: SummarizedLatencies,
     override val operationCount: Int,

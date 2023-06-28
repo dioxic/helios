@@ -1,6 +1,5 @@
 package uk.dioxic.helios.execute.format
 
-import com.mongodb.MongoException
 import uk.dioxic.helios.execute.model.ExecutionContext
 import uk.dioxic.helios.execute.results.*
 import kotlin.time.Duration
@@ -182,5 +181,5 @@ private val ExecutionContext.executionProgress
 private infix fun Int.percentOf(divisor: Int): Percent = (this * 100) / divisor
 private infix fun Long.percentOf(divisor: Long): Percent = ((this * 100) / divisor).toInt()
 
-private fun MongoException.toOutputString() =
+private fun Throwable.toOutputString() =
     "${this::class.simpleName!!}[${this.message.orEmpty()}]"

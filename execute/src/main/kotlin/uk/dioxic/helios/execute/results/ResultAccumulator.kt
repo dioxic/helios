@@ -1,6 +1,5 @@
 package uk.dioxic.helios.execute.results
 
-import com.mongodb.MongoException
 import uk.dioxic.helios.execute.model.ExecutionContext
 import kotlin.time.Duration
 
@@ -16,7 +15,7 @@ class ResultAccumulator {
     var operationCount: Int = 0
     var elapsedTime: Duration = Duration.ZERO
     var durations: MutableList<Duration> = mutableListOf()
-    var errors: MutableList<MongoException> = mutableListOf()
+    var errors: MutableList<Throwable> = mutableListOf()
     var context: ExecutionContext? = null
 
     fun add(timedResult: TimedResult): ResultAccumulator = apply {
