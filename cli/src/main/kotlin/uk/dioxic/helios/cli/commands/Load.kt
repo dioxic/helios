@@ -12,6 +12,7 @@ import com.github.ajalt.clikt.parameters.options.check
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
@@ -56,6 +57,8 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         .int()
         .default(100)
     private val workers by option(help = "number of workers").int().default(4)
+    private val outputFormat by option("-f", "--format", help = "output format")
+        .enum<ReportFormat>().default(ReportFormat.TEXT)
     private val drop by option(help = "drop collection before load").flag()
     private val ordered by option(help = "enable ordered writes").flag()
     private val template by argument(name = "template").file(
@@ -114,7 +117,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                     println("Starting load...")
                     val duration = measureTime {
                         benchmark.execute(registry, workers)
-                            .format(ReportFormatter.create(ReportFormat.TEXT))
+                            .format(ReportFormatter.create(outputFormat))
                             .collect {
                                 print(it)
                             }

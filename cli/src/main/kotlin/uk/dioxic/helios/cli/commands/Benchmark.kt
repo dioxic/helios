@@ -10,6 +10,7 @@ import com.github.ajalt.clikt.parameters.groups.cooccurring
 import com.github.ajalt.clikt.parameters.groups.provideDelegate
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.mongodb.MongoClientSettings
@@ -40,7 +41,9 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
     private val authOptions by AuthOptions().cooccurring()
     private val connOptions by ConnectionOptions()
     private val workers by option(help = "number of workers").int().default(4)
-    private val benchmark by argument(name = "benchmark").file(
+    private val outputFormat by option("-f", "--format", help = "output format")
+        .enum<ReportFormat>().default(ReportFormat.TEXT)
+    private val benchmark by argument(name = "file").file(
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
@@ -65,7 +68,7 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
                     println("Starting benchmark...")
                     val duration = measureTime {
                         benchmark.execute(registry, workers)
-                            .format(ReportFormatter.create(ReportFormat.TEXT))
+                            .format(ReportFormatter.create(outputFormat))
                             .collect {
                                 println(it)
                             }
