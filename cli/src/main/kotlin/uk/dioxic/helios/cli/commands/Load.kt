@@ -105,29 +105,23 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
             }
         }
 
-        println("Starting load...")
-
-
-        val duration = runBlocking {
+        runBlocking {
             resourceScope {
                 val client = mongoClient(mcs)
                 val registry = ResourceRegistry(client.cached())
 
-                if (!checkConnection(client)) {
-                    error("Can't connect!")
-                }
-                measureTime {
-                    benchmark.execute(registry, workers)
-                        .format(ReportFormatter.create(ReportFormat.TEXT))
-                        .collect {
-                            print(it)
-                        }
+                if (checkConnection(client)) {
+                    println("Starting load...")
+                    val duration = measureTime {
+                        benchmark.execute(registry, workers)
+                            .format(ReportFormatter.create(ReportFormat.TEXT))
+                            .collect {
+                                print(it)
+                            }
+                    }
+                    println("\nCompleted in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")
                 }
             }
         }
-
-        println("\nCompleted in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")
-
     }
-
 }

@@ -54,28 +54,26 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
             .codecRegistry(Template.defaultRegistry)
             .build()
 
-        println("Starting benchmark...")
 
-
-        val duration = runBlocking {
+        runBlocking {
             resourceScope {
                 val client = mongoClient(mcs)
                 val registry = ResourceRegistry(client)
 
-                if (!checkConnection(client)) {
-                    error("Can't connect!")
-                }
-                measureTime {
-                    benchmark.execute(registry, workers)
-                        .format(ReportFormatter.create(ReportFormat.TEXT))
-                        .collect {
-                            println(it)
-                        }
+                if (checkConnection(client)) {
+                    println("Starting benchmark...")
+                    val duration = measureTime {
+                        benchmark.execute(registry, workers)
+                            .format(ReportFormatter.create(ReportFormat.TEXT))
+                            .collect {
+                                println(it)
+                            }
+                    }
+                    println("\nCompleted benchmark in $duration")
                 }
             }
         }
 
-        println("\nCompleted benchmark in $duration")
 
     }
 
