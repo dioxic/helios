@@ -56,7 +56,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
     private val batchSize by option("-b", "--batchsize", help = "number of operations to batch together")
         .int()
         .default(100)
-    private val workers by option(help = "number of workers").int().default(4)
+    private val concurrency by option("-c", "--concurrency", help = "number of concurrent operations").int().default(4)
     private val outputFormat by option("-f", "--format", help = "output format")
         .enum<ReportFormat>().default(ReportFormat.TEXT)
     private val drop by option(help = "drop collection before load").flag()
@@ -116,7 +116,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                 if (checkConnection(client)) {
                     println("Starting load...")
                     val duration = measureTime {
-                        benchmark.execute(registry, workers)
+                        benchmark.execute(registry, concurrency)
                             .format(ReportFormatter.create(outputFormat))
                             .collect {
                                 print(it)

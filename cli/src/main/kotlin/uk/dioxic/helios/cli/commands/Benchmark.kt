@@ -40,7 +40,7 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
 
     private val authOptions by AuthOptions().cooccurring()
     private val connOptions by ConnectionOptions()
-    private val workers by option(help = "number of workers").int().default(4)
+    private val concurrency by option("-c", "--concurrency", help = "number of concurrent operations").int().default(4)
     private val outputFormat by option("-f", "--format", help = "output format")
         .enum<ReportFormat>().default(ReportFormat.TEXT)
     private val benchmark by argument(name = "file").file(
@@ -67,7 +67,7 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
                 if (checkConnection(client)) {
                     println("Starting benchmark...")
                     val duration = measureTime {
-                        benchmark.execute(registry, workers)
+                        benchmark.execute(registry, concurrency)
                             .format(ReportFormatter.create(outputFormat))
                             .collect {
                                 println(it)
