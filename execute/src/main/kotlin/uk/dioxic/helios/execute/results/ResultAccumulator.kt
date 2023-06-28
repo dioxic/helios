@@ -55,7 +55,9 @@ class ResultAccumulator {
                 executionResult.executionResults.forEach(::add)
             }
 
-            else -> {}
+            is MessageResult -> {
+                successCount++
+            }
         }
     }
 
