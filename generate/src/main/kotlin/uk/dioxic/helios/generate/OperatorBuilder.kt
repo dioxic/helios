@@ -1,5 +1,6 @@
 package uk.dioxic.helios.generate
 
+import uk.dioxic.helios.generate.operators.KeyedOperator
 import uk.dioxic.helios.generate.operators.Operator
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
@@ -9,29 +10,97 @@ import kotlin.reflect.jvm.jvmErasure
 
 object OperatorBuilder {
 
-    fun <T : Operator<*>> fromMap(clazz: KClass<T>, map: Map<*, *>): T {
+    fun <T : Operator<*>> fromMap(
+        clazz: KClass<out T>,
+        map: Map<*, *> = emptyMap<Any, Any>(),
+        subKey: String? = null
+    ): T {
         val args = mutableMapOf<KParameter, Any>()
-        clazz.primaryConstructor?.valueParameters?.forEach { parameter ->
-            if (parameter.type.jvmErasure == Function0::class) {
-                val desiredType = parameter.type.arguments.first().type
-                map[parameter.name]?.also { value ->
-                    args[parameter] = wrap(value, desiredType)
-                }
-            } else {
-                require(parameter.isOptional) {
-                    "The internal parameter '${parameter.name}' is not optional"
+        clazz.primaryConstructor.let { c ->
+            require(c != null) {
+                "${clazz.simpleName} must have a primary constructor"
+            }
+            c.valueParameters.forEach { parameter ->
+                if (parameter.name == KeyedOperator.KEY_NAME && subKey != null) {
+                    args[parameter] = subKey
+                } else {
+                    map[parameter.name].also { mapVal ->
+                        if (mapVal == null) {
+                            require(parameter.isOptional) {
+                                "${clazz.simpleName} constructor parameter '${parameter.name}' is not optional"
+                            }
+                        } else {
+                            args[parameter] = convert(parameter, mapVal)
+                        }
+                    }
                 }
             }
         }
-        return clazz.primaryConstructor!!.callBy(args)
+        return clazz.primaryConstructor!!.callBy(args.toMutableMap())
     }
 
-    fun <T : Operator<*>> fromValue(clazz: KClass<T>, value: Any): T {
-        val primaryArg = clazz.primaryConstructor?.valueParameters?.first { !it.isOptional }
-        require(primaryArg != null) { "primary constructor must have at least one non-optional argument" }
-        val desiredType = primaryArg.type.arguments.first().type
-        return clazz.primaryConstructor?.callBy(mapOf(primaryArg to wrap(value, desiredType)))!!
+    private fun convert(parameter: KParameter, value: Any): Any =
+        if (parameter.type.jvmErasure == Function0::class) {
+            val desiredType = parameter.type.arguments.first().type
+            wrap(value, desiredType)
+        } else {
+            convert(value, parameter.type)
+        }
+
+    private fun KClass<out Operator<*>>.getSingleValueParameter(excludeOpKey: Boolean): KParameter =
+        primaryConstructor.let { constructor ->
+            require(constructor != null) {
+                "$simpleName must have a primary constructor"
+            }
+            val parameters = constructor.valueParameters.let { p ->
+                if (excludeOpKey) {
+                    p.filterNot { it.name == KeyedOperator.KEY_NAME }
+                } else {
+                    p
+                }
+            }
+
+            if (parameters.size == 1) {
+                parameters.first()
+            } else {
+                require(parameters.count { !it.isOptional } == 1) {
+                    "$simpleName constructor must have either a single parameter or only one mandatory parameter"
+                }
+                parameters.first { !it.isOptional }
+            }
+        }
+
+    private fun KClass<out Operator<*>>.getKeyParameter(): KParameter =
+        primaryConstructor.let { constructor ->
+            require(constructor != null) {
+                "$simpleName must have a primary constructor"
+            }
+            constructor.valueParameters.first { it.name == KeyedOperator.KEY_NAME }
+        }
+
+    fun <T : Operator<*>> fromValue(clazz: KClass<T>, value: Any, subKey: String = ""): T {
+        val primaryParameter = clazz.getSingleValueParameter(subKey.isNotEmpty())
+        val primaryValue = convert(primaryParameter, value)
+
+        val args = if (subKey.isNotEmpty()) {
+            require(clazz.isSubclassOf(KeyedOperator::class))
+            mapOf(
+                clazz.getKeyParameter() to subKey,
+                primaryParameter to primaryValue
+            )
+        } else {
+            mapOf(primaryParameter to primaryValue)
+        }
+
+        return clazz.primaryConstructor?.callBy(args)!!
     }
+
+//    fun <T : Operator<*>> fromValue(clazz: KClass<T>, value: Any): T {
+//        val primaryParameter = clazz.getSingleValueParameter(false)
+//        val primaryValue = convert(primaryParameter, value)
+//
+//        return clazz.primaryConstructor?.callBy(mapOf(primaryParameter to primaryValue))!!
+//    }
 
     private fun wrap(obj: Any, type: KType?): Function<*> {
         return when (obj) {
