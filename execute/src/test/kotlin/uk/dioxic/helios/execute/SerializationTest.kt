@@ -53,6 +53,24 @@ class SerializationTest : FunSpec({
         decoded.stages[0].workloads.first().executor.shouldBeInstanceOf<CommandExecutor>()
     }
 
+    test("insertOne executor") {
+        val benchmark = buildBenchmark {
+            sequentialStage {
+                rateWorkload(
+                    executor = InsertOneExecutor(
+                        database = "test",
+                        collection = "people",
+                        template = buildTemplate { put("name", "\$name") }
+                    )
+                )
+            }
+        }
+        val str = json.encodeToString(benchmark)
+        println(str)
+        val decoded = json.decodeFromString<Benchmark>(str)
+        decoded.stages[0].workloads.first().executor.shouldBeInstanceOf<InsertOneExecutor>()
+    }
+
     test("polymorphic deserialization works without type") {
         val str = """
         {
