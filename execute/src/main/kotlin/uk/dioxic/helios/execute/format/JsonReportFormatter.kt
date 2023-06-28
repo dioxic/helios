@@ -31,7 +31,7 @@ object JsonReportFormatter : ReportFormatter() {
                             fRes.results.forEach { result ->
                                 with(fRes.batchDuration) {
                                     emit(
-                                        uk.dioxic.helios.execute.format.JsonReportFormatter.json.encodeToString(result.toOutputResult(currentStageName))
+                                        json.encodeToString(result.toOutputResult(currentStageName))
                                     )
                                 }
                             }
