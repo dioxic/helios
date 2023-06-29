@@ -1,6 +1,7 @@
 package uk.dioxic.helios.generate
 
-import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.should
@@ -9,6 +10,10 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import uk.dioxic.helios.generate.OperatorFactory.addOperator
 import uk.dioxic.helios.generate.OperatorFactory.canHandle
 import uk.dioxic.helios.generate.OperatorFactory.create
+import uk.dioxic.helios.generate.exceptions.NoDefaultConfiguration
+import uk.dioxic.helios.generate.exceptions.NoSingleValueParameter
+import uk.dioxic.helios.generate.exceptions.OperatorConversionError
+import uk.dioxic.helios.generate.exceptions.ParameterNotOptional
 import uk.dioxic.helios.generate.fixture.*
 import uk.dioxic.helios.generate.test.opKey
 import uk.dioxic.helios.generate.test.withEmptyContext
@@ -36,7 +41,7 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value is successful") {
-                create(opKey, expected).should {
+                create(opKey, expected).shouldBeRight().should {
                     it.shouldBeInstanceOf<OperatorWithSingleMandatoryArg>()
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
@@ -44,7 +49,7 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected)).should {
+                create(opKey, mapOf("arg" to expected)).shouldBeRight().should {
                     it.shouldBeInstanceOf<OperatorWithSingleMandatoryArg>()
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
@@ -52,8 +57,8 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("build fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey)
+                create(opKey).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<NoDefaultConfiguration>()
                 }
             }
         }
@@ -66,12 +71,12 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey, expected)
+                create(opKey, expected).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<NoSingleValueParameter>()
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected, "arg2" to "other")).should {
+                create(opKey, mapOf("arg" to expected, "arg2" to "other")).shouldBeRight().should {
                     it.shouldBeInstanceOf<OperatorWithMultiMandatoryArg>()
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
@@ -79,8 +84,8 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("build fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey)
+                create(opKey).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<NoDefaultConfiguration>()
                 }
             }
         }
@@ -93,7 +98,7 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value is successful") {
-                create(opKey, expected).should {
+                create(opKey, expected).shouldBeRight().should {
                     it.shouldBeInstanceOf<OperatorWithSingleOptionalArg>()
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
@@ -101,7 +106,7 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected)).should {
+                create(opKey, mapOf("arg" to expected)).shouldBeRight().should {
                     it.shouldBeInstanceOf<OperatorWithSingleOptionalArg>()
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
@@ -109,7 +114,7 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("build successful") {
-                create(opKey).shouldBeInstanceOf<OperatorWithSingleOptionalArg>()
+                create(opKey).shouldBeRight().shouldBeInstanceOf<OperatorWithSingleOptionalArg>()
             }
         }
 
@@ -121,12 +126,12 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey, expected)
+                create(opKey, expected).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<NoSingleValueParameter>()
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
+                create(opKey, mapOf("arg" to expected, "arg2" to expected)).shouldBeRight().should {
                     it.shouldBeInstanceOf<OperatorWithMultiOptionalArg>()
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
@@ -135,7 +140,7 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("build successful") {
-                create(opKey).shouldBeInstanceOf<OperatorWithMultiOptionalArg>()
+                create(opKey).shouldBeRight().shouldBeInstanceOf<OperatorWithMultiOptionalArg>()
             }
         }
     }
@@ -149,18 +154,18 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey, expected)
+                create(opKey, expected).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<NoSingleValueParameter>()
                 }
             }
             test("from map is successful") {
-                create(opKey, emptyMap<String, String>()).should {
+                create(opKey, emptyMap<String, String>()).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithNoArg>()
                     it.key shouldBe subKey
                 }
             }
             test("build successful") {
-                create(opKey).should {
+                create(opKey).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithNoArg>()
                     it.key shouldBe subKey
                 }
@@ -174,8 +179,8 @@ class OperatorFactoryTest : FunSpec({
                 canHandle(opKey).shouldBeTrue()
             }
 
-            test("from value fails") {
-                create(opKey, expected).should {
+            test("from value is successful") {
+                create(opKey, expected).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleMandatoryArg>()
                     it.key shouldBe subKey
                     withEmptyContext {
@@ -184,7 +189,7 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected)).should {
+                create(opKey, mapOf("arg" to expected)).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleMandatoryArg>()
                     it.key shouldBe subKey
                     withEmptyContext {
@@ -192,9 +197,12 @@ class OperatorFactoryTest : FunSpec({
                     }
                 }
             }
-            test("build successful") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey)
+            test("build fails") {
+                create(opKey).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<OperatorConversionError>()
+                    it.errors.forEach { e ->
+                        e.shouldBeInstanceOf<ParameterNotOptional>()
+                    }
                 }
             }
         }
@@ -207,12 +215,12 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey, expected)
+                create(opKey, expected).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<NoSingleValueParameter>()
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
+                create(opKey, mapOf("arg" to expected, "arg2" to expected)).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithMultiMandatoryArg>()
                     it.key shouldBe subKey
                     withEmptyContext {
@@ -222,8 +230,11 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("build fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey)
+                create(opKey).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<OperatorConversionError>()
+                    it.errors.forEach { e ->
+                        e.shouldBeInstanceOf<ParameterNotOptional>()
+                    }
                 }
             }
         }
@@ -236,21 +247,24 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value is successful") {
-                create(opKey, expected).should {
+                create(opKey, expected).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
                     it.key shouldBe subKey
                     withEmptyContext { it.arg.invoke() shouldBe expected }
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected)).should {
+                create(opKey, mapOf("arg" to expected)).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
                     it.key shouldBe subKey
                     withEmptyContext { it.arg.invoke() shouldBe expected }
                 }
             }
             test("build successful") {
-                create(opKey).shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
+                create(opKey).shouldBeRight().should {
+                    it.shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
+                    it.key shouldBe subKey
+                }
             }
         }
 
@@ -262,12 +276,12 @@ class OperatorFactoryTest : FunSpec({
             }
 
             test("from value fails") {
-                shouldThrow<IllegalArgumentException> {
-                    create(opKey, expected)
+                create(opKey, expected).shouldBeLeft().should {
+                    it.shouldBeInstanceOf<NoSingleValueParameter>()
                 }
             }
             test("from map is successful") {
-                create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
+                create(opKey, mapOf("arg" to expected, "arg2" to expected)).shouldBeRight().should {
                     it.shouldBeInstanceOf<KeyedOperatorWithMultiOptionalArg>()
                     it.key shouldBe subKey
                     withEmptyContext {
@@ -277,7 +291,10 @@ class OperatorFactoryTest : FunSpec({
                 }
             }
             test("build successful") {
-                create(opKey).shouldBeInstanceOf<KeyedOperatorWithMultiOptionalArg>()
+                create(opKey).shouldBeRight().should {
+                    it.shouldBeInstanceOf<KeyedOperatorWithMultiOptionalArg>()
+                    it.key shouldBe subKey
+                }
             }
         }
     }

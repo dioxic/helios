@@ -4,6 +4,8 @@ import kotlinx.serialization.json.*
 import org.bson.BsonBinary
 import org.bson.BsonTimestamp
 import org.bson.types.ObjectId
+import uk.dioxic.helios.generate.OperatorFactory.operatorPrefix
+import uk.dioxic.helios.generate.annotations.Alias
 import uk.dioxic.helios.generate.codecs.TemplateDocumentCodec
 import java.time.Instant
 import java.time.LocalDateTime
@@ -12,6 +14,7 @@ import java.util.*
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.reflect.full.findAnnotations
 
 @OptIn(ExperimentalContracts::class)
 inline fun buildTemplate(builderAction: JsonObjectBuilder.() -> Unit): Template {
@@ -19,15 +22,47 @@ inline fun buildTemplate(builderAction: JsonObjectBuilder.() -> Unit): Template 
     return TemplateDocumentCodec().decode(buildJsonObject(builderAction))
 }
 
-fun JsonArrayBuilder.addOperatorObject(operatorKey:String, builderAction: JsonObjectBuilder.() -> Unit): Boolean =
+inline fun <reified T> JsonArrayBuilder.addOperatorObject(noinline builderAction: JsonObjectBuilder.() -> Unit): Boolean =
     addJsonObject {
-        putJsonObject(operatorKey, builderAction)
+        putJsonObject("$operatorPrefix${getOperatorKey<T>()}", builderAction)
     }
 
-fun JsonObjectBuilder.putOperatorObject(key: String, operatorKey:String, builderAction: JsonObjectBuilder.() -> Unit): JsonElement? =
+fun JsonObjectBuilder.putOperatorObject(
+    key: String,
+    alias: String,
+    builderAction: JsonObjectBuilder.() -> Unit
+): JsonElement? =
     putJsonObject(key) {
-        putJsonObject(operatorKey, builderAction)
+        putJsonObject("$operatorPrefix$alias", builderAction)
     }
+
+inline fun <reified T> JsonObjectBuilder.putOperatorObject(
+    key: String,
+    noinline builderAction: JsonObjectBuilder.() -> Unit
+): JsonElement? =
+    putJsonObject(key) {
+        putJsonObject("$operatorPrefix${getOperatorKey<T>()}", builderAction)
+    }
+
+inline fun <reified T> getOperatorKey(): String {
+    val alias = T::class.findAnnotations(Alias::class).firstOrNull()
+    return if (alias != null && alias.aliases.isNotEmpty()) {
+        alias.aliases.first()
+    } else {
+        T::class.simpleName!!
+    }
+}
+
+inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(value: String): Boolean =
+    addJsonObject {
+        put(getOperatorKey<T>(), value)
+    }
+
+inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(): Boolean =
+    add(getOperatorKey<T>())
+
+inline fun <reified T : Operator<*>> JsonObjectBuilder.putOperator(key: String): JsonElement? =
+    put(key, getOperatorKey<T>())
 
 fun JsonObjectBuilder.put(key: String, value: LocalDateTime): JsonElement? =
     put(key, value.toInstant(ZoneOffset.UTC))

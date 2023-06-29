@@ -19,5 +19,5 @@ fun <R> withEmptyContext(block: OperatorContext.() -> R) = with(OperatorContext.
 inline fun <reified T> opKey() =
     "${OperatorFactory.operatorPrefix}${T::class.simpleName}"
 
-inline fun <reified T> opKey(subkey:String) =
+inline fun <reified T> opKey(subkey: String) =
     "${OperatorFactory.operatorPrefix}${T::class.simpleName}.$subkey"
