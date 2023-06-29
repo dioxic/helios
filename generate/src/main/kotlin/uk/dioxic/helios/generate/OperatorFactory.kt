@@ -1,7 +1,13 @@
 package uk.dioxic.helios.generate
 
+import arrow.core.Either
+import arrow.core.raise.either
+import arrow.core.raise.ensureNotNull
+import arrow.core.right
 import org.reflections.Reflections
 import uk.dioxic.helios.generate.annotations.Alias
+import uk.dioxic.helios.generate.exceptions.NoOperatorFound
+import uk.dioxic.helios.generate.exceptions.OperatorError
 import uk.dioxic.helios.generate.operators.fakerGenerators
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
@@ -57,9 +63,11 @@ object OperatorFactory {
                 (classMap.containsKey(rootKey) || objectMap.containsKey(rootKey))
     }
 
-    fun create(key: String, obj: Any): Operator<*> {
+    fun create(key: String, obj: Any): Either<OperatorError, Operator<*>> = either {
         val (rootKey, subKey) = splitKey(key)
-        val operatorClass = getOperatorClass(rootKey)
+        val operatorClass = ensureNotNull(classMap[rootKey]) {
+            raise(NoOperatorFound(rootKey))
+        }
 
         return when (obj) {
             is Map<*, *> -> OperatorBuilder.fromMap(operatorClass, obj, subKey)
@@ -67,16 +75,17 @@ object OperatorFactory {
         }
     }
 
-    fun create(key: String): Operator<*> {
+    fun create(key: String): Either<OperatorError, Operator<*>> = either {
         val (rootKey, subKey) = splitKey(key)
+        val operatorClass = ensureNotNull(classMap[rootKey]) {
+            raise(NoOperatorFound(rootKey))
+        }
+
         return if (subKey.isEmpty()) {
-            objectMap[rootKey] ?: OperatorBuilder.build(getOperatorClass(rootKey))
+            objectMap[rootKey]?.right() ?: OperatorBuilder.build(operatorClass)
         } else {
-            OperatorBuilder.fromMap(clazz = getOperatorClass(rootKey), subKey = subKey)
+            OperatorBuilder.fromMap(clazz = operatorClass, subKey = subKey)
         }
     }
-
-    private fun getOperatorClass(key: String): KClass<out Operator<*>> =
-        classMap[key] ?: error("No operator found for key $key")
 
 }
