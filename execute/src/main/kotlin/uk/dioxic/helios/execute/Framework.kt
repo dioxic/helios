@@ -24,6 +24,7 @@ fun Benchmark.execute(
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
         stages.forEach { stage ->
+            StateManager.setState(hydratedState + stage.hydratedState)
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {

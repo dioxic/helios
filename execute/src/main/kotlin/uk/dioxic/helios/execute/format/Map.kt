@@ -5,8 +5,8 @@ import kotlinx.serialization.json.JsonObject
 import org.bson.BsonDocument
 import org.bson.BsonValue
 
-fun Map<String, Any>.flatten(separator: Char) =
-    mutableMapOf<String, Any>().also {
+fun Map<String, Any?>.flatten(separator: Char) =
+    mutableMapOf<String, Any?>().also {
         flatten(it, this, separator)
     }.toMap()
 
