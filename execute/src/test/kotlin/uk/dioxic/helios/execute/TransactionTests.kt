@@ -30,7 +30,7 @@ import uk.dioxic.helios.execute.results.WriteResult
 import uk.dioxic.helios.generate.Template
 import kotlin.time.Duration.Companion.seconds
 
-class RetryTests : FunSpec({
+class TransactionTests : FunSpec({
 
     val mongoTransientTxnEx = MongoException(123, "error")
         .apply {

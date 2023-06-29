@@ -11,7 +11,7 @@ import kotlin.reflect.full.findAnnotation
 object OperatorFactory {
 
     private const val operatorPrefix = "\$"
-    private val classMap: MutableMap<String, KClass<Operator<*>>> = mutableMapOf()
+    private val classMap: MutableMap<String, KClass<out Operator<*>>> = mutableMapOf()
     private val objectMap: MutableMap<String, Operator<*>> = mutableMapOf()
 
     init {
@@ -29,9 +29,18 @@ object OperatorFactory {
     private fun String.isOperator() =
         startsWith("\$")
 
-    fun addOperator(clazz: KClass<Operator<*>>) {
-        clazz.findAnnotation<Alias>()?.aliases?.forEach { alias ->
-            classMap["$operatorPrefix$alias"] = clazz
+    fun addOperator(clazz: KClass<out Operator<*>>) {
+        clazz.findAnnotation<Alias>().let { annotation ->
+            if (annotation != null && annotation.aliases.isNotEmpty()) {
+                annotation.aliases.forEach { alias ->
+                    require(!alias.contains('.')) {
+                        "Alias cannot contain a '.'"
+                    }
+                    classMap["$operatorPrefix$alias"] = clazz
+                }
+            } else {
+                classMap["$operatorPrefix${clazz.simpleName}"] = clazz
+            }
         }
     }
 
@@ -40,22 +49,35 @@ object OperatorFactory {
             objectMap["$operatorPrefix$alias"] = operator
         }
 
-    fun canHandle(key: String) = key.isOperator() &&
-            (classMap.containsKey(key) || objectMap.containsKey(key))
+    fun splitKey(key: String): Pair<String, String> =
+        Pair(key.substringBefore('.'), key.substringAfter('.', ""))
+
+    fun canHandle(key: String): Boolean {
+        val (rootKey, _) = splitKey(key)
+        return rootKey.isOperator() &&
+                (classMap.containsKey(rootKey) || objectMap.containsKey(rootKey))
+    }
 
     fun create(key: String, obj: Any): Operator<*> {
-        val operatorClass = getOperatorClass(key)
+        val (rootKey, subKey) = splitKey(key)
+        val operatorClass = getOperatorClass(rootKey)
 
         return when (obj) {
-            is Map<*, *> -> OperatorBuilder.fromMap(operatorClass, obj)
-            else -> OperatorBuilder.fromValue(operatorClass, obj)
+            is Map<*, *> -> OperatorBuilder.fromMap(operatorClass, obj, subKey)
+            else -> OperatorBuilder.fromValue(operatorClass, obj, subKey)
         }
     }
 
-    fun create(key: String): Operator<*> =
-        objectMap[key] ?: OperatorBuilder.build(getOperatorClass(key))
+    fun create(key: String): Operator<*> {
+        val (rootKey, subKey) = splitKey(key)
+        return if (subKey.isEmpty()) {
+            objectMap[rootKey] ?: OperatorBuilder.build(getOperatorClass(rootKey))
+        } else {
+            OperatorBuilder.fromMap(clazz = getOperatorClass(rootKey), subKey = subKey)
+        }
+    }
 
-    private fun getOperatorClass(key: String): KClass<Operator<*>> =
+    private fun getOperatorClass(key: String): KClass<out Operator<*>> =
         classMap[key] ?: error("No operator found for key $key")
 
 }

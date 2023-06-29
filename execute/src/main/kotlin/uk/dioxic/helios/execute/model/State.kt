@@ -1,16 +1,24 @@
 package uk.dioxic.helios.execute.model
 
-import arrow.optics.optics
+import uk.dioxic.helios.execute.format.flatten
 
-@optics
-data class State(
-    val custom: Map<String, Any?>
-) {
+class State private constructor(map: Map<String, Any?>) {
+
+    private val state = map.flatten('.')
+
+    operator fun get(key: String) = state[key]
+
     operator fun plus(other: State) =
-        other.copy(custom = buildMap {
-            putAll(custom)
-            putAll(other.custom)
+        State(buildMap {
+            putAll(state)
+            putAll(other.state)
         })
 
-    companion object
+    companion object {
+        val EMPTY = State(emptyMap())
+
+        operator fun invoke(map: Map<String, Any?> = emptyMap()) =
+            State(map.flatten('.'))
+
+    }
 }
