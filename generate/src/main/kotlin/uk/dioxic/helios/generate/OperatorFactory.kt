@@ -2,8 +2,7 @@ package uk.dioxic.helios.generate
 
 import org.reflections.Reflections
 import uk.dioxic.helios.generate.annotations.Alias
-import uk.dioxic.helios.generate.operators.Operator
-import uk.dioxic.helios.generate.operators.fakerOperators
+import uk.dioxic.helios.generate.operators.fakerGenerators
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
@@ -23,7 +22,7 @@ object OperatorFactory {
             .forEach(OperatorFactory::addOperator)
 
         // add object operators
-        fakerOperators.forEach(OperatorFactory::addOperator)
+        fakerGenerators.forEach(OperatorFactory::addOperator)
     }
 
     private fun String.isOperator() =

@@ -1,10 +1,12 @@
 package uk.dioxic.helios.generate.operators
 
 import io.github.serpro69.kfaker.Faker
+import uk.dioxic.helios.generate.Operator
 
 private val faker = Faker()
 
-val fakerOperators = mapOf<Operator<*>, List<String>>(
+val fakerGenerators = mapOf<Operator<*>, List<String>>(
+
     Operator { faker.internet.email() } to listOf("email"),
     Operator { faker.internet.domain() } to listOf("domain"),
     Operator { faker.internet.domainSuffix() } to listOf("domainSuffix"),

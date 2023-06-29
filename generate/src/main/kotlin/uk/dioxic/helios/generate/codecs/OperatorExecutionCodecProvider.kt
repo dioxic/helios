@@ -3,7 +3,7 @@ package uk.dioxic.helios.generate.codecs
 import org.bson.codecs.Codec
 import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
-import uk.dioxic.helios.generate.operators.Operator
+import uk.dioxic.helios.generate.Operator
 
 class OperatorExecutionCodecProvider: CodecProvider {
 

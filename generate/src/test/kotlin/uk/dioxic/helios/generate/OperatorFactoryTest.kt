@@ -10,6 +10,7 @@ import uk.dioxic.helios.generate.OperatorFactory.addOperator
 import uk.dioxic.helios.generate.OperatorFactory.canHandle
 import uk.dioxic.helios.generate.OperatorFactory.create
 import uk.dioxic.helios.generate.fixture.*
+import uk.dioxic.helios.generate.test.withEmptyContext
 
 class OperatorFactoryTest : FunSpec({
 
@@ -35,13 +36,17 @@ class OperatorFactoryTest : FunSpec({
             test("from value is successful") {
                 create(opKey, expected).should {
                     it.shouldBeInstanceOf<OperatorWithSingleMandatoryArg>()
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                    }
                 }
             }
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected)).should {
                     it.shouldBeInstanceOf<OperatorWithSingleMandatoryArg>()
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                    }
                 }
             }
             test("build fails") {
@@ -66,7 +71,9 @@ class OperatorFactoryTest : FunSpec({
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected, "arg2" to "other")).should {
                     it.shouldBeInstanceOf<OperatorWithMultiMandatoryArg>()
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                    }
                 }
             }
             test("build fails") {
@@ -86,13 +93,17 @@ class OperatorFactoryTest : FunSpec({
             test("from value is successful") {
                 create(opKey, expected).should {
                     it.shouldBeInstanceOf<OperatorWithSingleOptionalArg>()
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                    }
                 }
             }
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected)).should {
                     it.shouldBeInstanceOf<OperatorWithSingleOptionalArg>()
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                    }
                 }
             }
             test("build successful") {
@@ -115,8 +126,10 @@ class OperatorFactoryTest : FunSpec({
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
                     it.shouldBeInstanceOf<OperatorWithMultiOptionalArg>()
-                    it.arg.invoke() shouldBe expected
-                    it.arg2.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                        it.arg2.invoke() shouldBe expected
+                    }
                 }
             }
             test("build successful") {
@@ -163,14 +176,18 @@ class OperatorFactoryTest : FunSpec({
                 create(opKey, expected).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleMandatoryArg>()
                     it.key shouldBe "subkey.badger"
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                    }
                 }
             }
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleMandatoryArg>()
                     it.key shouldBe "subkey.badger"
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                    }
                 }
             }
             test("build successful") {
@@ -196,8 +213,10 @@ class OperatorFactoryTest : FunSpec({
                 create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithMultiMandatoryArg>()
                     it.key shouldBe "subkey.badger"
-                    it.arg.invoke() shouldBe expected
-                    it.arg2.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                        it.arg2.invoke() shouldBe expected
+                    }
                 }
             }
             test("build fails") {
@@ -218,14 +237,14 @@ class OperatorFactoryTest : FunSpec({
                 create(opKey, expected).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
                     it.key shouldBe "subkey.badger"
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext { it.arg.invoke() shouldBe expected }
                 }
             }
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
                     it.key shouldBe "subkey.badger"
-                    it.arg.invoke() shouldBe expected
+                    withEmptyContext { it.arg.invoke() shouldBe expected }
                 }
             }
             test("build successful") {
@@ -249,8 +268,10 @@ class OperatorFactoryTest : FunSpec({
                 create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithMultiOptionalArg>()
                     it.key shouldBe "subkey.badger"
-                    it.arg.invoke() shouldBe expected
-                    it.arg2.invoke() shouldBe expected
+                    withEmptyContext {
+                        it.arg.invoke() shouldBe expected
+                        it.arg2.invoke() shouldBe expected
+                    }
                 }
             }
             test("build successful") {

@@ -12,7 +12,6 @@ import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.helios.generate.codecs.OperatorExecutionCodecProvider
 import uk.dioxic.helios.generate.codecs.TemplateDocumentCodecProvider
-import uk.dioxic.helios.generate.operators.Operator
 import uk.dioxic.helios.generate.serialization.TemplateSerializer
 
 @Serializable(TemplateSerializer::class)
@@ -29,7 +28,10 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
     override fun toJson(): String =
         super.toJson(defaultJsonWriter, defaultCodec)
 
-    fun hydrate() = hydrateMap(this)
+    fun hydrate(context: OperatorContext = OperatorContext.EMPTY) =
+        with(context) {
+            hydrateMap(this@Template)
+        }
 
     companion object {
         val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
@@ -49,6 +51,7 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
     }
 }
 
+context(OperatorContext)
 @Suppress("UNCHECKED_CAST")
 private fun hydrateMap(map: Map<String, Any?>): Map<String, Any?> =
     map.mapValues { (_, v) ->

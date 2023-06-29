@@ -12,10 +12,12 @@ class TemplateTests : FunSpec({
     context("hydration") {
 
         test("simple") {
-            val hydrated = buildTemplate {
-                put("name", "\$name")
-                put("oid", "\$objectId")
-            }.hydrate()
+            val hydrated = with (OperatorContext.EMPTY) {
+                buildTemplate {
+                    put("name", "\$name")
+                    put("oid", "\$objectId")
+                }.hydrate()
+            }
 
             hydrated.shouldContainKeys("name", "oid")
             hydrated["name"].shouldBeInstanceOf<String>()
@@ -23,13 +25,15 @@ class TemplateTests : FunSpec({
         }
 
         test("complex") {
-            val hydrated = buildTemplate {
-                putJsonObject("subDoc") {
-                    putJsonObject("subSubDoc") {
-                        put("oid", "\$objectId")
+            val hydrated = with (OperatorContext.EMPTY) {
+                buildTemplate {
+                    putJsonObject("subDoc") {
+                        putJsonObject("subSubDoc") {
+                            put("oid", "\$objectId")
+                        }
                     }
-                }
-            }.hydrate()
+                }.hydrate()
+            }
 
             hydrated["subDoc"]
                 .shouldBeInstanceOf<Map<String, Any>>()

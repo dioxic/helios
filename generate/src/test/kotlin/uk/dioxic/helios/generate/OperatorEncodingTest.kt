@@ -4,9 +4,9 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.json.Json
 import org.bson.Document
+import uk.dioxic.helios.generate.operators.ChooseOperator
 import uk.dioxic.helios.generate.operators.IntOperator
-import uk.dioxic.helios.generate.operators.general.ChooseOperator
-import uk.dioxic.helios.generate.operators.general.PickSetOperator
+import uk.dioxic.helios.generate.operators.PickSetOperator
 import uk.dioxic.helios.generate.test.readResource
 
 class OperatorJsonDecode: FunSpec({

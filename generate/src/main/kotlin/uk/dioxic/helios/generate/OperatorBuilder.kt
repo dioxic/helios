@@ -1,7 +1,5 @@
 package uk.dioxic.helios.generate
 
-import uk.dioxic.helios.generate.operators.KeyedOperator
-import uk.dioxic.helios.generate.operators.Operator
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
@@ -40,7 +38,7 @@ object OperatorBuilder {
     }
 
     private fun convert(parameter: KParameter, value: Any): Any =
-        if (parameter.type.jvmErasure == Function0::class) {
+        if (parameter.type.jvmErasure == Operator::class) {
             val desiredType = parameter.type.arguments.first().type
             wrap(value, desiredType)
         } else {
@@ -102,12 +100,12 @@ object OperatorBuilder {
 //        return clazz.primaryConstructor?.callBy(mapOf(primaryParameter to primaryValue))!!
 //    }
 
-    private fun wrap(obj: Any, type: KType?): Function<*> {
+    private fun wrap(obj: Any, type: KType?): Operator<*> {
         return when (obj) {
-            is Function<*> -> obj
+            is Operator<*> -> obj
             else -> {
                 val tObj = type?.let { convert(obj, type) } ?: obj
-                { tObj }
+                Operator { tObj }
             }
         }
     }

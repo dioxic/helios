@@ -13,7 +13,7 @@ import org.bson.codecs.jsr310.Jsr310CodecProvider
 import org.bson.json.JsonReader
 import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.Template
-import uk.dioxic.helios.generate.operators.general.ObjectIdOperator
+import uk.dioxic.helios.generate.operators.ObjectIdOperator
 
 class TemplateDocumentCodec(
     registry: CodecRegistry = CodecRegistries.fromProviders(

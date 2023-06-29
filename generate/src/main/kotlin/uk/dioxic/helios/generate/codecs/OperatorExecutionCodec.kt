@@ -6,7 +6,8 @@ import org.bson.codecs.Codec
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.EncoderContext
 import org.bson.codecs.configuration.CodecRegistry
-import uk.dioxic.helios.generate.operators.Operator
+import uk.dioxic.helios.generate.Operator
+import uk.dioxic.helios.generate.OperatorContext
 
 class OperatorExecutionCodec(
     private val registry: CodecRegistry
@@ -14,11 +15,13 @@ class OperatorExecutionCodec(
 
     @Suppress("UNCHECKED_CAST")
     override fun encode(writer: BsonWriter, value: Operator<*>, encoderContext: EncoderContext) {
-        when (val unwrappedValue = value()) {
-            null -> writer.writeNull()
-            else -> {
-                val codec = registry[unwrappedValue::class.java] as Codec<Any>
-                encoderContext.encodeWithChildContext(codec, writer, unwrappedValue)
+        with(OperatorContext.EMPTY) {
+            when (val unwrappedValue = value()) {
+                null -> writer.writeNull()
+                else -> {
+                    val codec = registry[unwrappedValue::class.java] as Codec<Any>
+                    encoderContext.encodeWithChildContext(codec, writer, unwrappedValue)
+                }
             }
         }
     }
