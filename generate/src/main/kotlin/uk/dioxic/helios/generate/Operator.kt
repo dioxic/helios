@@ -1,6 +1,3 @@
 package uk.dioxic.helios.generate
 
-fun interface Operator<T: Any?> {
-    context(OperatorContext)
-    operator fun invoke(): T
-}
+fun interface Operator<T: Any?> :Wrapped<T>

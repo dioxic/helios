@@ -2,6 +2,7 @@ package uk.dioxic.helios.generate.fixture
 
 import uk.dioxic.helios.generate.KeyedOperator
 import uk.dioxic.helios.generate.Operator
+import uk.dioxic.helios.generate.Wrapped
 import uk.dioxic.helios.generate.annotations.Alias
 
 
@@ -16,46 +17,46 @@ sealed class AbstractKeyedTestOperator : KeyedOperator<String>() {
 
 @Alias
 class OperatorWithSingleMandatoryArg(
-    val arg: Operator<String>,
-    val arg2: Operator<String> = Operator { "fake" }
+    val arg: Wrapped<String>,
+    val arg2: Wrapped<String> = Wrapped { "fake" }
 ) : AbstractTestOperator()
 
 @Alias
 class OperatorWithSingleOptionalArg(
-    val arg: Operator<String> = Operator { "fake" }
+    val arg: Wrapped<String> = Wrapped { "fake" }
 ) : AbstractTestOperator()
 
 class OperatorWithMultiOptionalArg(
-    val arg: Operator<String> = Operator { "fake" },
-    val arg2: Operator<String> = Operator { "fake" }
+    val arg: Wrapped<String> = Wrapped { "fake" },
+    val arg2: Wrapped<String> = Wrapped { "fake" }
 ) :
     AbstractTestOperator()
 
 class OperatorWithMultiMandatoryArg(
-    val arg: Operator<String>,
-    val arg2: Operator<String>
+    val arg: Wrapped<String>,
+    val arg2: Wrapped<String>
 ) : AbstractTestOperator()
 
 class KeyedOperatorWithNoArg(override val key: String) : AbstractKeyedTestOperator()
 
 class KeyedOperatorWithSingleMandatoryArg(
     override val key: String,
-    val arg: Operator<String>
+    val arg: Wrapped<String>
 ) : AbstractKeyedTestOperator()
 
 class KeyedOperatorWithSingleOptionalArg(
     override val key: String,
-    val arg: Operator<String> = Operator { "fake" }
+    val arg: Wrapped<String> = Wrapped { "fake" }
 ) : AbstractKeyedTestOperator()
 
 class KeyedOperatorWithMultiOptionalArg(
     override val key: String,
-    val arg: Operator<String> = Operator { "fake" },
-    val arg2: Operator<String> = Operator { "fake" }
+    val arg: Wrapped<String> = Wrapped { "fake" },
+    val arg2: Wrapped<String> = Wrapped { "fake" }
 ) : AbstractKeyedTestOperator()
 
 class KeyedOperatorWithMultiMandatoryArg(
     override val key: String,
-    val arg: Operator<String>,
-    val arg2: Operator<String>
+    val arg: Wrapped<String>,
+    val arg2: Wrapped<String>
 ) : AbstractKeyedTestOperator()

@@ -2,6 +2,7 @@ package uk.dioxic.helios.generate.operators
 
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorContext
+import uk.dioxic.helios.generate.Wrapped
 import uk.dioxic.helios.generate.annotations.Alias
 import kotlin.math.abs
 import kotlin.random.Random
@@ -10,8 +11,8 @@ import kotlin.random.nextLong
 
 @Alias("double")
 class DoubleOperator(
-    val min: Operator<Double> = Operator { 0.0 },
-    val max: Operator<Double> = Operator { Double.MAX_VALUE }
+    val min: Wrapped<Double> = Wrapped { 0.0 },
+    val max: Wrapped<Double> = Wrapped { Double.MAX_VALUE }
 ) : Operator<Double> {
     context(OperatorContext)
     override fun invoke(): Double = Random.nextDouble(min(), max())
@@ -19,7 +20,7 @@ class DoubleOperator(
 
 @Alias("abs")
 class AbsOperator(
-    val input: Operator<Number?>
+    val input: Wrapped<Number?>
 ) : Operator<Number?> {
     context(OperatorContext)
     override fun invoke(): Number? = when (val i = input()) {
@@ -34,8 +35,8 @@ class AbsOperator(
 
 @Alias("int")
 class IntOperator(
-    val min: Operator<Int> = Operator { 0 },
-    val max: Operator<Int> = Operator { Int.MAX_VALUE }
+    val min: Wrapped<Int> = Wrapped { 0 },
+    val max: Wrapped<Int> = Wrapped { Int.MAX_VALUE }
 ) : Operator<Int> {
     context(OperatorContext)
     override fun invoke(): Int = Random.nextInt(min()..max())
@@ -43,8 +44,8 @@ class IntOperator(
 
 @Alias("long")
 class LongOperator(
-    val min: Operator<Long> = Operator { 0 },
-    val max: Operator<Long> = Operator { Long.MAX_VALUE }
+    val min: Wrapped<Long> = Wrapped { 0 },
+    val max: Wrapped<Long> = Wrapped { Long.MAX_VALUE }
 ) : Operator<Long> {
     context(OperatorContext)
     override fun invoke() = Random.nextLong(LongRange(min(), max()))

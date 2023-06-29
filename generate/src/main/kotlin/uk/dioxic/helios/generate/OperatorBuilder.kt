@@ -38,14 +38,14 @@ object OperatorBuilder {
     }
 
     private fun convert(parameter: KParameter, value: Any): Any =
-        if (parameter.type.jvmErasure == Operator::class) {
+        if (parameter.type.jvmErasure.isSubclassOf(Wrapped::class)) {
             val desiredType = parameter.type.arguments.first().type
             wrap(value, desiredType)
         } else {
             convert(value, parameter.type)
         }
 
-    private fun KClass<out Operator<*>>.getSingleValueParameter(excludeOpKey: Boolean): KParameter =
+    private fun KClass<out Wrapped<*>>.getSingleValueParameter(excludeOpKey: Boolean): KParameter =
         primaryConstructor.let { constructor ->
             require(constructor != null) {
                 "$simpleName must have a primary constructor"
@@ -68,7 +68,7 @@ object OperatorBuilder {
             }
         }
 
-    private fun KClass<out Operator<*>>.getKeyParameter(): KParameter =
+    private fun KClass<out Wrapped<*>>.getKeyParameter(): KParameter =
         primaryConstructor.let { constructor ->
             require(constructor != null) {
                 "$simpleName must have a primary constructor"
@@ -76,7 +76,7 @@ object OperatorBuilder {
             constructor.valueParameters.first { it.name == KeyedOperator.KEY_NAME }
         }
 
-    fun <T : Operator<*>> fromValue(clazz: KClass<T>, value: Any, subKey: String = ""): T {
+    fun <T : Wrapped<*>> fromValue(clazz: KClass<out T>, value: Any, subKey: String = ""): T {
         val primaryParameter = clazz.getSingleValueParameter(subKey.isNotEmpty())
         val primaryValue = convert(primaryParameter, value)
 
@@ -100,12 +100,12 @@ object OperatorBuilder {
 //        return clazz.primaryConstructor?.callBy(mapOf(primaryParameter to primaryValue))!!
 //    }
 
-    private fun wrap(obj: Any, type: KType?): Operator<*> {
+    private fun wrap(obj: Any, type: KType?): Wrapped<*> {
         return when (obj) {
-            is Operator<*> -> obj
+            is Wrapped<*> -> obj
             else -> {
                 val tObj = type?.let { convert(obj, type) } ?: obj
-                Operator { tObj }
+                Wrapped { tObj }
             }
         }
     }

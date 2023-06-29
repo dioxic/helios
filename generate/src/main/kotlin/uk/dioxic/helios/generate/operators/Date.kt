@@ -3,6 +3,7 @@ package uk.dioxic.helios.generate.operators
 import org.bson.BsonTimestamp
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorContext
+import uk.dioxic.helios.generate.Wrapped
 import uk.dioxic.helios.generate.annotations.Alias
 import uk.dioxic.helios.generate.extensions.myLocale
 import uk.dioxic.helios.generate.extensions.nextInstant
@@ -22,8 +23,8 @@ fun Instant.toUtcLocalDateTime(): LocalDateTime = LocalDateTime.ofInstant(this, 
 
 @Alias("date", "dt")
 class DateOperator(
-    val min: Operator<Instant>,
-    val max: Operator<Instant>
+    val min: Wrapped<Instant>,
+    val max: Wrapped<Instant>
 ) : Operator<Instant> {
 
     context(OperatorContext)
@@ -33,7 +34,7 @@ class DateOperator(
 }
 
 @Alias("now")
-class NowOperator : Operator<Instant> {
+class NowOperator : Wrapped<Instant> {
 
     context(OperatorContext)
     override fun invoke(): Instant = Instant.now()
@@ -41,7 +42,7 @@ class NowOperator : Operator<Instant> {
 
 @Alias("dayOfMonth")
 class DayOfMonthOperator(
-    val date: Operator<Instant> = Operator { Instant.now() }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() }
 ) : Operator<Int> {
 
     context(OperatorContext)
@@ -51,8 +52,8 @@ class DayOfMonthOperator(
 
 @Alias("dayOfWeek")
 class DayOfWeekOperator(
-    val date: Operator<Instant> = Operator { Instant.now() },
-    val format: Operator<OutputFormat> = Operator { OutputFormat.NUMERIC }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() },
+    val format: Wrapped<OutputFormat> = Wrapped { OutputFormat.NUMERIC }
 ) : Operator<Any> {
 
     context(OperatorContext)
@@ -67,7 +68,7 @@ class DayOfWeekOperator(
 
 @Alias("dayOfYear")
 class DayOfYearOperator(
-    val date: Operator<Instant> = Operator { Instant.now() }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() }
 ) : Operator<Int> {
 
     context(OperatorContext)
@@ -76,8 +77,8 @@ class DayOfYearOperator(
 
 @Alias("epoch")
 class EpochOperator(
-    val date: Operator<Instant> = Operator { Instant.now() },
-    val unit: Operator<ChronoUnit> = Operator { ChronoUnit.MILLIS }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() },
+    val unit: Wrapped<ChronoUnit> = Wrapped { ChronoUnit.MILLIS }
 ) : Operator<Long> {
 
     private val zeroEpoch = Instant.EPOCH
@@ -89,7 +90,7 @@ class EpochOperator(
 
 @Alias("hour")
 class HourOperator(
-    val date: Operator<Instant> = Operator { Instant.now() }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() }
 ) : Operator<Int> {
 
     context(OperatorContext)
@@ -98,7 +99,7 @@ class HourOperator(
 
 @Alias("minute")
 class MinuteOperator(
-    val date: Operator<Instant> = Operator { Instant.now() }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() }
 ) : Operator<Int> {
 
     context(OperatorContext)
@@ -107,7 +108,7 @@ class MinuteOperator(
 
 @Alias("second")
 class SecondOperator(
-    val date: Operator<Instant> = Operator { Instant.now() }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() }
 ) : Operator<Int> {
 
     context(OperatorContext)
@@ -117,7 +118,7 @@ class SecondOperator(
 
 @Alias("year")
 class YearOperator(
-    val date: Operator<Instant> = Operator { Instant.now() }
+    val date: Wrapped<Instant> = Wrapped { Instant.now() }
 ) : Operator<Int> {
 
     context(OperatorContext)
@@ -127,8 +128,8 @@ class YearOperator(
 
 @Alias("year")
 class TimestampOperator(
-    val t: Operator<Int>,
-    val i: Operator<Int> = Operator { 0 },
+    val t: Wrapped<Int>,
+    val i: Wrapped<Int> = Wrapped { 0 },
 ) : Operator<BsonTimestamp> {
 
     context(OperatorContext)

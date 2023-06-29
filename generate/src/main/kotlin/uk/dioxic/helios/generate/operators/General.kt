@@ -6,6 +6,7 @@ import org.bson.BsonBinarySubType
 import org.bson.types.ObjectId
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorContext
+import uk.dioxic.helios.generate.Wrapped
 import uk.dioxic.helios.generate.annotations.Alias
 import uk.dioxic.helios.generate.extensions.nextElement
 import java.util.*
@@ -15,8 +16,8 @@ import kotlin.random.Random
 
 @Alias("array")
 class ArrayOperator(
-    val of: Operator<Any>,
-    val number: Operator<Int> = Operator { 5 }
+    val of: Wrapped<Any>,
+    val number: Wrapped<Int> = Wrapped { 5 }
 ) : Operator<List<*>> {
 
     context (OperatorContext)
@@ -28,8 +29,8 @@ class ArrayOperator(
 
 @Alias("choose")
 class ChooseOperator(
-    val from: Operator<List<Any>>,
-    val weights: Operator<List<Int>?> = Operator { null }
+    val from: Wrapped<List<Any>>,
+    val weights: Wrapped<List<Int>?> = Wrapped { null }
 ) : Operator<Any?> {
 
     context (OperatorContext)
@@ -39,8 +40,8 @@ class ChooseOperator(
 
 @Alias("pick")
 class PickOperator(
-    val array: Operator<List<Any>>,
-    val element: Operator<Int> = Operator { 0 },
+    val array: Wrapped<List<Any>>,
+    val element: Wrapped<Int> = Wrapped { 0 },
 ) : Operator<Any?> {
 
     context(OperatorContext)
@@ -62,7 +63,7 @@ class PickOperator(
 
 @Alias("bool")
 class BooleanOperator(
-    val probability: Operator<Double> = Operator { 0.5 }
+    val probability: Wrapped<Double> = Wrapped { 0.5 }
 ) : Operator<Boolean> {
 
     context (OperatorContext)
@@ -72,8 +73,8 @@ class BooleanOperator(
 
 @Alias("bin")
 class BinaryOperator(
-    val size: Operator<Int> = Operator { 1024 },
-    val subtype: Operator<BsonBinarySubType> = Operator { BsonBinarySubType.BINARY }
+    val size: Wrapped<Int> = Wrapped { 1024 },
+    val subtype: Wrapped<BsonBinarySubType> = Wrapped { BsonBinarySubType.BINARY }
 ) : Operator<BsonBinary> {
 
     context (OperatorContext)
@@ -83,9 +84,9 @@ class BinaryOperator(
 
 @Alias("pickSet")
 class PickSetOperator(
-    val from: Operator<List<Any>>,
-    val weights: Operator<List<Int>?> = Operator { null },
-    val quantity: Operator<Int> = Operator { 1 },
+    val from: Wrapped<List<Any>>,
+    val weights: Wrapped<List<Int>?> = Wrapped { null },
+    val quantity: Wrapped<Int> = Wrapped { 1 },
     private val slippage: Int = 10
 ) : Operator<Set<Any>> {
 
@@ -123,7 +124,7 @@ class PickSetOperator(
 }
 
 class UuidOperator(
-    val type: Operator<String> = Operator { "BINARY" }
+    val type: Wrapped<String> = Wrapped { "BINARY" }
 ) : Operator<Any> {
     context(OperatorContext)
     override fun invoke(): Any =

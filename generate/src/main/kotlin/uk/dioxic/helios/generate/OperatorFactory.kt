@@ -9,7 +9,7 @@ import kotlin.reflect.full.findAnnotation
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
 object OperatorFactory {
 
-    private const val operatorPrefix = "\$"
+    const val operatorPrefix = "\$"
     private val classMap: MutableMap<String, KClass<out Operator<*>>> = mutableMapOf()
     private val objectMap: MutableMap<String, Operator<*>> = mutableMapOf()
 
