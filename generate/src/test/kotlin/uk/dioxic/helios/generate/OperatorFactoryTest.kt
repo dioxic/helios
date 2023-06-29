@@ -9,8 +9,15 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import uk.dioxic.helios.generate.OperatorFactory.addOperator
 import uk.dioxic.helios.generate.OperatorFactory.canHandle
 import uk.dioxic.helios.generate.OperatorFactory.create
+import uk.dioxic.helios.generate.OperatorFactory.operatorPrefix
 import uk.dioxic.helios.generate.fixture.*
 import uk.dioxic.helios.generate.test.withEmptyContext
+
+inline fun <reified T> opKey() =
+    "$operatorPrefix${T::class.simpleName}"
+
+inline fun <reified T> opKey(subkey:String) =
+    "$operatorPrefix${T::class.simpleName}.$subkey"
 
 class OperatorFactoryTest : FunSpec({
 
@@ -25,10 +32,11 @@ class OperatorFactoryTest : FunSpec({
     addOperator(KeyedOperatorWithMultiOptionalArg::class)
 
     val expected = "halibut"
+    val subKey = "subkey.badger"
 
     context("Normal Operator") {
         context("single mandatory arg") {
-            val opKey = "\$OperatorWithSingleMandatoryArg"
+            val opKey = opKey<OperatorWithSingleMandatoryArg>()
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
             }
@@ -57,7 +65,7 @@ class OperatorFactoryTest : FunSpec({
         }
 
         context("multiple mandatory args") {
-            val opKey = "\$OperatorWithMultiMandatoryArg"
+            val opKey = opKey<OperatorWithMultiMandatoryArg>()
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -84,7 +92,7 @@ class OperatorFactoryTest : FunSpec({
         }
 
         context("single optional arg") {
-            val opKey = "\$OperatorWithSingleOptionalArg"
+            val opKey = opKey<OperatorWithSingleOptionalArg>()
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -112,7 +120,7 @@ class OperatorFactoryTest : FunSpec({
         }
 
         context("mutiple optional args") {
-            val opKey = "\$OperatorWithMultiOptionalArg"
+            val opKey = opKey<OperatorWithMultiOptionalArg>()
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -140,7 +148,7 @@ class OperatorFactoryTest : FunSpec({
 
     context("Keyed Operator") {
         context("no args") {
-            val opKey = "\$KeyedOperatorWithNoArg.subkey.badger"
+            val opKey = opKey<KeyedOperatorWithNoArg>("subkey.badger")
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -154,19 +162,19 @@ class OperatorFactoryTest : FunSpec({
             test("from map is successful") {
                 create(opKey, emptyMap<String, String>()).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithNoArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                 }
             }
             test("build successful") {
                 create(opKey).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithNoArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                 }
             }
         }
 
         context("single mandatory arg") {
-            val opKey = "\$KeyedOperatorWithSingleMandatoryArg.subkey.badger"
+            val opKey = opKey<KeyedOperatorWithSingleMandatoryArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -175,7 +183,7 @@ class OperatorFactoryTest : FunSpec({
             test("from value fails") {
                 create(opKey, expected).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleMandatoryArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
                     }
@@ -184,7 +192,7 @@ class OperatorFactoryTest : FunSpec({
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleMandatoryArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
                     }
@@ -198,7 +206,7 @@ class OperatorFactoryTest : FunSpec({
         }
 
         context("multiple mandatory args") {
-            val opKey = "\$KeyedOperatorWithMultiMandatoryArg.subkey.badger"
+            val opKey = opKey<KeyedOperatorWithMultiMandatoryArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -212,7 +220,7 @@ class OperatorFactoryTest : FunSpec({
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithMultiMandatoryArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
                         it.arg2.invoke() shouldBe expected
@@ -227,7 +235,7 @@ class OperatorFactoryTest : FunSpec({
         }
 
         context("single optional arg") {
-            val opKey = "\$KeyedOperatorWithSingleOptionalArg.subkey.badger"
+            val opKey = opKey<KeyedOperatorWithSingleOptionalArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -236,14 +244,14 @@ class OperatorFactoryTest : FunSpec({
             test("from value is successful") {
                 create(opKey, expected).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                     withEmptyContext { it.arg.invoke() shouldBe expected }
                 }
             }
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithSingleOptionalArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                     withEmptyContext { it.arg.invoke() shouldBe expected }
                 }
             }
@@ -253,7 +261,7 @@ class OperatorFactoryTest : FunSpec({
         }
 
         context("mutiple optional args") {
-            val opKey = "\$KeyedOperatorWithMultiOptionalArg.subkey.badger"
+            val opKey = opKey<KeyedOperatorWithMultiOptionalArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -267,7 +275,7 @@ class OperatorFactoryTest : FunSpec({
             test("from map is successful") {
                 create(opKey, mapOf("arg" to expected, "arg2" to expected)).should {
                     it.shouldBeInstanceOf<KeyedOperatorWithMultiOptionalArg>()
-                    it.key shouldBe "subkey.badger"
+                    it.key shouldBe subKey
                     withEmptyContext {
                         it.arg.invoke() shouldBe expected
                         it.arg2.invoke() shouldBe expected
