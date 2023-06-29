@@ -9,15 +9,9 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import uk.dioxic.helios.generate.OperatorFactory.addOperator
 import uk.dioxic.helios.generate.OperatorFactory.canHandle
 import uk.dioxic.helios.generate.OperatorFactory.create
-import uk.dioxic.helios.generate.OperatorFactory.operatorPrefix
 import uk.dioxic.helios.generate.fixture.*
+import uk.dioxic.helios.generate.test.opKey
 import uk.dioxic.helios.generate.test.withEmptyContext
-
-inline fun <reified T> opKey() =
-    "$operatorPrefix${T::class.simpleName}"
-
-inline fun <reified T> opKey(subkey:String) =
-    "$operatorPrefix${T::class.simpleName}.$subkey"
 
 class OperatorFactoryTest : FunSpec({
 
