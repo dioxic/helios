@@ -9,7 +9,7 @@ import uk.dioxic.helios.generate.operators.IntOperator
 import uk.dioxic.helios.generate.operators.PickSetOperator
 import uk.dioxic.helios.generate.test.readResource
 
-class OperatorJsonDecode: FunSpec({
+class OperatorEncodingTest: FunSpec({
 
     test("decode") {
         val json = readResource("/test.json")
