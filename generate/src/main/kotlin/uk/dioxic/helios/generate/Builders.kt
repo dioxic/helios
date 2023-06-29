@@ -19,6 +19,16 @@ inline fun buildTemplate(builderAction: JsonObjectBuilder.() -> Unit): Template 
     return TemplateDocumentCodec().decode(buildJsonObject(builderAction))
 }
 
+fun JsonArrayBuilder.addOperatorObject(operatorKey:String, builderAction: JsonObjectBuilder.() -> Unit): Boolean =
+    addJsonObject {
+        putJsonObject(operatorKey, builderAction)
+    }
+
+fun JsonObjectBuilder.putOperatorObject(key: String, operatorKey:String, builderAction: JsonObjectBuilder.() -> Unit): JsonElement? =
+    putJsonObject(key) {
+        putJsonObject(operatorKey, builderAction)
+    }
+
 fun JsonObjectBuilder.put(key: String, value: LocalDateTime): JsonElement? =
     put(key, value.toInstant(ZoneOffset.UTC))
 
