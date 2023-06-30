@@ -25,6 +25,7 @@ import uk.dioxic.helios.execute.model.TpsRate
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.test.IS_NOT_GH_ACTION
 import uk.dioxic.helios.generate.Template
+import kotlin.time.Duration
 
 class ReportFormattingTest : FunSpec({
     val executor = mockk<MessageExecutor>()
@@ -35,7 +36,7 @@ class ReportFormattingTest : FunSpec({
                     execute()
                 }
             }
-        } throws MongoException("myError")andThenThrows DuplicateKeyException(
+        } throws MongoException("myError") andThenThrows DuplicateKeyException(
             BsonDocument("response", BsonString("error")),
             ServerAddress("example", 27017),
             WriteConcernResult.acknowledged(1, true, null)
@@ -68,6 +69,18 @@ class ReportFormattingTest : FunSpec({
     context("text format") {
         test("print multiple workloads").config(enabled = IS_NOT_GH_ACTION) {
             benchmark.execute(ResourceRegistry(mongoClient))
+                .buffer(100)
+                .format(ReportFormatter.create(ReportFormat.TEXT)).collect {
+                    println(it)
+                }
+        }
+        test("print unsummarized workloads").config(enabled = IS_NOT_GH_ACTION) {
+            buildBenchmark {
+                parallelStage {
+                    rateWorkload(executor = defaultExecutor, count = 20, rate = TpsRate(2))
+                    rateWorkload(executor = defaultMongoExecutor, count = 5, rate = TpsRate(3))
+                }
+            }.execute(registry = ResourceRegistry(mongoClient), interval = Duration.ZERO)
                 .buffer(100)
                 .format(ReportFormatter.create(ReportFormat.TEXT)).collect {
                     println(it)
