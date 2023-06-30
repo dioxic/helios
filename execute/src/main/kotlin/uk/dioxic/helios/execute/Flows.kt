@@ -32,48 +32,54 @@ suspend fun Flow<Number>.average(): Double {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class, ObsoleteCoroutinesApi::class)
-fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> = channelFlow {
-    require(interval.isPositive()) {
-        "interval must be positive, but was $interval"
-    }
-    val results = ArrayList<TimedResult>()
-    val flowChannel = produce { collect { send(it) } }
-    val tickerChannel = ticker(interval.inWholeMilliseconds)
-    var lastSummaryTime: TimeMark = TimeSource.Monotonic.markNow()
+fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> {
+    return if (interval.isPositive()) {
+        channelFlow {
+            require(interval.isPositive()) {
+                "interval must be positive, but was $interval"
+            }
+            val results = ArrayList<TimedResult>()
+            val flowChannel = produce { collect { send(it) } }
+            val tickerChannel = ticker(interval.inWholeMilliseconds)
+            var lastSummaryTime: TimeMark = TimeSource.Monotonic.markNow()
 
-    try {
-        whileSelect {
-            flowChannel.onReceive {
-                if (it.isSingleExecution) {
-                    send(it)
-                    true
-                } else {
-                    results.add(it)
+            try {
+                whileSelect {
+                    flowChannel.onReceive {
+                        if (it.isSingleExecution) {
+                            send(it)
+                            true
+                        } else {
+                            results.add(it)
+                        }
+                    }
+                    tickerChannel.onReceive {
+                        send(
+                            SummarizedResultsBatch(
+                                batchDuration = lastSummaryTime.elapsedNow(),
+                                results = results.summarize()
+                            )
+                        )
+                        lastSummaryTime = TimeSource.Monotonic.markNow()
+                        results.clear()
+                        true
+                    }
                 }
-            }
-            tickerChannel.onReceive {
-                send(
-                    SummarizedResultsBatch(
-                        batchDuration = lastSummaryTime.elapsedNow(),
-                        results = results.summarize()
+            } catch (e: ClosedReceiveChannelException) {
+                if (results.isNotEmpty()) {
+                    send(
+                        SummarizedResultsBatch(
+                            batchDuration = lastSummaryTime.elapsedNow(),
+                            results = results.summarize()
+                        )
                     )
-                )
-                lastSummaryTime = TimeSource.Monotonic.markNow()
-                results.clear()
-                true
+                }
+            } finally {
+                tickerChannel.cancel()
             }
         }
-    } catch (e: ClosedReceiveChannelException) {
-        if (results.isNotEmpty()) {
-            send(
-                SummarizedResultsBatch(
-                    batchDuration = lastSummaryTime.elapsedNow(),
-                    results = results.summarize()
-                )
-            )
-        }
-    } finally {
-        tickerChannel.cancel()
+    } else {
+        this
     }
 }
 

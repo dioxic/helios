@@ -46,7 +46,7 @@ data class ReadResult(
 ) : ExecutionResult
 
 data class MessageResult(
-    val msg: String
+    val doc: Map<String, *> = emptyMap<String, Any?>()
 ) : ExecutionResult
 
 data class TransactionResult(

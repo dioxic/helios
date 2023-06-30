@@ -1,25 +1,27 @@
-package uk.dioxic.helios.execute.format
+package uk.dioxic.helios.generate.extensions
 
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import org.bson.BsonDocument
 import org.bson.BsonValue
 
-fun Map<String, Any?>.flatten(separator: Char) =
+fun Map<String, Any?>.flatten(separator: Char = '.') =
     mutableMapOf<String, Any?>().also {
         flatten(it, this, separator)
     }.toMap()
 
-fun JsonObject.flatten(separator: Char) =
+fun JsonObject.flatten(separator: Char = '.') =
     mutableMapOf<String, JsonElement>().also {
         flatten(it, this, separator)
     }.toMap()
 
-fun BsonDocument.flatten(separator: Char) =
+fun BsonDocument.flatten(separator: Char = '.') =
     mutableMapOf<String, BsonValue>().also {
         flatten(it, this, separator)
     }.toMap()
 
+
+// TODO put complex objects into the map (maps + lists)
 @Suppress("UNCHECKED_CAST")
 private fun <T> flatten(map: MutableMap<String, T>, value: T, separator: Char, key: String = "") {
     return when (value) {

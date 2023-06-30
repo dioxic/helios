@@ -11,8 +11,7 @@ import org.bson.codecs.jsr310.Jsr310CodecProvider
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.helios.generate.codecs.OperatorExecutionCodecProvider
-import uk.dioxic.helios.generate.codecs.TemplateDocumentCodecProvider
-import uk.dioxic.helios.generate.operators.Operator
+import uk.dioxic.helios.generate.codecs.TemplateCodecProvider
 import uk.dioxic.helios.generate.serialization.TemplateSerializer
 
 @Serializable(TemplateSerializer::class)
@@ -29,14 +28,18 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
     override fun toJson(): String =
         super.toJson(defaultJsonWriter, defaultCodec)
 
-    fun hydrate() = hydrateMap(this)
-
     companion object {
         val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
             listOf(
-                ValueCodecProvider(), Jsr310CodecProvider(), TemplateDocumentCodecProvider(),
-                CollectionCodecProvider(), IterableCodecProvider(), OperatorExecutionCodecProvider(),
-                BsonValueCodecProvider(), DocumentCodecProvider(OperatorTransformer()), MapCodecProvider()
+                ValueCodecProvider(),
+                Jsr310CodecProvider(),
+                TemplateCodecProvider(),
+                CollectionCodecProvider(OperatorTransformer),
+                IterableCodecProvider(OperatorTransformer),
+                OperatorExecutionCodecProvider(),
+                BsonValueCodecProvider(),
+                DocumentCodecProvider(OperatorTransformer),
+                MapCodecProvider()
             )
         )
         private val defaultCodec = CodecRegistries.withUuidRepresentation(
@@ -49,12 +52,3 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
     }
 }
 
-@Suppress("UNCHECKED_CAST")
-private fun hydrateMap(map: Map<String, Any?>): Map<String, Any?> =
-    map.mapValues { (_, v) ->
-        when (v) {
-            is Operator<*> -> v.invoke()
-            is Map<*, *> -> hydrateMap(v as Map<String, Any?>)
-            else -> v
-        }
-    }

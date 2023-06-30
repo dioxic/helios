@@ -5,19 +5,22 @@ import uk.dioxic.helios.execute.measureTimedResult
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.ErrorResult
 import uk.dioxic.helios.execute.results.TimedResult
-import kotlin.time.ExperimentalTime
+import uk.dioxic.helios.generate.OperatorContext
 import kotlin.time.TimeSource
 import kotlin.time.TimeSource.Monotonic.ValueTimeMark
 
-@OptIn(ExperimentalTime::class)
 data class ExecutionContext(
     val workload: Workload,
     val executor: Executor,
-    val state: State,
     val rate: Rate,
-    val executionCount: Long = 0,
-    val startTime: ValueTimeMark = TimeSource.Monotonic.markNow()
-) {
+    override val constants: Lazy<Map<String, Any?>>,
+    override val variables: Lazy<Map<String, Any?>>,
+    override val executionCount: Long = 0,
+    val startTime: ValueTimeMark = TimeSource.Monotonic.markNow(),
+) : OperatorContext {
+    override val identity
+        get() = workload
+
     context(ResourceRegistry)
     suspend operator fun invoke(): TimedResult = measureTimedResult {
         try {

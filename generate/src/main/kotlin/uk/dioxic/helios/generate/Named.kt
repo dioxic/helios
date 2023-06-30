@@ -1,4 +1,4 @@
-package uk.dioxic.helios.execute
+package uk.dioxic.helios.generate
 
 interface Named {
     val name: String

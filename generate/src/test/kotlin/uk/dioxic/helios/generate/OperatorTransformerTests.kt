@@ -4,9 +4,10 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.bson.Document
-import uk.dioxic.helios.generate.operators.general.ChooseOperator
+import uk.dioxic.helios.generate.operators.ChooseOperator
+import uk.dioxic.helios.generate.test.withEmptyContext
 
-class OperatorTransformerTest: FunSpec({
+class OperatorTransformerTests: FunSpec({
 
     val colours = listOf("blue", "red", "green")
 
@@ -19,9 +20,11 @@ class OperatorTransformerTest: FunSpec({
     )
 
     test("decode") {
-        OperatorTransformer().transform(doc).let {
-            it.shouldBeInstanceOf<ChooseOperator>()
-            it.invoke().shouldBeIn(*colours.toTypedArray())
+        withEmptyContext {
+            OperatorTransformer.transform(doc).let {
+                it.shouldBeInstanceOf<ChooseOperator>()
+                it.invoke().shouldBeIn(*colours.toTypedArray())
+            }
         }
     }
 

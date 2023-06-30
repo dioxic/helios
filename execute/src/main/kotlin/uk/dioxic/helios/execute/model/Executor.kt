@@ -14,6 +14,7 @@ import uk.dioxic.helios.execute.resources.mongoSession
 import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.execute.serialization.TransactionOptionsSerializer
 import uk.dioxic.helios.generate.Template
+import uk.dioxic.helios.generate.hydrate
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -50,12 +51,12 @@ sealed class DatabaseExecutor : Executor {
 @Serializable
 @SerialName("message")
 data class MessageExecutor(
-    val message: String
+    val template: Template
 ) : Executor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        MessageResult("$message - count: $executionCount")
+        MessageResult(template.hydrate())
 
 }
 

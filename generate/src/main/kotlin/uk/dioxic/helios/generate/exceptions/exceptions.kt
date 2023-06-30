@@ -1,18 +1,38 @@
 package uk.dioxic.helios.generate.exceptions
 
+import arrow.core.Nel
 import kotlin.reflect.KClass
 
-sealed class OperatorArgumentException(msg: String) : Exception(msg)
+class OperatorTransformationException(msg: String): Exception(msg)
 
-class IncorrectTypeException(
-    type: KClass<*>,
-    argument: String
-) : OperatorArgumentException("$type not valid for [$argument] argument")
+sealed interface OperatorError
 
-class MissingArgumentException(
-    argument: List<String>
-): OperatorArgumentException("Mandatory argument(s) [$argument] not provided")
+data class NoOperatorFound(val key: String): OperatorError
 
-class UnsupportedOperatorAliasException(
-    alias: String
-): Exception("Operator alias \"$alias\" not supported")
+sealed interface OperatorBuildError: OperatorError {
+    val name: String
+}
+
+data class OperatorConversionError(
+    override val name: String,
+    val errors: Nel<ParameterError>
+) : OperatorBuildError
+
+data class NoDefaultConfiguration(override val name: String) : OperatorBuildError
+data class NoPrimaryConstructor(override val name: String) : OperatorBuildError
+data class NoSingleValueParameter(override val name: String) : OperatorBuildError
+data class ExpectingKeyedOperator(override val name: String) : OperatorBuildError
+data class NoKeyParameter(override val name: String) : OperatorBuildError
+
+sealed interface ParameterError {
+    val parameter: String
+}
+
+data class ParameterConversionError(
+    override val parameter: String,
+    val conversionError: ConversionError
+) : ParameterError
+
+data class ParameterNotOptional(override val parameter: String) : ParameterError
+
+data class ConversionError(val value: Any?, val target: KClass<*>)

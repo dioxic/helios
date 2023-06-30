@@ -10,17 +10,15 @@ import uk.dioxic.helios.execute.ProgressMessage
 import uk.dioxic.helios.execute.StageCompleteMessage
 import uk.dioxic.helios.execute.StageStartMessage
 import uk.dioxic.helios.execute.model.Workload
-import uk.dioxic.helios.execute.results.SummarizedLatencies
-import uk.dioxic.helios.execute.results.SummarizedResultsBatch
-import uk.dioxic.helios.execute.results.TimedMessageResult
-import uk.dioxic.helios.execute.results.TimedResult
+import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.execute.serialization.DurationConsoleSerializer
 import uk.dioxic.helios.execute.serialization.IntPercentSerializer
+import uk.dioxic.helios.generate.extensions.flatten
 import kotlin.math.max
 import kotlin.time.Duration
 
 private typealias Columns = List<Pair<String, Int>>
-private typealias ResultsMap = List<Map<String, String>>
+private typealias ResultMap = Map<String, String>
 
 internal object ConsoleReportFormatter : ReportFormatter() {
     private const val padding = 3
@@ -60,7 +58,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
             else -> error("Default value not found")
         }
 
-    private fun Map<String,String>.getOrDefault(key: String) =
+    private fun Map<String, String>.getOrDefault(key: String) =
         this.getOrDefault(key, getDefaultValue(key))
 
     private fun formatResult(result: Map<String, String>, columns: Columns) =
@@ -82,7 +80,8 @@ internal object ConsoleReportFormatter : ReportFormatter() {
     }
 
     override fun format(results: Flow<FrameworkMessage>) = flow {
-        var lastWorkloads: List<Workload> = emptyList()
+        var recentWorkloads = mutableListOf<Workload>()
+        val recentResults = ArrayDeque<ResultMap>()
         var columns: Columns = emptyList()
         var count: Long = 0
 
@@ -92,19 +91,40 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                 is ProgressMessage -> {
                     when (val fRes = msg.result) {
                         is TimedResult -> {
-                            val outMsg = "\n${fRes.context.workload.name} completed in ${fRes.duration}"
-                            when (fRes) {
-                                is TimedMessageResult -> emit("$outMsg [msg: ${fRes.value.msg}]")
-                                else -> emit(outMsg)
+                            if (fRes.context.workload.count == 1L) {
+                                val outMsg = "\n${fRes.context.workload.name} completed in ${fRes.duration}"
+                                when (fRes) {
+                                    is TimedMessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
+                                    else -> emit(outMsg)
+                                }
+                            }
+                            else {
+                                val resultsMap = fRes.toResultMap()
+                                val headerTick = count % printHeaderEvery == 0L
+
+                                recentResults.add(resultsMap)
+
+                                if (headerTick || columnChange(columns, resultsMap)) {
+                                    columns = getColumns(recentResults)
+                                    count = 0
+                                    emit(formatHeader(columns))
+                                }
+
+                                emit(formatResult(resultsMap, columns))
+
+                                if (recentResults.size > printHeaderEvery) {
+                                    recentResults.removeFirst()
+                                }
+                                count++
                             }
                         }
 
                         is SummarizedResultsBatch -> {
-                            val resultsMap = fRes.toFlatMap()
+                            val resultsMap = fRes.toResultMapList()
                             val workloads = fRes.results.map { it.context.workload }
                             val headerTick = count % printHeaderEvery == 0L
                             val workloadChange =
-                                !lastWorkloads.containsAll(workloads) || workloads.size != lastWorkloads.size
+                                !recentWorkloads.containsAll(workloads) || workloads.size != recentWorkloads.size
 
                             if (headerTick || workloadChange || workloads.size > 1) {
                                 columns = getColumns(resultsMap)
@@ -115,7 +135,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                             resultsMap.forEach { result ->
                                 emit(formatResult(result, columns))
                             }
-                            lastWorkloads = workloads
+                            recentWorkloads = workloads.toMutableList()
                             count++
                         }
                     }
@@ -126,7 +146,28 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         }
     }
 
-    private fun getColumns(results: ResultsMap): Columns =
+    private fun columnChange(current: Columns, results: ResultMap): Boolean {
+        val new = getColumns(results)
+        if (new.size > current.size) {
+            return true
+        }
+        val currentMap = current.toMap()
+        new.forEach {(name, len) ->
+            val c = currentMap[name]
+            if (c == null || c < len) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun getColumns(results: ResultMap): Columns =
+        results.keys
+            .sortedBy { fieldOrder[it] }
+            .map { it to it.length }
+
+    private fun getColumns(results: List<ResultMap>): Columns =
         results
             .flatMap { it.keys }
             .distinct()
@@ -155,13 +196,27 @@ internal object ConsoleReportFormatter : ReportFormatter() {
         }
     }
 
+    private fun OutputResult.toStringMap(): Map<String, String> =
+        toFlatMap(json)
+            .mapValues { (_, v) -> v.jsonPrimitive.content }
+
     private fun OutputResult.toFlatMap(json: Json): Map<String, JsonElement> =
         json.encodeToJsonElement(this).jsonObject.flatten(' ')
 
-    private fun SummarizedResultsBatch.toFlatMap(stageName: String = ""): ResultsMap = results.map { sr ->
+    private fun TimedResult.toResultMap(stageName: String = ""): ResultMap =
+        toOutputResult(stageName)
+            .toFlatMap(json)
+            .mapValues { (_, v) -> v.jsonPrimitive.content }
+
+    context(Duration)
+    private fun SummarizedResult.toResultMap(stageName: String = ""): ResultMap =
+        toOutputResult(stageName)
+            .toFlatMap(json)
+            .mapValues { (_, v) -> v.jsonPrimitive.content }
+
+    private fun SummarizedResultsBatch.toResultMapList(stageName: String = ""): List<ResultMap> =
         with(batchDuration) {
-            sr.toOutputResult(stageName).toFlatMap(json).mapValues { (_, v) -> v.jsonPrimitive.content }
+            results.map { it.toResultMap(stageName) }
         }
-    }
 
 }

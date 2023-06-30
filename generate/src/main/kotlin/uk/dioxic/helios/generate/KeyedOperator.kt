@@ -1,4 +1,4 @@
-package uk.dioxic.helios.generate.operators
+package uk.dioxic.helios.generate
 
 abstract class KeyedOperator<T> : Operator<T> {
     abstract val key: String

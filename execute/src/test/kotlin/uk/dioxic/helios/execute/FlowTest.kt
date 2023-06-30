@@ -15,7 +15,7 @@ class FlowTest : FunSpec({
         flow {
             repeat(100) {
                 val timedResult = defaultExecutionContext.measureTimedResult {
-                    MessageResult("[$it] hello world!")
+                    MessageResult(mapOf("hello" to "world"))
                 }
 
                 emit(timedResult)

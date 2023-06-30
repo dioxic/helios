@@ -1,4 +1,3 @@
-
 package uk.dioxic.helios.execute
 
 import arrow.fx.coroutines.parMapUnordered
@@ -24,7 +23,6 @@ fun Benchmark.execute(
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
         stages.forEach { stage ->
-            StateManager.setState(hydratedState + stage.hydratedState)
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {
@@ -76,16 +74,22 @@ fun Benchmark.produceWeighted(
 
     var weightSum = weights.sum()
     while (weightSum > 0) {
-        val context = Random.nextElementIndex(weights, weightSum).let {
+        Random.nextElementIndex(weights, weightSum).let {
             val count = ++counts[it]
             if (count == workloads[it].count) {
                 weights[it] = 0
                 weightSum = weights.sum()
             }
-            contexts[it].copy(executionCount = count)
+            contexts[it].copy(
+                executionCount = count,
+                variables = lazy(LazyThreadSafetyMode.NONE) {
+                    this@produceWeighted.variables + stage.variables + workloads[it].variables
+                }
+            )
+        }.also {
+            emit(it)
+            it.delay()
         }
-        emit(context)
-        context.delay()
     }
 }
 
@@ -96,7 +100,12 @@ fun Benchmark.produceRated(
 ): Flow<ExecutionContext> = flow {
     val context = workload.createContext(this@produceRated, stage)
     for (i in 1..context.workload.count) {
-        context.copy(executionCount = i).also {
+        context.copy(
+            executionCount = i,
+            variables = lazy(LazyThreadSafetyMode.NONE) {
+                this@produceRated.variables + stage.variables + workload.variables
+            }
+        ).also {
             emit(it)
             it.delay()
         }

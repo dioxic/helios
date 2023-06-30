@@ -2,6 +2,7 @@ package uk.dioxic.helios.execute
 
 import kotlinx.serialization.json.put
 import uk.dioxic.helios.execute.model.*
+import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
 import uk.dioxic.helios.generate.put
 import java.time.LocalDateTime
@@ -14,7 +15,7 @@ val defaultTemplate = buildTemplate {
     put("long", Long.MAX_VALUE)
 }
 
-val defaultExecutor = MessageExecutor("hello world!")
+val defaultExecutor = MessageExecutor(Template.EMPTY)
 
 val defaultMongoExecutor = InsertOneExecutor(
     database = "myDB",

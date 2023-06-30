@@ -12,8 +12,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.put
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.test.readResource
+import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.buildTemplate
-import uk.dioxic.helios.generate.operators.Operator
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
