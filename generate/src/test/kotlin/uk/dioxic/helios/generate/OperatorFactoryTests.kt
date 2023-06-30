@@ -18,7 +18,7 @@ import uk.dioxic.helios.generate.fixture.*
 import uk.dioxic.helios.generate.test.opKey
 import uk.dioxic.helios.generate.test.withEmptyContext
 
-class OperatorFactoryTest : FunSpec({
+class OperatorFactoryTests : FunSpec({
 
     addOperator(OperatorWithSingleMandatoryArg::class)
     addOperator(OperatorWithMultiOptionalArg::class)
