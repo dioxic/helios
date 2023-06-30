@@ -6,16 +6,15 @@ import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.ErrorResult
 import uk.dioxic.helios.execute.results.TimedResult
 import uk.dioxic.helios.generate.OperatorContext
-import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 import kotlin.time.TimeSource.Monotonic.ValueTimeMark
 
-@OptIn(ExperimentalTime::class)
 data class ExecutionContext(
     val workload: Workload,
     val executor: Executor,
     val rate: Rate,
     override val constants: Lazy<Map<String, Any?>>,
+    override val variables: Lazy<Map<String, Any?>>,
     override val executionCount: Long = 0,
     val startTime: ValueTimeMark = TimeSource.Monotonic.markNow(),
 ) : OperatorContext {

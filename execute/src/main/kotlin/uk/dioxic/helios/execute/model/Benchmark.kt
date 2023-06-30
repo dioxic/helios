@@ -4,7 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import uk.dioxic.helios.execute.Stateful
-import uk.dioxic.helios.generate.Named
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.hydrateAndFlatten
 
@@ -14,12 +13,10 @@ data class Benchmark(
     @SerialName("constants") override val constantsDefinition: Template  = Template.EMPTY,
     @SerialName("variables") override val variablesDefinition: Template  = Template.EMPTY,
     val stages: List<Stage>
-) : Named, Stateful {
+) : Stateful {
 
     @Transient
     override val constants = lazy { constantsDefinition.hydrateAndFlatten(this) }
 
-    @Transient
-    override val variables = lazy { variablesDefinition.hydrateAndFlatten(this) }
 }
 

@@ -5,13 +5,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import uk.dioxic.helios.execute.Stateful
 import uk.dioxic.helios.execute.serialization.WorkloadSerializer
-import uk.dioxic.helios.generate.Named
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.hydrateAndFlatten
 import kotlin.time.Duration
 
 @Serializable(WorkloadSerializer::class)
-sealed class Workload : Named, Stateful {
+sealed class Workload : Stateful {
     abstract val executor: Executor
     abstract val count: Long
 
@@ -20,8 +19,6 @@ sealed class Workload : Named, Stateful {
     @Transient
     override val constants = lazy { constantsDefinition.hydrateAndFlatten(this) }
 
-    @Transient
-    override val variables = lazy { variablesDefinition.hydrateAndFlatten(this) }
 }
 
 @Serializable
@@ -38,7 +35,12 @@ data class RateWorkload(
     override fun createContext(benchmark: Benchmark, stage: Stage) = ExecutionContext(
         workload = this,
         executor = executor,
-        constants = lazy { benchmark.constants.value + stage.constants.value + constants.value },
+        constants = lazy(LazyThreadSafetyMode.NONE) {
+            benchmark.constants.value + stage.constants.value + constants.value
+        },
+        variables = lazy(LazyThreadSafetyMode.NONE) {
+            benchmark.variables + stage.variables + variables
+        },
         rate = rate,
     )
 
@@ -61,7 +63,12 @@ data class WeightedWorkload(
         return ExecutionContext(
             workload = this,
             executor = executor,
-            constants = lazy { benchmark.constants.value + stage.constants.value + constants.value },
+            constants = lazy(LazyThreadSafetyMode.NONE) {
+                benchmark.constants.value + stage.constants.value + constants.value
+            },
+            variables = lazy(LazyThreadSafetyMode.NONE) {
+                benchmark.variables + stage.variables + variables
+            },
             rate = stage.weightedWorkloadRate,
         )
     }
