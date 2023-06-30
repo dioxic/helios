@@ -9,6 +9,7 @@ import kotlinx.serialization.json.putJsonObject
 import uk.dioxic.helios.execute.model.State
 import uk.dioxic.helios.generate.OperatorFactory
 import uk.dioxic.helios.generate.buildTemplate
+import uk.dioxic.helios.generate.hydrate
 
 class StateOperatorTests : FunSpec({
 
