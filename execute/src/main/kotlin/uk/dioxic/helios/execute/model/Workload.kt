@@ -6,6 +6,7 @@ import uk.dioxic.helios.execute.Named
 import uk.dioxic.helios.execute.Stateful
 import uk.dioxic.helios.execute.serialization.WorkloadSerializer
 import uk.dioxic.helios.generate.Template
+import uk.dioxic.helios.generate.hydrate
 import kotlin.time.Duration
 
 @Serializable(WorkloadSerializer::class)
