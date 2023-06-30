@@ -16,6 +16,7 @@ import uk.dioxic.helios.execute.results.TimedMessageResult
 import uk.dioxic.helios.execute.results.TimedResult
 import uk.dioxic.helios.execute.serialization.DurationConsoleSerializer
 import uk.dioxic.helios.execute.serialization.IntPercentSerializer
+import uk.dioxic.helios.generate.extensions.flatten
 import kotlin.math.max
 import kotlin.time.Duration
 
@@ -94,7 +95,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                         is TimedResult -> {
                             val outMsg = "\n${fRes.context.workload.name} completed in ${fRes.duration}"
                             when (fRes) {
-                                is TimedMessageResult -> emit("$outMsg [msg: ${fRes.value.msg}]")
+                                is TimedMessageResult -> emit("$outMsg [msg: ${fRes.value.doc}]")
                                 else -> emit(outMsg)
                             }
                         }

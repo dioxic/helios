@@ -41,7 +41,7 @@ class FrameworkTest : FunSpec({
                     executor.execute()
                 }
             }
-        } returns MessageResult("hello world!")
+        } returns MessageResult()
     }
 
     context("execution counts") {

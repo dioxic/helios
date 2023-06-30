@@ -2,10 +2,16 @@
 
 package uk.dioxic.helios.generate
 
-//TODO use context receiver
-fun Map<String, *>.hydrate(): Map<String, *> = with (OperatorContext.EMPTY) {
-    hydrate(this@hydrate) as Map<String, *>
-}
+import uk.dioxic.helios.generate.extensions.flatten
+
+fun Template.hydrateAndFlatten(named: Named) =
+    with(NamedContext(named)) {
+        this@hydrateAndFlatten.hydrate().flatten()
+    }
+
+context (OperatorContext)
+fun Map<String, *>.hydrate(): Map<String, *> =
+    hydrate(this) as Map<String, *>
 
 context (OperatorContext)
 fun hydrate(value: Any?): Any? =

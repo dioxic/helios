@@ -1,12 +1,17 @@
 package uk.dioxic.helios.generate
 
 interface OperatorContext {
-
-    operator fun get(key: String): Any?
+    val identity: Named
+    val constants: Lazy<Map<String, Any?>>
+    val executionCount: Long
 
     companion object {
         val EMPTY = object : OperatorContext {
-            override fun get(key: String) = null
+            override val identity = object : Named {
+                override val name = "EMPTY"
+            }
+            override val constants = lazy { emptyMap<String, Any?>() }
+            override val executionCount = 0L
         }
     }
 }

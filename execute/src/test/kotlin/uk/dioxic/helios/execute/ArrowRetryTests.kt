@@ -36,7 +36,7 @@ class ArrowRetryTests : FunSpec({
                     executor.execute()
                 }
             }
-        } throws mongoTransientTxnEx andThen MessageResult("hello")
+        } throws mongoTransientTxnEx andThen MessageResult()
 
         val res = schedule.retry {
             with(defaultExecutionContext) {
@@ -126,7 +126,7 @@ class ArrowRetryTests : FunSpec({
                     executor.execute()
                 }
             }
-        } throws mongoTransientTxnEx andThen MessageResult("hello")
+        } throws mongoTransientTxnEx andThen MessageResult()
 
         schedule.retry {
             with(defaultExecutionContext) {

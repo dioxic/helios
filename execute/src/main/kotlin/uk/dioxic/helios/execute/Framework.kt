@@ -1,4 +1,3 @@
-
 package uk.dioxic.helios.execute
 
 import arrow.fx.coroutines.parMapUnordered
@@ -24,7 +23,6 @@ fun Benchmark.execute(
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
         stages.forEach { stage ->
-            StateManager.setState(hydratedState + stage.hydratedState)
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {
@@ -76,16 +74,17 @@ fun Benchmark.produceWeighted(
 
     var weightSum = weights.sum()
     while (weightSum > 0) {
-        val context = Random.nextElementIndex(weights, weightSum).let {
+        Random.nextElementIndex(weights, weightSum).let {
             val count = ++counts[it]
             if (count == workloads[it].count) {
                 weights[it] = 0
                 weightSum = weights.sum()
             }
             contexts[it].copy(executionCount = count)
+        }.also {
+            emit(it)
+            it.delay()
         }
-        emit(context)
-        context.delay()
     }
 }
 
