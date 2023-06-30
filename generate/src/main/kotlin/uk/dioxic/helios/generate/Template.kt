@@ -31,9 +31,15 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
     companion object {
         val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
             listOf(
-                ValueCodecProvider(), Jsr310CodecProvider(), TemplateDocumentCodecProvider(),
-                CollectionCodecProvider(), IterableCodecProvider(), OperatorExecutionCodecProvider(),
-                BsonValueCodecProvider(), DocumentCodecProvider(OperatorTransformer()), MapCodecProvider()
+                ValueCodecProvider(),
+                Jsr310CodecProvider(),
+                TemplateCodecProvider(),
+                CollectionCodecProvider(OperatorTransformer),
+                IterableCodecProvider(OperatorTransformer),
+                OperatorExecutionCodecProvider(),
+                BsonValueCodecProvider(),
+                DocumentCodecProvider(OperatorTransformer),
+                MapCodecProvider()
             )
         )
         private val defaultCodec = CodecRegistries.withUuidRepresentation(

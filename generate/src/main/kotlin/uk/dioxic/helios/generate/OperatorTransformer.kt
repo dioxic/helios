@@ -5,7 +5,7 @@ import org.bson.Document
 import org.bson.Transformer
 import uk.dioxic.helios.generate.exceptions.OperatorTransformationException
 
-class OperatorTransformer : Transformer {
+object OperatorTransformer : Transformer {
     override fun transform(objectToTransform: Any?): Any? {
         when (objectToTransform) {
             is Document -> {

@@ -18,16 +18,21 @@ import uk.dioxic.helios.generate.operators.ObjectIdOperator
 class TemplateDocumentCodec(
     registry: CodecRegistry = CodecRegistries.fromProviders(
         listOf(
-            ValueCodecProvider(), Jsr310CodecProvider(),
-            CollectionCodecProvider(), IterableCodecProvider(), OperatorExecutionCodecProvider(),
-            BsonValueCodecProvider(), DocumentCodecProvider(OperatorTransformer()), MapCodecProvider()
+            ValueCodecProvider(),
+            Jsr310CodecProvider(),
+            CollectionCodecProvider(OperatorTransformer),
+            IterableCodecProvider(OperatorTransformer),
+            OperatorExecutionCodecProvider(),
+            BsonValueCodecProvider(),
+            DocumentCodecProvider(OperatorTransformer),
+            MapCodecProvider()
         )
     ),
     bsonTypeClassMap: BsonTypeClassMap = BsonTypeClassMap(),
 ) : CollectibleCodec<Template> {
 
     private val idFieldName = "_id"
-    private val documentCodec = DocumentCodec(registry, bsonTypeClassMap, OperatorTransformer())
+    private val documentCodec = DocumentCodec(registry, bsonTypeClassMap, OperatorTransformer)
 
     override fun encode(writer: BsonWriter, value: Template, encoderContext: EncoderContext) {
         documentCodec.encode(writer, value, encoderContext)

@@ -7,7 +7,7 @@ import org.bson.Document
 import uk.dioxic.helios.generate.operators.ChooseOperator
 import uk.dioxic.helios.generate.test.withEmptyContext
 
-class OperatorTransformerTest: FunSpec({
+class OperatorTransformerTests: FunSpec({
 
     val colours = listOf("blue", "red", "green")
 
@@ -21,7 +21,7 @@ class OperatorTransformerTest: FunSpec({
 
     test("decode") {
         withEmptyContext {
-            OperatorTransformer().transform(doc).let {
+            OperatorTransformer.transform(doc).let {
                 it.shouldBeInstanceOf<ChooseOperator>()
                 it.invoke().shouldBeIn(*colours.toTypedArray())
             }
