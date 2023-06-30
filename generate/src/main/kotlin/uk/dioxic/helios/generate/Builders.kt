@@ -24,7 +24,7 @@ inline fun buildTemplate(builderAction: JsonObjectBuilder.() -> Unit): Template 
 
 inline fun <reified T> JsonArrayBuilder.addOperatorObject(noinline builderAction: JsonObjectBuilder.() -> Unit): Boolean =
     addJsonObject {
-        putJsonObject("$operatorPrefix${getOperatorKey<T>()}", builderAction)
+        putJsonObject(getOperatorKey<T>(), builderAction)
     }
 
 fun JsonObjectBuilder.putOperatorObject(
@@ -41,16 +41,17 @@ inline fun <reified T> JsonObjectBuilder.putOperatorObject(
     noinline builderAction: JsonObjectBuilder.() -> Unit
 ): JsonElement? =
     putJsonObject(key) {
-        putJsonObject("$operatorPrefix${getOperatorKey<T>()}", builderAction)
+        putJsonObject(getOperatorKey<T>(), builderAction)
     }
 
 inline fun <reified T> getOperatorKey(): String {
     val alias = T::class.findAnnotations(Alias::class).firstOrNull()
-    return if (alias != null && alias.aliases.isNotEmpty()) {
+    val key = if (alias != null && alias.aliases.isNotEmpty()) {
         alias.aliases.first()
     } else {
         T::class.simpleName!!
     }
+    return "$operatorPrefix$key"
 }
 
 inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(value: String): Boolean =

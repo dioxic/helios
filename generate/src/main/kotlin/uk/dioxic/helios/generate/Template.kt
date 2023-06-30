@@ -28,11 +28,6 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
     override fun toJson(): String =
         super.toJson(defaultJsonWriter, defaultCodec)
 
-    fun hydrate(context: OperatorContext = OperatorContext.EMPTY) =
-        with(context) {
-            hydrateMap(this@Template)
-        }
-
     companion object {
         val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
             listOf(
@@ -51,13 +46,3 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
     }
 }
 
-context(OperatorContext)
-@Suppress("UNCHECKED_CAST")
-private fun hydrateMap(map: Map<String, Any?>): Map<String, Any?> =
-    map.mapValues { (_, v) ->
-        when (v) {
-            is Operator<*> -> v.invoke()
-            is Map<*, *> -> hydrateMap(v as Map<String, Any?>)
-            else -> v
-        }
-    }
