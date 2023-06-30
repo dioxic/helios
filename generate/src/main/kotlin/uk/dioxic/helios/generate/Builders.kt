@@ -36,6 +36,15 @@ fun JsonObjectBuilder.putOperatorObject(
         putJsonObject("$operatorPrefix$alias", builderAction)
     }
 
+inline fun <reified T : KeyedOperator<*>> JsonObjectBuilder.putKeyedOperatorObject(
+    key: String,
+    operatorSubKey: String,
+    noinline builderAction: JsonObjectBuilder.() -> Unit
+): JsonElement? =
+    putJsonObject(key) {
+        putJsonObject("${getOperatorKey<T>()}.$operatorSubKey", builderAction)
+    }
+
 inline fun <reified T> JsonObjectBuilder.putOperatorObject(
     key: String,
     noinline builderAction: JsonObjectBuilder.() -> Unit
@@ -61,6 +70,9 @@ inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(value: String)
 
 inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(): Boolean =
     add(getOperatorKey<T>())
+
+inline fun <reified T : Operator<*>> JsonObjectBuilder.putKeyedOperator(key: String, operatorSubKey: String): JsonElement? =
+    put(key, "${getOperatorKey<T>()}.$operatorSubKey")
 
 inline fun <reified T : Operator<*>> JsonObjectBuilder.putOperator(key: String): JsonElement? =
     put(key, getOperatorKey<T>())
