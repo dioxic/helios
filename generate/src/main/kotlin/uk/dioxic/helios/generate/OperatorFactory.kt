@@ -1,7 +1,9 @@
 package uk.dioxic.helios.generate
 
 import arrow.core.Either
+import arrow.core.left
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import arrow.core.right
 import org.reflections.Reflections
@@ -77,12 +79,18 @@ object OperatorFactory {
 
     fun create(key: String): Either<OperatorError, Operator<*>> = either {
         val (rootKey, subKey) = splitKey(key)
-        val operatorClass = ensureNotNull(classMap[rootKey]) {
+        val operatorClass = classMap[rootKey]
+
+        ensure(operatorClass != null || subKey.isEmpty()) {
             raise(NoOperatorFound(rootKey))
         }
 
+        if (operatorClass == null) {
+            return objectMap[rootKey]?.right() ?: NoOperatorFound(rootKey).left()
+        }
+
         return if (subKey.isEmpty()) {
-            objectMap[rootKey]?.right() ?: OperatorBuilder.build(operatorClass)
+            OperatorBuilder.build(operatorClass)
         } else {
             OperatorBuilder.fromMap(clazz = operatorClass, subKey = subKey)
         }
