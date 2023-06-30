@@ -9,7 +9,7 @@ import org.bson.codecs.configuration.CodecRegistry
 import org.bson.types.CodeWithScope
 import uk.dioxic.helios.generate.Template
 
-class TemplateDocumentCodecProvider @JvmOverloads constructor(
+class TemplateCodecProvider @JvmOverloads constructor(
     private val bsonTypeClassMap: BsonTypeClassMap = BsonTypeClassMap()
 ) : CodecProvider {
 
@@ -19,7 +19,7 @@ class TemplateDocumentCodecProvider @JvmOverloads constructor(
             return CodeWithScopeCodec(registry.get(Document::class.java)) as Codec<T>
         }
         return if (clazz == Template::class.java) {
-            TemplateDocumentCodec(registry, bsonTypeClassMap) as Codec<T>
+            TemplateCodec(registry, bsonTypeClassMap) as Codec<T>
         } else null
     }
 

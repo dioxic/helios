@@ -15,7 +15,7 @@ import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
 
-class TemplateDocumentCodec(
+class TemplateCodec(
     registry: CodecRegistry = CodecRegistries.fromProviders(
         listOf(
             ValueCodecProvider(),

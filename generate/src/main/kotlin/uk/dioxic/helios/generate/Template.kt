@@ -11,7 +11,7 @@ import org.bson.codecs.jsr310.Jsr310CodecProvider
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.helios.generate.codecs.OperatorExecutionCodecProvider
-import uk.dioxic.helios.generate.codecs.TemplateDocumentCodecProvider
+import uk.dioxic.helios.generate.codecs.TemplateCodecProvider
 import uk.dioxic.helios.generate.serialization.TemplateSerializer
 
 @Serializable(TemplateSerializer::class)

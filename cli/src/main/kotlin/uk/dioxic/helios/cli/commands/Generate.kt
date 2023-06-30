@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
 import uk.dioxic.helios.cli.enums.OutputType
 import uk.dioxic.helios.cli.extensions.writeJson
 import uk.dioxic.helios.generate.Template
-import uk.dioxic.helios.generate.codecs.TemplateDocumentCodec
+import uk.dioxic.helios.generate.codecs.TemplateCodec
 
 class Generate : CliktCommand(help = "Generate data and output to a file or stdout") {
     init {
@@ -40,7 +40,7 @@ class Generate : CliktCommand(help = "Generate data and output to a file or stdo
             val seq = generateSequence { template }
                 .take(number)
 
-            it.writeJson(seq, TemplateDocumentCodec(), outputType.jsonWriterSettings(), outputType.isArray())
+            it.writeJson(seq, TemplateCodec(), outputType.jsonWriterSettings(), outputType.isArray())
         }
 
     }
