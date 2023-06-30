@@ -19,17 +19,17 @@ class ConstOperatorTests : FunSpec({
     OperatorFactory.addOperator(ConstOperator::class)
 
     val template = buildTemplate {
-        putKeyedOperator<ConstOperator>("const", "const")
+        putKeyedOperator<ConstOperator>("name", "animal")
     }
     val consts = buildTemplate {
-        put("const", "halibut")
+        put("animal", "halibut")
     }
     val executor = MessageExecutor(template)
 
     suspend fun Benchmark.verify() {
         execute().filterIsInstance<ProgressMessage>().collect { msg ->
             msg.result.shouldBeInstanceOf<TimedMessageResult>().value.doc.should { doc ->
-                doc["const"] shouldBe "halibut"
+                doc["name"] shouldBe "halibut"
             }
         }
     }
