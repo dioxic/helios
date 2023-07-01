@@ -159,7 +159,10 @@ class TemplateCodecTests : FunSpec({
 
             encodeAndPrint(template).should {
                 it shouldContainKey "type"
-                it["type"].shouldBeInstanceOf<String>()
+                it["type"].should {type ->
+                    type.shouldBeInstanceOf<JsonPrimitive>()
+                    type.isString shouldBe true
+                }
             }
         }
     }

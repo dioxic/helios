@@ -28,23 +28,11 @@ class TemplateCodec(
     private val idFieldName = "_id"
 
     override fun encode(writer: BsonWriter, template: Template, encoderContext: EncoderContext) {
-//        val t = template
-//
-//        template[getOperatorKey<RootOperator>()].let {
-//            if (it != null && it is RootOperator) {
-//                it.value.invoke()
-//            }
-//        }
-//
-//        if (template.containsKey(getOperatorKey<RootOperator>())) {
-//
-//        }
-
         writer.writeStartDocument()
 
         beforeFields(writer, encoderContext, template)
 
-        template.forEach { key, value ->
+        template.resolveRoot().forEach { (key, value) ->
             if (!skipField(encoderContext, key)) {
                 writer.writeName(key)
                 writeValue(writer, encoderContext, value)

@@ -2,10 +2,11 @@ package uk.dioxic.helios.generate.codecs
 
 import org.bson.*
 import org.bson.codecs.*
-import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
-import org.bson.codecs.jsr310.Jsr310CodecProvider
-import uk.dioxic.helios.generate.OperatorTransformer
+import uk.dioxic.helios.generate.OperatorContext
+import uk.dioxic.helios.generate.Wrapped
+import uk.dioxic.helios.generate.getOperatorKey
+import uk.dioxic.helios.generate.operators.RootOperator
 import java.util.*
 
 sealed interface BaseDocumentCodec<T : MutableMap<String, Any?>> : Codec<T> {
@@ -58,20 +59,28 @@ sealed interface BaseDocumentCodec<T : MutableMap<String, Any?>> : Codec<T> {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun Map<String, Any?>.resolveRoot() =
+        this[rootOperatorKey]?.let { value ->
+            require(size == 1) {
+                "document should only have one top-level field when $rootOperatorKey is present"
+            }
+            when (value) {
+                is Wrapped<*> -> with(OperatorContext.threadLocal.get()) {
+                    value.invoke()
+                }
+
+                else -> value
+            }.also {
+                require(it is Map<*, *>) {
+                    "$rootOperatorKey must resolve to a map"
+                }
+            } as Map<String,Any?>
+        } ?: this
+
     companion object {
+        private val rootOperatorKey = getOperatorKey<RootOperator>()
         val defaultBsonTypeClassMap: BsonTypeClassMap = BsonTypeClassMap()
-        val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
-            listOf(
-                ValueCodecProvider(),
-                Jsr310CodecProvider(),
-                CollectionCodecProvider(OperatorTransformer),
-                IterableCodecProvider(OperatorTransformer),
-                OperatorExecutionCodecProvider(),
-                BsonValueCodecProvider(),
-                DocumentCodecProvider(),
-                MapCodecProvider(OperatorTransformer)
-            )
-        )
     }
 
 }
