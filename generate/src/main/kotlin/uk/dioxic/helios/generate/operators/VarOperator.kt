@@ -1,4 +1,4 @@
-package uk.dioxic.helios.execute.operators
+package uk.dioxic.helios.generate.operators
 
 import uk.dioxic.helios.generate.KeyedOperator
 import uk.dioxic.helios.generate.OperatorContext

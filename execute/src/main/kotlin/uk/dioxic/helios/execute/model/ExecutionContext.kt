@@ -24,6 +24,7 @@ data class ExecutionContext(
     context(ResourceRegistry)
     suspend operator fun invoke(): TimedResult = measureTimedResult {
         try {
+            OperatorContext.threadLocal.set(this)
             executor.execute()
         } catch (e: MongoException) {
             ErrorResult(e)

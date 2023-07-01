@@ -63,6 +63,9 @@ inline fun <reified T> getOperatorKey(): String {
     return "$operatorPrefix$key"
 }
 
+inline fun <reified T> getOperatorKey(subkey: String): String =
+    "${getOperatorKey<T>()}.$subkey"
+
 inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(value: String): Boolean =
     addJsonObject {
         put(getOperatorKey<T>(), value)

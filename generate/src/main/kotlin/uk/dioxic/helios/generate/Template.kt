@@ -4,15 +4,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import org.bson.Document
 import org.bson.UuidRepresentation
-import org.bson.codecs.*
-import org.bson.codecs.configuration.CodecRegistries
-import org.bson.codecs.configuration.CodecRegistry
-import org.bson.codecs.jsr310.Jsr310CodecProvider
+import org.bson.codecs.Encoder
+import org.bson.codecs.EncoderContext
 import org.bson.json.JsonMode
+import org.bson.json.JsonWriter
 import org.bson.json.JsonWriterSettings
-import uk.dioxic.helios.generate.codecs.OperatorExecutionCodecProvider
-import uk.dioxic.helios.generate.codecs.TemplateCodecProvider
+import uk.dioxic.helios.generate.codecs.TemplateCodec
 import uk.dioxic.helios.generate.serialization.TemplateSerializer
+import java.io.StringWriter
 
 @Serializable(TemplateSerializer::class)
 open class Template(map: Map<String, *>, val definition: JsonObject? = null) : Document(map) {
@@ -22,30 +21,20 @@ open class Template(map: Map<String, *>, val definition: JsonObject? = null) : D
         .outputMode(JsonMode.RELAXED)
         .build()
 
-    override fun toJson(writerSettings: JsonWriterSettings): String =
-        super.toJson(writerSettings, defaultCodec)
+    override fun toJson(writerSettings: JsonWriterSettings?, encoder: Encoder<Document>): String =
+        throw UnsupportedOperationException()
+
+    override fun toJson(writerSettings: JsonWriterSettings): String {
+        val writer = JsonWriter(StringWriter(), writerSettings)
+        defaultCodec.encode(writer, this, EncoderContext.builder().build())
+        return writer.writer.toString()
+    }
 
     override fun toJson(): String =
-        super.toJson(defaultJsonWriter, defaultCodec)
+        this.toJson(defaultJsonWriter)
 
     companion object {
-        val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
-            listOf(
-                ValueCodecProvider(),
-                Jsr310CodecProvider(),
-                TemplateCodecProvider(),
-                CollectionCodecProvider(OperatorTransformer),
-                IterableCodecProvider(OperatorTransformer),
-                OperatorExecutionCodecProvider(),
-                BsonValueCodecProvider(),
-                DocumentCodecProvider(OperatorTransformer),
-                MapCodecProvider()
-            )
-        )
-        private val defaultCodec = CodecRegistries.withUuidRepresentation(
-            defaultRegistry,
-            UuidRepresentation.STANDARD
-        )[Document::class.java]
+        private val defaultCodec = TemplateCodec(uuidRepresentation = UuidRepresentation.STANDARD)
 
         val EMPTY = Template(emptyMap<String, Any>(), JsonObject(mapOf()))
 

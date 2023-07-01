@@ -15,5 +15,7 @@ interface OperatorContext {
             override val variables = lazy { emptyMap<String, Any?>() }
             override val executionCount = 0L
         }
+        val threadLocal: ThreadLocal<OperatorContext> =
+            ThreadLocal.withInitial { EMPTY }
     }
 }

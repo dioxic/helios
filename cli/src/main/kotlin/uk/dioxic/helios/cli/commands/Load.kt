@@ -36,6 +36,7 @@ import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoClient
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
+import uk.dioxic.helios.generate.codecs.TemplateCodec
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
@@ -73,7 +74,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         val mcs = MongoClientSettings.builder()
             .applyAuthOptions(authOptions)
             .applyConnectionOptions(connOptions)
-            .codecRegistry(Template.defaultRegistry)
+            .codecRegistry(TemplateCodec.defaultRegistry)
             .build()
 
         val amendedBatchSize = min(batchSize, number.toInt())

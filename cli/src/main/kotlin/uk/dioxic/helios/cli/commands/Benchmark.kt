@@ -28,7 +28,7 @@ import uk.dioxic.helios.execute.format.format
 import uk.dioxic.helios.execute.format.toFormatString
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoClient
-import uk.dioxic.helios.generate.Template
+import uk.dioxic.helios.generate.codecs.TemplateCodec
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 import uk.dioxic.helios.execute.model.Benchmark as ExBenchmark
@@ -55,7 +55,7 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
         val mcs = MongoClientSettings.builder()
             .applyAuthOptions(authOptions)
             .applyConnectionOptions(connOptions)
-            .codecRegistry(Template.defaultRegistry)
+            .codecRegistry(TemplateCodec.defaultRegistry)
             .build()
 
 
