@@ -54,14 +54,16 @@ fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> {
                         }
                     }
                     tickerChannel.onReceive {
-                        send(
-                            SummarizedResultsBatch(
-                                batchDuration = lastSummaryTime.elapsedNow(),
-                                results = results.summarize()
+                        if (results.isNotEmpty()) {
+                            send(
+                                SummarizedResultsBatch(
+                                    batchDuration = lastSummaryTime.elapsedNow(),
+                                    results = results.summarize()
+                                )
                             )
-                        )
-                        lastSummaryTime = TimeSource.Monotonic.markNow()
-                        results.clear()
+                            lastSummaryTime = TimeSource.Monotonic.markNow()
+                            results.clear()
+                        }
                         true
                     }
                 }
