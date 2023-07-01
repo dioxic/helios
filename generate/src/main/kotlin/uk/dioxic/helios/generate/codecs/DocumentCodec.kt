@@ -1,14 +1,13 @@
 package uk.dioxic.helios.generate.codecs
 
 import org.bson.*
-import org.bson.codecs.BsonTypeClassMap
-import org.bson.codecs.BsonTypeCodecMap
-import org.bson.codecs.DecoderContext
-import org.bson.codecs.EncoderContext
+import org.bson.codecs.*
+import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
+import org.bson.codecs.jsr310.Jsr310CodecProvider
 import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultBsonTypeClassMap
-import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultRegistry
+import uk.dioxic.helios.generate.codecs.DocumentCodecProvider as HeliosDocumentCodecProvider
 
 class DocumentCodec(
     override val registry: CodecRegistry = defaultRegistry,
@@ -44,6 +43,21 @@ class DocumentCodec(
         reader.readEndDocument()
 
         return document
+    }
+
+    companion object {
+        val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
+            listOf(
+                ValueCodecProvider(),
+                Jsr310CodecProvider(),
+                CollectionCodecProvider(OperatorTransformer),
+                IterableCodecProvider(OperatorTransformer),
+                OperatorExecutionCodecProvider(),
+                BsonValueCodecProvider(),
+                HeliosDocumentCodecProvider(),
+                MapCodecProvider(OperatorTransformer)
+            )
+        )
     }
 
 }

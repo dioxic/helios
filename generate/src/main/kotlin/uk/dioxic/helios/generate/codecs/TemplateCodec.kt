@@ -5,14 +5,16 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.bson.*
 import org.bson.codecs.*
+import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
+import org.bson.codecs.jsr310.Jsr310CodecProvider
 import org.bson.json.JsonReader
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultBsonTypeClassMap
-import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultRegistry
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
+import uk.dioxic.helios.generate.codecs.DocumentCodecProvider as HeliosDocumentCodecProvider
 
 class TemplateCodec(
     override val registry: CodecRegistry = defaultRegistry,
@@ -125,5 +127,21 @@ class TemplateCodec(
                 valueTransformer = valueTransformer
             )
         }
+
+    companion object {
+        val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
+            listOf(
+                ValueCodecProvider(),
+                Jsr310CodecProvider(),
+                CollectionCodecProvider(OperatorTransformer),
+                IterableCodecProvider(OperatorTransformer),
+                OperatorExecutionCodecProvider(),
+                BsonValueCodecProvider(),
+                TemplateCodecProvider(),
+                HeliosDocumentCodecProvider(),
+                MapCodecProvider(OperatorTransformer)
+            )
+        )
+    }
 
 }
