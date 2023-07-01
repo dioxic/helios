@@ -6,10 +6,6 @@ import io.kotest.matchers.maps.shouldContainKeys
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.json.addJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
 import org.bson.types.ObjectId
 import uk.dioxic.helios.generate.operators.*
 import uk.dioxic.helios.generate.test.hydrateAndPrint
@@ -17,10 +13,10 @@ import uk.dioxic.helios.generate.test.hydrateAndPrint
 class HydrationTests : FunSpec({
 
     test("top level operators") {
-        val hydrated = hydrateAndPrint(buildTemplate {
-            putOperator<NameOperator>("name")
-            putOperator<ObjectIdOperator>("oid")
-        })
+        val hydrated = mapOf(
+            "name" to NameOperator(),
+            "oid" to ObjectIdOperator()
+        ).hydrateAndPrint()
 
         hydrated.shouldContainKeys("name", "oid")
         hydrated["name"].shouldBeInstanceOf<String>()
@@ -28,27 +24,28 @@ class HydrationTests : FunSpec({
     }
 
     test("nested operators") {
-        val hydrated = hydrateAndPrint(buildTemplate {
-            putJsonObject("subDoc") {
-                putJsonObject("subSubDoc") {
-                    putOperator<ObjectIdOperator>("oid")
-                }
-            }
-        })
+        val hydrated = mapOf(
+            "subDoc" to mapOf(
+                "subSubDoc" to mapOf(
+                    "oid" to ObjectIdOperator()
+                )
+            )
+        ).hydrateAndPrint()
 
-        hydrated["subDoc"].shouldBeInstanceOf<Map<String, Any>>().should {
-            it["subSubDoc"].shouldBeInstanceOf<Map<String, Any>>()
-            it["oid"].shouldBeInstanceOf<ObjectId>()
+        hydrated["subDoc"].shouldBeInstanceOf<Map<String, Any>>().should { subDoc ->
+            subDoc["subSubDoc"].shouldBeInstanceOf<Map<String, Any>>().should {
+                it["oid"].shouldBeInstanceOf<ObjectId>()
+            }
         }
     }
 
     test("operators as input to operators") {
-        val hydrated = hydrateAndPrint(buildTemplate {
-            putOperatorObject<ArrayOperator>("array") {
-                putOperator<ObjectIdOperator>("of")
-                put("number", 3)
-            }
-        })
+        val hydrated = mapOf(
+            "array" to ArrayOperator(
+                of = { ObjectIdOperator() },
+                number = { 3 }
+            )
+        ).hydrateAndPrint()
 
         hydrated["array"]
             .shouldBeInstanceOf<List<*>>()
@@ -61,15 +58,12 @@ class HydrationTests : FunSpec({
     }
 
     test("map with nested operators as input to operators") {
-        val hydrated = hydrateAndPrint(buildTemplate {
-            putOperatorObject<ArrayOperator>("array") {
-                putJsonObject("of") {
-                    putOperator<NameOperator>("name")
-                    putOperator<ObjectIdOperator>("id")
-                }
-                put("number", 3)
-            }
-        })
+        val hydrated = mapOf(
+            "array" to ArrayOperator(
+                of = { mapOf("name" to NameOperator(), "id" to ObjectIdOperator()) },
+                number = { 3 }
+            )
+        ).hydrateAndPrint()
 
         hydrated["array"]
             .shouldBeInstanceOf<List<*>>()
@@ -86,12 +80,12 @@ class HydrationTests : FunSpec({
     }
 
     test("array with nested operators as input to operators") {
-        val hydrated = hydrateAndPrint(mapOf(
+        val hydrated = mapOf(
             "array" to ArrayOperator(
                 of = { listOf(ObjectIdOperator(), ObjectIdOperator()) },
                 number = { 3 }
             )
-        ))
+        ).hydrateAndPrint()
 
         hydrated["array"]
             .shouldBeInstanceOf<List<*>>()
@@ -109,22 +103,21 @@ class HydrationTests : FunSpec({
     }
 
     test("root operator") {
-        val template = buildTemplate {
-            putOperatorObject<ChooseOperator>(getOperatorKey<RootOperator>()) {
-                putJsonArray("from") {
-                    addJsonObject {
-                        put("type", "person")
-                        put("height", 12)
-                    }
-                    addJsonObject {
-                        put("type", "org")
-                        put("orgId", 123)
-                    }
-                }
-            }
-        }
+        val personMap = mapOf(
+            "type" to "person",
+            "height" to 12
+        )
+        val orgMap = mapOf(
+            "type" to "org",
+            "orgId" to 123
+        )
+        val hydrated = mapOf(
+            getOperatorKey<RootOperator>() to ChooseOperator(
+                from = { listOf(personMap, orgMap) }
+            )
+        ).hydrateAndPrint()
 
-        hydrateAndPrint(template).shouldContainKeys("type")
+        hydrated.shouldContainKeys("type")
     }
 
 })
