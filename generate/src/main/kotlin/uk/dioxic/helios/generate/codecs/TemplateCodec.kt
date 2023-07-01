@@ -7,16 +7,18 @@ import org.bson.*
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.json.JsonReader
+import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultBsonTypeClassMap
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultRegistry
+import uk.dioxic.helios.generate.operators.ObjectIdOperator
 
 class TemplateCodec(
     override val registry: CodecRegistry = defaultRegistry,
     bsonTypeClassMap: BsonTypeClassMap = defaultBsonTypeClassMap,
     override val bsonTypeCodecMap: BsonTypeCodecMap = BsonTypeCodecMap(bsonTypeClassMap, registry),
-    private val idGenerator: IdGenerator = ObjectIdGenerator(),
+    private val idGenerator: Operator<*> = ObjectIdOperator(),
     override val valueTransformer: Transformer = OperatorTransformer,
     override val uuidRepresentation: UuidRepresentation = UuidRepresentation.UNSPECIFIED
 ) : BaseDocumentCodec<Template>, CollectibleCodec<Template>, OverridableUuidRepresentationCodec<Template> {
@@ -97,7 +99,7 @@ class TemplateCodec(
 
     override fun generateIdIfAbsentFromDocument(template: Template) = template.apply {
         if (!documentHasId(template)) {
-            template[idFieldName] = idGenerator.generate()
+            template[idFieldName] = idGenerator
         }
     }
 
