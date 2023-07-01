@@ -12,22 +12,9 @@ import org.bson.types.ObjectId
 import uk.dioxic.helios.generate.operators.ArrayOperator
 import uk.dioxic.helios.generate.operators.NameOperator
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
-import uk.dioxic.helios.generate.test.printJson
+import uk.dioxic.helios.generate.test.hydrateAndPrint
 
 class HydrationTests : FunSpec({
-
-    fun hydrateAndPrint(template: Template): Map<String, Any?> {
-        printJson(template)
-        val map = with(OperatorContext.EMPTY) { template.hydrate() }
-        println(map)
-        return map
-    }
-
-    fun hydrateAndPrint(map: Map<String, Any?>): Map<String, Any?> {
-        val res = with(OperatorContext.EMPTY) { map.hydrate() }
-        println(res)
-        return res
-    }
 
     test("top level operators") {
         val hydrated = hydrateAndPrint(buildTemplate {

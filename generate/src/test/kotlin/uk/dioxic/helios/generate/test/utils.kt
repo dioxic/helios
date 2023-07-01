@@ -4,6 +4,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import uk.dioxic.helios.generate.OperatorContext
 import uk.dioxic.helios.generate.Template
+import uk.dioxic.helios.generate.hydrate
 
 fun readResource(filename: String) =
     object {}.javaClass.getResourceAsStream(filename)?.bufferedReader()?.readText()
@@ -22,4 +23,17 @@ private val json = Json { prettyPrint = true }
 
 fun printJson(template: Template) {
     println(json.encodeToString(template))
+}
+
+fun hydrateAndPrint(template: Template): Map<String, Any?> {
+    printJson(template)
+    val map = with(OperatorContext.EMPTY) { template.hydrate() }
+    println(map)
+    return map
+}
+
+fun hydrateAndPrint(map: Map<String, Any?>): Map<String, Any?> {
+    val res = with(OperatorContext.EMPTY) { map.hydrate() }
+    println(res)
+    return res
 }
