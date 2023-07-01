@@ -1,0 +1,64 @@
+{
+  "name": "example benchmark",
+  "stages": [
+    {
+      "type": "parallel",
+      "name": "setup",
+      "workloads": [
+        {
+          "name": "drop people collection",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "drop": "people"
+            }
+          }
+        },
+        {
+          "name": "drop animals collection",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "drop": "animals"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "parallel",
+      "name": "load data",
+      "workloads": [
+        {
+          "name": "people",
+          "executor": {
+            "type": "insertOne",
+            "database": "test",
+            "collection": "people",
+            "template": {
+              "name": "$name"
+            }
+          },
+          "rate": {
+            "tps": 500
+          },
+          "count": 500
+        },
+        {
+          "name": "animals",
+          "executor": {
+            "type": "insertOne",
+            "database": "test",
+            "collection": "animals",
+            "template": {
+              "name": "badger"
+            }
+          },
+          "count": 10000
+        }
+      ]
+    }
+  ]
+}
