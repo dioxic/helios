@@ -1,7 +1,10 @@
 package uk.dioxic.helios.generate.test
 
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import uk.dioxic.helios.generate.OperatorContext
 import uk.dioxic.helios.generate.OperatorFactory
+import uk.dioxic.helios.generate.Template
 
 fun readResource(filename: String) =
     object {}.javaClass.getResourceAsStream(filename)?.bufferedReader()?.readText()
@@ -21,3 +24,10 @@ inline fun <reified T> opKey() =
 
 inline fun <reified T> opKey(subkey: String) =
     "${OperatorFactory.operatorPrefix}${T::class.simpleName}.$subkey"
+
+
+private val json = Json { prettyPrint = true }
+
+fun printJson(template: Template) {
+    println(json.encodeToString(template))
+}

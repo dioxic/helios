@@ -6,21 +6,18 @@ import io.kotest.matchers.maps.shouldContainKeys
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.bson.types.ObjectId
 import uk.dioxic.helios.generate.operators.ArrayOperator
 import uk.dioxic.helios.generate.operators.NameOperator
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
+import uk.dioxic.helios.generate.test.printJson
 
 class HydrationTests : FunSpec({
 
-    val json = Json { prettyPrint = true }
-
     fun hydrateAndPrint(template: Template): Map<String, Any?> {
-        println(json.encodeToString(template))
+        printJson(template)
         val map = with(OperatorContext.EMPTY) { template.hydrate() }
         println(map)
         return map
@@ -52,10 +49,10 @@ class HydrationTests : FunSpec({
             }
         })
 
-        hydrated["subDoc"]
-            .shouldBeInstanceOf<Map<String, Any>>()
-            .get("subSubDoc").shouldBeInstanceOf<Map<String, Any>>()
-            .get("oid").shouldBeInstanceOf<ObjectId>()
+        hydrated["subDoc"].shouldBeInstanceOf<Map<String, Any>>().should {
+            it["subSubDoc"].shouldBeInstanceOf<Map<String, Any>>()
+            it["oid"].shouldBeInstanceOf<ObjectId>()
+        }
     }
 
     test("operators as input to operators") {

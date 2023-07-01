@@ -8,23 +8,16 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import uk.dioxic.helios.generate.operators.ArrayOperator
 import uk.dioxic.helios.generate.operators.NameOperator
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
+import uk.dioxic.helios.generate.test.printJson
 import uk.dioxic.helios.generate.test.shouldBeWrapped
 
 class TemplateCodecTests : FunSpec({
-
-    val json = Json { prettyPrint = true }
-
-    fun printJson(template: Template) {
-        println(json.encodeToString(template))
-    }
 
     context("decode") {
         test("top level operators") {
