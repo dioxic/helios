@@ -1,5 +1,8 @@
 {
   "name": "example benchmark",
+  "variables": {
+    "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
+  },
   "stages": [
     {
       "type": "parallel",
@@ -30,6 +33,16 @@
     {
       "type": "parallel",
       "name": "load data",
+      "variables": {
+        "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
+        "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
+        "altName": "$name"
+      },
+      "constants": {
+        "date": "$objectId",
+        "number": "$int",
+        "altName": "$name"
+      },
       "workloads": [
         {
           "name": "people",
@@ -38,13 +51,18 @@
             "database": "test",
             "collection": "people",
             "template": {
-              "name": "$name"
+              "name": "$name",
+              "salutation": "$var.salutation",
+              "food": "$var.food",
+              "number": "$const.number",
+              "date": "$const.date",
+              "otherName": "$var.altName"
             }
           },
           "rate": {
             "tps": 500
           },
-          "count": 500
+          "count": 100
         },
         {
           "name": "animals",
@@ -53,10 +71,11 @@
             "database": "test",
             "collection": "animals",
             "template": {
-              "name": "badger"
+              "name": "badger",
+              "salutation": "$var.salutation"
             }
           },
-          "count": 10000
+          "count": 200
         }
       ]
     }
