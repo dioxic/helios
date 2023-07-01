@@ -135,4 +135,33 @@ class TemplateCodecTests : FunSpec({
         }
     }
 
+    context("encoding") {
+        fun encodeAndPrint(template: Template): JsonObject =
+            template.toJson().let {
+                println(it)
+                Json.decodeFromString<JsonObject>(it)
+            }
+
+        test("root operator") {
+            val personMap = mapOf(
+                "type" to "person",
+                "height" to 12
+            )
+            val orgMap = mapOf(
+                "type" to "org",
+                "orgId" to 123
+            )
+            val template = Template(mapOf(
+                getOperatorKey<RootOperator>() to ChooseOperator(
+                    from = { listOf(personMap, orgMap) }
+                )
+            ))
+
+            encodeAndPrint(template).should {
+                it shouldContainKey "type"
+                it["type"].shouldBeInstanceOf<String>()
+            }
+        }
+    }
+
 })
