@@ -13,6 +13,7 @@ import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultBsonTypeClassMap
+import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.idFieldName
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
 import uk.dioxic.helios.generate.codecs.DocumentCodecProvider as HeliosDocumentCodecProvider
 
@@ -24,8 +25,6 @@ class TemplateCodec(
     override val valueTransformer: Transformer = OperatorTransformer,
     override val uuidRepresentation: UuidRepresentation = UuidRepresentation.UNSPECIFIED
 ) : BaseDocumentCodec<Template>, CollectibleCodec<Template>, OverridableUuidRepresentationCodec<Template> {
-
-    private val idFieldName = "_id"
 
     override fun encode(writer: BsonWriter, template: Template, encoderContext: EncoderContext) {
         writer.writeStartDocument()
@@ -50,8 +49,7 @@ class TemplateCodec(
 
         reader.readStartDocument()
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-            val fieldName = reader.readName()
-            map[fieldName] = readValue(reader, decoderContext)
+            map[reader.readName()] = readValue(reader, decoderContext)
         }
 
         reader.readEndDocument()
