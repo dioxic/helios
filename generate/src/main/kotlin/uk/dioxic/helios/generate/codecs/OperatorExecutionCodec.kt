@@ -15,7 +15,7 @@ class OperatorExecutionCodec(
 
     @Suppress("UNCHECKED_CAST")
     override fun encode(writer: BsonWriter, value: Operator<*>, encoderContext: EncoderContext) {
-        with(OperatorContext.EMPTY) {
+        with(OperatorContext.threadLocal.get()) {
             when (val unwrappedValue = value()) {
                 null -> writer.writeNull()
                 else -> {

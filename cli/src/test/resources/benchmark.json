@@ -1,0 +1,83 @@
+{
+  "name": "example benchmark",
+  "variables": {
+    "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
+  },
+  "stages": [
+    {
+      "type": "parallel",
+      "name": "setup",
+      "workloads": [
+        {
+          "name": "drop people collection",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "drop": "people"
+            }
+          }
+        },
+        {
+          "name": "drop animals collection",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "drop": "animals"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "parallel",
+      "name": "load data",
+      "variables": {
+        "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
+        "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
+        "altName": "$name"
+      },
+      "constants": {
+        "date": "$objectId",
+        "number": "$int",
+        "altName": "$name"
+      },
+      "workloads": [
+        {
+          "name": "people",
+          "executor": {
+            "type": "insertOne",
+            "database": "test",
+            "collection": "people",
+            "template": {
+              "name": "$name",
+              "salutation": "$var.salutation",
+              "food": "$var.food",
+              "number": "$const.number",
+              "date": "$const.date",
+              "otherName": "$var.altName"
+            }
+          },
+          "rate": {
+            "tps": 500
+          },
+          "count": 100
+        },
+        {
+          "name": "animals",
+          "executor": {
+            "type": "insertOne",
+            "database": "test",
+            "collection": "animals",
+            "template": {
+              "name": "badger",
+              "salutation": "$var.salutation"
+            }
+          },
+          "count": 200
+        }
+      ]
+    }
+  ]
+}

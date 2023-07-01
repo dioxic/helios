@@ -8,22 +8,25 @@ import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.put
 import org.bson.types.ObjectId
 import uk.dioxic.helios.execute.model.Benchmark
 import uk.dioxic.helios.execute.model.MessageExecutor
-import uk.dioxic.helios.execute.operators.ConstOperator
-import uk.dioxic.helios.execute.operators.VarOperator
 import uk.dioxic.helios.execute.results.TimedMessageResult
 import uk.dioxic.helios.generate.*
+import uk.dioxic.helios.generate.operators.ConstOperator
 import uk.dioxic.helios.generate.operators.NameOperator
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
+import uk.dioxic.helios.generate.operators.VarOperator
 import kotlin.time.Duration
 
 class OperatorTests : FunSpec({
 
-    OperatorFactory.addOperator(ConstOperator::class)
-    OperatorFactory.addOperator(VarOperator::class)
+    val json = Json {
+        prettyPrint = true
+    }
 
     context("constants") {
         context("lookups") {
@@ -35,6 +38,8 @@ class OperatorTests : FunSpec({
             val consts = buildTemplate {
                 put("animal", "halibut")
             }
+
+            println(json.encodeToString(template))
 
             suspend fun Benchmark.verify() {
                 execute().filterIsInstance<ProgressMessage>().collect { msg ->

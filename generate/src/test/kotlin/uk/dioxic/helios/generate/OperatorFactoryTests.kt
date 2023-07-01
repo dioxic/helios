@@ -15,7 +15,6 @@ import uk.dioxic.helios.generate.exceptions.NoSingleValueParameter
 import uk.dioxic.helios.generate.exceptions.OperatorConversionError
 import uk.dioxic.helios.generate.exceptions.ParameterNotOptional
 import uk.dioxic.helios.generate.fixture.*
-import uk.dioxic.helios.generate.test.opKey
 import uk.dioxic.helios.generate.test.withEmptyContext
 
 class OperatorFactoryTests : FunSpec({
@@ -35,7 +34,7 @@ class OperatorFactoryTests : FunSpec({
 
     context("Normal Operator") {
         context("single mandatory arg") {
-            val opKey = opKey<OperatorWithSingleMandatoryArg>()
+            val opKey = getOperatorKey<OperatorWithSingleMandatoryArg>()
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
             }
@@ -64,7 +63,7 @@ class OperatorFactoryTests : FunSpec({
         }
 
         context("multiple mandatory args") {
-            val opKey = opKey<OperatorWithMultiMandatoryArg>()
+            val opKey = getOperatorKey<OperatorWithMultiMandatoryArg>()
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -91,7 +90,7 @@ class OperatorFactoryTests : FunSpec({
         }
 
         context("single optional arg") {
-            val opKey = opKey<OperatorWithSingleOptionalArg>()
+            val opKey = getOperatorKey<OperatorWithSingleOptionalArg>()
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -119,7 +118,7 @@ class OperatorFactoryTests : FunSpec({
         }
 
         context("mutiple optional args") {
-            val opKey = opKey<OperatorWithMultiOptionalArg>()
+            val opKey = getOperatorKey<OperatorWithMultiOptionalArg>()
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -147,7 +146,7 @@ class OperatorFactoryTests : FunSpec({
 
     context("Keyed Operator") {
         context("no args") {
-            val opKey = opKey<KeyedOperatorWithNoArg>("subkey.badger")
+            val opKey = getOperatorKey<KeyedOperatorWithNoArg>("subkey.badger")
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -173,7 +172,7 @@ class OperatorFactoryTests : FunSpec({
         }
 
         context("single mandatory arg") {
-            val opKey = opKey<KeyedOperatorWithSingleMandatoryArg>(subKey)
+            val opKey = getOperatorKey<KeyedOperatorWithSingleMandatoryArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -208,7 +207,7 @@ class OperatorFactoryTests : FunSpec({
         }
 
         context("multiple mandatory args") {
-            val opKey = opKey<KeyedOperatorWithMultiMandatoryArg>(subKey)
+            val opKey = getOperatorKey<KeyedOperatorWithMultiMandatoryArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -240,7 +239,7 @@ class OperatorFactoryTests : FunSpec({
         }
 
         context("single optional arg") {
-            val opKey = opKey<KeyedOperatorWithSingleOptionalArg>(subKey)
+            val opKey = getOperatorKey<KeyedOperatorWithSingleOptionalArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()
@@ -269,7 +268,7 @@ class OperatorFactoryTests : FunSpec({
         }
 
         context("mutiple optional args") {
-            val opKey = opKey<KeyedOperatorWithMultiOptionalArg>(subKey)
+            val opKey = getOperatorKey<KeyedOperatorWithMultiOptionalArg>(subKey)
 
             test("canHandle returns true") {
                 canHandle(opKey).shouldBeTrue()

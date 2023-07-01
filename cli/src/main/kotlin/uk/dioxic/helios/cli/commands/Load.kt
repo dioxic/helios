@@ -36,6 +36,7 @@ import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoClient
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
+import uk.dioxic.helios.generate.codecs.TemplateCodec
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
@@ -56,7 +57,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
     private val batchSize by option("-b", "--batchsize", help = "number of operations to batch together")
         .int()
         .default(100)
-    private val concurrency by option("-c", "--concurrency", help = "number of concurrent operations").int().default(4)
+    private val concurrency by option(help = "number of concurrent operations").int().default(4)
     private val outputFormat by option("-f", "--format", help = "output format")
         .enum<ReportFormat>().default(ReportFormat.TEXT)
     private val drop by option(help = "drop collection before load").flag()
@@ -73,7 +74,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         val mcs = MongoClientSettings.builder()
             .applyAuthOptions(authOptions)
             .applyConnectionOptions(connOptions)
-            .codecRegistry(Template.defaultRegistry)
+            .codecRegistry(TemplateCodec.defaultRegistry)
             .build()
 
         val amendedBatchSize = min(batchSize, number.toInt())

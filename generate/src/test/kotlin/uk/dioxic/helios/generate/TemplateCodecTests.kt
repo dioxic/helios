@@ -1,46 +1,45 @@
 package uk.dioxic.helios.generate
 
+import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.shouldForAll
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.maps.shouldContainKeys
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
-import uk.dioxic.helios.generate.operators.ArrayOperator
-import uk.dioxic.helios.generate.operators.NameOperator
-import uk.dioxic.helios.generate.operators.ObjectIdOperator
+import kotlinx.serialization.json.*
+import uk.dioxic.helios.generate.codecs.TemplateCodec
+import uk.dioxic.helios.generate.operators.*
 import uk.dioxic.helios.generate.test.shouldBeWrapped
 
 class TemplateCodecTests : FunSpec({
 
-    val json = Json { prettyPrint = true }
-
-    fun printJson(template: Template) {
-        println(json.encodeToString(template))
-    }
-
     context("decode") {
+
+        fun decodeAndPrint(jsonObject: JsonObject): Template =
+            TemplateCodec().decode(jsonObject).also {
+                println(it)
+            }
+
         test("top level operators") {
-            val template = buildTemplate {
+            val jsonObject = buildJsonObject {
                 putOperator<NameOperator>("name")
                 putOperator<ObjectIdOperator>("oid")
             }
 
-            printJson(template)
+            decodeAndPrint(jsonObject).should { template ->
+                template.shouldContainKeys("name", "oid")
+                template["name"].shouldBeInstanceOf<NameOperator>()
+                template["oid"].shouldBeInstanceOf<ObjectIdOperator>()
+            }
 
-            template["name"].shouldBeInstanceOf<NameOperator>()
-            template["oid"].shouldBeInstanceOf<ObjectIdOperator>()
         }
 
         test("nested operators") {
-            val template = buildTemplate {
+            val jsonObject = buildJsonObject {
                 putJsonObject("subDoc") {
                     putJsonObject("subSubDoc") {
                         putOperator<ObjectIdOperator>("oid")
@@ -48,35 +47,41 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            printJson(template)
-
-            template["subDoc"].shouldBeInstanceOf<Map<String, Any>>().should { subDoc ->
-                subDoc["subSubDoc"].shouldBeInstanceOf<Map<String, Any>>().should { subSubDoc ->
-                    subSubDoc["oid"].shouldBeInstanceOf<ObjectIdOperator>()
+            decodeAndPrint(jsonObject).should { template ->
+                template shouldContainKey "subDoc"
+                template["subDoc"].shouldBeInstanceOf<Map<String, Any>>().should { subDoc ->
+                    subDoc shouldContainKey "subSubDoc"
+                    subDoc["subSubDoc"].shouldBeInstanceOf<Map<String, Any>>().should { subSubDoc ->
+                        subSubDoc shouldContainKey "oid"
+                        subSubDoc["oid"].shouldBeInstanceOf<ObjectIdOperator>()
+                    }
                 }
             }
+
         }
 
         test("operators as input to operators") {
-            val template = buildTemplate {
+            val jsonObject = buildJsonObject {
                 putOperatorObject<ArrayOperator>("array") {
                     putOperator<ObjectIdOperator>("of")
                     put("number", 3)
                 }
             }
 
-            printJson(template)
+            decodeAndPrint(jsonObject).should { template ->
+                template shouldContainKey "array"
+                template["array"]
+                    .shouldBeInstanceOf<ArrayOperator>()
+                    .should { array ->
+                        array.of.shouldBeInstanceOf<ObjectIdOperator>()
+                        array.number.shouldBeWrapped<Int>() shouldBe 3
+                    }
 
-            template["array"]
-                .shouldBeInstanceOf<ArrayOperator>()
-                .should { array ->
-                    array.of.shouldBeInstanceOf<ObjectIdOperator>()
-                    array.number.shouldBeWrapped<Int>() shouldBe 3
-                }
+            }
         }
 
         test("map with nested operators as input to operators") {
-            val template = buildTemplate {
+            val jsonObject = buildJsonObject {
                 putOperatorObject<ArrayOperator>("array") {
                     putJsonObject("of") {
                         putOperator<NameOperator>("name")
@@ -86,23 +91,25 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            printJson(template)
-
-            template["array"]
-                .shouldBeInstanceOf<ArrayOperator>()
-                .should { array ->
-                    array.of.shouldBeWrapped<Map<String, Any?>> { of ->
-                        of.shouldHaveSize(2)
-                        of.shouldContainKeys("name", "id")
-                        of["name"].shouldBeInstanceOf<NameOperator>()
-                        of["id"].shouldBeInstanceOf<ObjectIdOperator>()
+            decodeAndPrint(jsonObject).should { template ->
+                template shouldContainKey "array"
+                template["array"]
+                    .shouldBeInstanceOf<ArrayOperator>()
+                    .should { array ->
+                        array.of.shouldBeWrapped<Map<String, Any?>> { of ->
+                            of.shouldHaveSize(2)
+                            of.shouldContainKeys("name", "id")
+                            of["name"].shouldBeInstanceOf<NameOperator>()
+                            of["id"].shouldBeInstanceOf<ObjectIdOperator>()
+                        }
+                        array.number.shouldBeWrapped<Int>() shouldBe 3
                     }
-                    array.number.shouldBeWrapped<Int>() shouldBe 3
-                }
+            }
+
         }
 
         test("array with nested operators as input to operators") {
-            val template = buildTemplate {
+            val jsonObject = buildJsonObject {
                 putOperatorObject<ArrayOperator>("array") {
                     putJsonArray("of") {
                         addOperator<ObjectIdOperator>()
@@ -112,18 +119,102 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            printJson(template)
-
-            template["array"]
-                .shouldBeInstanceOf<ArrayOperator>()
-                .should { array ->
-                    array.of.shouldBeWrapped<List<*>> { of ->
-                        of.shouldHaveSize(2)
-                        of.shouldForAll { it.shouldBeInstanceOf<ObjectIdOperator>() }
+            decodeAndPrint(jsonObject).should { template ->
+                template shouldContainKey "array"
+                template["array"]
+                    .shouldBeInstanceOf<ArrayOperator>()
+                    .should { array ->
+                        array.of.shouldBeWrapped<List<*>> { of ->
+                            of.shouldHaveSize(2)
+                            of.shouldForAll { it.shouldBeInstanceOf<ObjectIdOperator>() }
+                        }
+                        array.number.shouldBeWrapped<Int>() shouldBe 3
                     }
-                    array.number.shouldBeWrapped<Int>() shouldBe 3
-                }
+            }
 
+
+        }
+    }
+
+    context("encoding") {
+        fun encodeAndPrint(template: Template): JsonObject =
+            template.toJson().let {
+                println(it)
+                Json.decodeFromString<JsonObject>(it)
+            }
+
+        test("root operator is a map containing operators") {
+            val template = Template(mapOf(
+                getOperatorKey<RootOperator>() to mapOf(
+                    "address" to mapOf(
+                        "cities" to ChooseOperator(
+                            from = { listOf("London", "Belfast") }
+                        )
+                    )
+                )
+            ))
+
+            encodeAndPrint(template).should {
+                it shouldContainKey "address"
+                it["address"].shouldBeInstanceOf<JsonObject>().should { address ->
+                    address shouldContainKey "cities"
+                    address["cities"].shouldBeInstanceOf<JsonPrimitive>().should { cities ->
+                        cities.isString shouldBe true
+                    }
+                }
+            }
+        }
+
+        test("root operator is a simple map") {
+            val template = Template(
+                mapOf(
+                    getOperatorKey<RootOperator>() to mapOf("animal" to "halibut")
+                )
+            )
+
+            encodeAndPrint(template).should {
+                it shouldContainKey "animal"
+                it["animal"].should { type ->
+                    type.shouldBeInstanceOf<JsonPrimitive>()
+                    type.isString shouldBe true
+                }
+            }
+        }
+
+        test("should fail when root operator is not a map") {
+            val template = Template(
+                mapOf(
+                    getOperatorKey<RootOperator>() to "halibut"
+                )
+            )
+
+            shouldThrowExactly<IllegalArgumentException> {
+                encodeAndPrint(template)
+            }
+        }
+
+        test("root operator is an operator") {
+            val personMap = mapOf(
+                "type" to "person",
+                "height" to 12
+            )
+            val orgMap = mapOf(
+                "type" to "org",
+                "orgId" to 123
+            )
+            val template = Template(mapOf(
+                getOperatorKey<RootOperator>() to ChooseOperator(
+                    from = { listOf(personMap, orgMap) }
+                )
+            ))
+
+            encodeAndPrint(template).should {
+                it shouldContainKey "type"
+                it["type"].should { type ->
+                    type.shouldBeInstanceOf<JsonPrimitive>()
+                    type.isString shouldBe true
+                }
+            }
         }
     }
 

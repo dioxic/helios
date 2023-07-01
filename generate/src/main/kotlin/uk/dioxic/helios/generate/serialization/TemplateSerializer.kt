@@ -8,7 +8,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonObject
 import uk.dioxic.helios.generate.Template
-import uk.dioxic.helios.generate.Template.Companion.defaultRegistry
 import uk.dioxic.helios.generate.codecs.TemplateCodec
 import uk.dioxic.helios.generate.extensions.asJsonDecoder
 import uk.dioxic.helios.generate.extensions.asJsonEncoder
@@ -17,7 +16,7 @@ object TemplateSerializer : KSerializer<Template> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("TemplateSerializer", PrimitiveKind.STRING)
 
-    private val templateCodec = TemplateCodec(defaultRegistry)
+    private val templateCodec = TemplateCodec()
 
     override fun deserialize(decoder: Decoder): Template =
         when (val jsonElement = decoder.asJsonDecoder().decodeJsonElement()) {
