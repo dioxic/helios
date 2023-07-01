@@ -6,12 +6,12 @@ import io.kotest.matchers.maps.shouldContainKeys
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import org.bson.types.ObjectId
-import uk.dioxic.helios.generate.operators.ArrayOperator
-import uk.dioxic.helios.generate.operators.NameOperator
-import uk.dioxic.helios.generate.operators.ObjectIdOperator
+import uk.dioxic.helios.generate.operators.*
 import uk.dioxic.helios.generate.test.hydrateAndPrint
 
 class HydrationTests : FunSpec({
@@ -106,6 +106,25 @@ class HydrationTests : FunSpec({
                 }
                 l.distinct().count() shouldBe 3
             }
+    }
+
+    test("root operator") {
+        val template = buildTemplate {
+            putOperatorObject<ChooseOperator>(getOperatorKey<RootOperator>()) {
+                putJsonArray("from") {
+                    addJsonObject {
+                        put("type", "person")
+                        put("height", 12)
+                    }
+                    addJsonObject {
+                        put("type", "org")
+                        put("orgId", 123)
+                    }
+                }
+            }
+        }
+
+        hydrateAndPrint(template).shouldContainKeys("type")
     }
 
 })
