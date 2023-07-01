@@ -1,5 +1,6 @@
 package uk.dioxic.helios.generate
 
+import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.shouldForAll
 import io.kotest.matchers.collections.shouldHaveSize
@@ -142,7 +143,57 @@ class TemplateCodecTests : FunSpec({
                 Json.decodeFromString<JsonObject>(it)
             }
 
-        test("root operator") {
+        test("root operator is a map containing operators") {
+            val template = Template(mapOf(
+                getOperatorKey<RootOperator>() to mapOf(
+                    "address" to mapOf(
+                        "cities" to ChooseOperator(
+                            from = { listOf("London", "Belfast") }
+                        )
+                    )
+                )
+            ))
+
+            encodeAndPrint(template).should {
+                it shouldContainKey "address"
+                it["address"].shouldBeInstanceOf<JsonObject>().should { address ->
+                    address shouldContainKey "cities"
+                    address["cities"].shouldBeInstanceOf<JsonPrimitive>().should { cities ->
+                        cities.isString shouldBe true
+                    }
+                }
+            }
+        }
+
+        test("root operator is a simple map") {
+            val template = Template(
+                mapOf(
+                    getOperatorKey<RootOperator>() to mapOf("animal" to "halibut")
+                )
+            )
+
+            encodeAndPrint(template).should {
+                it shouldContainKey "animal"
+                it["animal"].should { type ->
+                    type.shouldBeInstanceOf<JsonPrimitive>()
+                    type.isString shouldBe true
+                }
+            }
+        }
+
+        test("should fail when root operator is not a map") {
+            val template = Template(
+                mapOf(
+                    getOperatorKey<RootOperator>() to "halibut"
+                )
+            )
+
+            shouldThrowExactly<IllegalArgumentException> {
+                encodeAndPrint(template)
+            }
+        }
+
+        test("root operator is an operator") {
             val personMap = mapOf(
                 "type" to "person",
                 "height" to 12
@@ -159,7 +210,7 @@ class TemplateCodecTests : FunSpec({
 
             encodeAndPrint(template).should {
                 it shouldContainKey "type"
-                it["type"].should {type ->
+                it["type"].should { type ->
                     type.shouldBeInstanceOf<JsonPrimitive>()
                     type.isString shouldBe true
                 }
