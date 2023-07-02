@@ -216,6 +216,37 @@ class TemplateCodecTests : FunSpec({
                 it["type"] shouldBeIn listOf("person", "org")
             }
         }
+
+        test("takes the _id from the root operator if present") {
+            val root = mapOf(
+                "_id" to "myId",
+                "name" to "Bob",
+            )
+            val template = templateOf(rootKey to root)
+
+            Template.defaultCodec.generateIdIfAbsentFromDocument(template)
+
+            encodeAndPrint(template, true).should {
+                it.shouldContainKeys("_id", "name")
+                it["_id"] shouldBe root["_id"]
+                it["name"] shouldBe root["name"]
+            }
+        }
+
+        test("takes the _id from the template if not present on the root") {
+            val root = mapOf(
+                "name" to "Bob",
+            )
+            val template = templateOf(rootKey to root)
+
+            Template.defaultCodec.generateIdIfAbsentFromDocument(template)
+
+            encodeAndPrint(template, true).should {
+                it.shouldContainKeys("_id", "name")
+                it["_id"].shouldBeInstanceOf<ObjectId>()
+                it["name"] shouldBe "Bob"
+            }
+        }
     }
 
 })

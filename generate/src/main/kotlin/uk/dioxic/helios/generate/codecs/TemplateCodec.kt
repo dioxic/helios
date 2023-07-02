@@ -29,9 +29,11 @@ class TemplateCodec(
     override fun encode(writer: BsonWriter, template: Template, encoderContext: EncoderContext) {
         writer.writeStartDocument()
 
-        beforeFields(writer, encoderContext, template)
+        val root = template.resolveRoot()
 
-        template.resolveRoot().forEach { (key, value) ->
+        beforeFields(writer, encoderContext, template, root)
+
+        root.forEach { (key, value) ->
             if (!skipField(encoderContext, key)) {
                 writer.writeName(key)
                 writeValue(writer, encoderContext, value)
@@ -105,10 +107,17 @@ class TemplateCodec(
         }
     }
 
-    private fun beforeFields(bsonWriter: BsonWriter, encoderContext: EncoderContext, template: Template) {
-        if (encoderContext.isEncodingCollectibleDocument && template.containsKey(idFieldName)) {
-            bsonWriter.writeName(idFieldName)
-            writeValue(bsonWriter, encoderContext, template[idFieldName])
+    private fun beforeFields(
+        bsonWriter: BsonWriter,
+        encoderContext: EncoderContext,
+        template: Template,
+        root: Map<String, Any?>
+    ) {
+        if (encoderContext.isEncodingCollectibleDocument) {
+            (root[idFieldName] ?: template[idFieldName])?.let { id ->
+                bsonWriter.writeName(idFieldName)
+                writeValue(bsonWriter, encoderContext, id)
+            }
         }
     }
 
