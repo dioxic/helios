@@ -9,7 +9,7 @@ import org.bson.BsonArray
 import org.bson.BsonDocument
 import org.bson.BsonElement
 import org.bson.BsonString
-import uk.dioxic.helios.generate.extensions.flatten
+import uk.dioxic.helios.generate.flatten
 import java.time.LocalDateTime
 
 class MapFormatterTest : FunSpec({

@@ -13,7 +13,7 @@ import uk.dioxic.helios.execute.model.Workload
 import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.execute.serialization.DurationConsoleSerializer
 import uk.dioxic.helios.execute.serialization.IntPercentSerializer
-import uk.dioxic.helios.generate.extensions.flatten
+import uk.dioxic.helios.generate.flatten
 import kotlin.math.max
 import kotlin.time.Duration
 
