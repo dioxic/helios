@@ -15,7 +15,7 @@ import uk.dioxic.helios.generate.serialization.TemplateSerializer
 import java.io.StringWriter
 
 @Serializable(TemplateSerializer::class)
-open class Template(map: Map<String, *>, val definition: JsonElement? = null) : Document(map) {
+class Template(map: Map<String, *>, val definition: JsonElement? = null) : Document(map) {
 
     private val defaultJsonWriter = JsonWriterSettings.builder()
         .indent(true)
@@ -35,7 +35,7 @@ open class Template(map: Map<String, *>, val definition: JsonElement? = null) : 
         this.toJson(defaultJsonWriter)
 
     companion object {
-        private val defaultCodec = TemplateCodec(uuidRepresentation = UuidRepresentation.STANDARD)
+        val defaultCodec = TemplateCodec(uuidRepresentation = UuidRepresentation.STANDARD)
 
         val EMPTY = Template(emptyMap<String, Any>(), JsonObject(mapOf()))
 
