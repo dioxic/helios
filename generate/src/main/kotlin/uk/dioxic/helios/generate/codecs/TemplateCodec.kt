@@ -1,8 +1,7 @@
 package uk.dioxic.helios.generate.codecs
 
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.*
 import org.bson.*
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistries
@@ -15,6 +14,7 @@ import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultBsonTypeClassMap
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.idFieldName
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
+import uk.dioxic.helios.generate.putRootOperator
 import uk.dioxic.helios.generate.codecs.DocumentCodecProvider as HeliosDocumentCodecProvider
 
 class TemplateCodec(
@@ -57,9 +57,23 @@ class TemplateCodec(
         return Template(map)
     }
 
-    fun decode(definition: JsonObject): Template {
-        val jsonReader = JsonReader(Json.encodeToString(definition))
-        val document = decode(jsonReader, DecoderContext.builder().build())
+    fun decode(definition: JsonElement): Template {
+        val document = when (definition)  {
+            is JsonObject -> {
+                val jsonReader = JsonReader(Json.encodeToString(definition))
+                decode(jsonReader, DecoderContext.builder().build())
+            }
+            is JsonPrimitive -> {
+                require(definition.isString) {
+                    "template root definition must be a string but was $definition"
+                }
+                decode(buildJsonObject {
+                    putRootOperator(definition.content)
+                })
+            }
+            else -> error("template root definition must be an object or a string but was $definition")
+        }
+
         return Template(document, definition)
     }
 

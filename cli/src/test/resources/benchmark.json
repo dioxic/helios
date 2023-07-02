@@ -34,9 +34,15 @@
       "type": "parallel",
       "name": "load data",
       "variables": {
-        "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
-        "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
-        "altName": "$name"
+        "person": {
+          "name": "$name",
+          "address": {
+            "city": { "$choose": ["London", "Belfast", "Madrid"] }
+          },
+          "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
+          "favFood": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
+          "age": { "$int":  { "min":  1, "max":  99 }}
+        }
       },
       "constants": {
         "date": "$objectId",
@@ -50,14 +56,7 @@
             "type": "insertOne",
             "database": "test",
             "collection": "people",
-            "template": {
-              "name": "$name",
-              "salutation": "$var.salutation",
-              "food": "$var.food",
-              "number": "$const.number",
-              "date": "$const.date",
-              "otherName": "$var.altName"
-            }
+            "template": "$var.person"
           },
           "rate": {
             "tps": 500
@@ -72,7 +71,8 @@
             "collection": "animals",
             "template": {
               "name": "badger",
-              "salutation": "$var.salutation"
+              "salutation": "$var.person.salutation",
+              "number": "$const.number"
             }
           },
           "count": 200

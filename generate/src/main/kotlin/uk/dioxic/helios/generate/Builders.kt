@@ -7,6 +7,7 @@ import org.bson.types.ObjectId
 import uk.dioxic.helios.generate.OperatorFactory.operatorPrefix
 import uk.dioxic.helios.generate.annotations.Alias
 import uk.dioxic.helios.generate.codecs.TemplateCodec
+import uk.dioxic.helios.generate.operators.RootOperator
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -22,11 +23,33 @@ inline fun buildTemplate(builderAction: JsonObjectBuilder.() -> Unit): Template 
     return TemplateCodec().decode(buildJsonObject(builderAction))
 }
 
+/**
+ * Add an operator to a JsonArray.
+ *
+ * Example output:
+ * ```
+ * [ { "$operator": { ... } } ]
+ * ```
+ * @param value the value to pass to the operator
+ */
 inline fun <reified T> JsonArrayBuilder.addOperatorObject(noinline builderAction: JsonObjectBuilder.() -> Unit): Boolean =
     addJsonObject {
         putJsonObject(getOperatorKey<T>(), builderAction)
     }
 
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": {
+ *     "$alias": { .. }
+ *   }
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ */
 fun JsonObjectBuilder.putOperatorObject(
     key: String,
     alias: String,
@@ -36,15 +59,42 @@ fun JsonObjectBuilder.putOperatorObject(
         putJsonObject("$operatorPrefix$alias", builderAction)
     }
 
+/**
+ * Puts a keyed operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": {
+ *     "$operator.subKey": { .. }
+ *   }
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ * @param subKey the key of the KeyedOperator
+ */
 inline fun <reified T : KeyedOperator<*>> JsonObjectBuilder.putKeyedOperatorObject(
     key: String,
-    operatorSubKey: String,
+    subKey: String,
     noinline builderAction: JsonObjectBuilder.() -> Unit
 ): JsonElement? =
     putJsonObject(key) {
-        putJsonObject("${getOperatorKey<T>()}.$operatorSubKey", builderAction)
+        putJsonObject("${getOperatorKey<T>()}.$subKey", builderAction)
     }
 
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": {
+ *     "$operator": { .. }
+ *   }
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ */
 inline fun <reified T> JsonObjectBuilder.putOperatorObject(
     key: String,
     noinline builderAction: JsonObjectBuilder.() -> Unit
@@ -66,35 +116,145 @@ inline fun <reified T> getOperatorKey(): String {
 inline fun <reified T> getOperatorKey(subkey: String): String =
     "${getOperatorKey<T>()}.$subkey"
 
+/**
+ * Add an operator to a JsonArray.
+ *
+ * Example output:
+ * ```
+ * [ { "$operator": "value" } ]
+ * ```
+ * @param value the value to pass to the operator
+ */
 inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(value: String): Boolean =
     addJsonObject {
         put(getOperatorKey<T>(), value)
     }
 
+/**
+ * Add an operator to a JsonArray.
+ *
+ * Example output:
+ * ```
+ * [ "$operator" ]
+ * ```
+ */
 inline fun <reified T : Operator<*>> JsonArrayBuilder.addOperator(): Boolean =
     add(getOperatorKey<T>())
 
-inline fun <reified T : Operator<*>> JsonObjectBuilder.putKeyedOperator(key: String, operatorSubKey: String): JsonElement? =
-    put(key, "${getOperatorKey<T>()}.$operatorSubKey")
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": "$operator.subKey"
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ * @param subKey the sub key of the KeyedOperator
+ */
+inline fun <reified T : Operator<*>> JsonObjectBuilder.putKeyedOperator(key: String, subKey: String): JsonElement? =
+    put(key, "${getOperatorKey<T>()}.$subKey")
 
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": "$operator"
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ */
 inline fun <reified T : Operator<*>> JsonObjectBuilder.putOperator(key: String): JsonElement? =
     put(key, getOperatorKey<T>())
 
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": {
+ *     "$operator": "value"
+ *   }
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ * @param value the value to pass to the Operator
+ */
 inline fun <reified T : Operator<*>> JsonObjectBuilder.putOperator(key: String, value: String): JsonElement? =
     putJsonObject(key) {
         put(getOperatorKey<T>(), value)
     }
 
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "$root": "value"
+ * }
+ * ```
+ * @param value the value to pass to the Operator
+ */
+fun JsonObjectBuilder.putRootOperator(value: String): JsonElement? =
+    put(getOperatorKey<RootOperator>(), value)
+
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": {
+ *     "$operator": "value"
+ *   }
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ * @param value the value to pass to the Operator
+ */
 inline fun <reified T : Operator<*>> JsonObjectBuilder.putOperator(key: String, value: Number): JsonElement? =
     putJsonObject(key) {
         put(getOperatorKey<T>(), value)
     }
 
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": {
+ *     "$operator": "value"
+ *   }
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ * @param value the value to pass to the Operator
+ */
 inline fun <reified T : Operator<*>> JsonObjectBuilder.putOperator(key: String, value: Boolean): JsonElement? =
     putJsonObject(key) {
         put(getOperatorKey<T>(), value)
     }
 
+/**
+ * Puts an operator in a JsonObject.
+ *
+ * Example output:
+ * ```
+ * {
+ *   "key": {
+ *     "$operator": "value"
+ *   }
+ * }
+ * ```
+ * @param key the key in the JsonObject
+ * @param value the value to pass to the Operator
+ */
 inline fun <reified T : Operator<*>> JsonObjectBuilder.putOperator(key: String, value: List<String>): JsonElement? =
     putJsonObject(key) {
         putJsonArray(getOperatorKey<T>()) {

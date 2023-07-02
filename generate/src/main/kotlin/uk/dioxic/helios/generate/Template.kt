@@ -1,6 +1,7 @@
 package uk.dioxic.helios.generate
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import org.bson.Document
 import org.bson.UuidRepresentation
@@ -14,7 +15,7 @@ import uk.dioxic.helios.generate.serialization.TemplateSerializer
 import java.io.StringWriter
 
 @Serializable(TemplateSerializer::class)
-open class Template(map: Map<String, *>, val definition: JsonObject? = null) : Document(map) {
+open class Template(map: Map<String, *>, val definition: JsonElement? = null) : Document(map) {
 
     private val defaultJsonWriter = JsonWriterSettings.builder()
         .indent(true)

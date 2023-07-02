@@ -6,7 +6,6 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonObject
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.TemplateCodec
 import uk.dioxic.helios.generate.extensions.asJsonDecoder
@@ -19,10 +18,7 @@ object TemplateSerializer : KSerializer<Template> {
     private val templateCodec = TemplateCodec()
 
     override fun deserialize(decoder: Decoder): Template =
-        when (val jsonElement = decoder.asJsonDecoder().decodeJsonElement()) {
-            is JsonObject -> templateCodec.decode(jsonElement)
-            else -> error("expecting as JsonObject but ${jsonElement::class} was found")
-        }
+        templateCodec.decode(decoder.asJsonDecoder().decodeJsonElement())
 
     override fun serialize(encoder: Encoder, value: Template) {
         require(value.definition != null) {
