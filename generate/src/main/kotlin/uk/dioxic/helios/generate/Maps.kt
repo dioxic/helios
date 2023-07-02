@@ -20,6 +20,10 @@ fun BsonDocument.flatten(separator: Char = '.', leafOnly: Boolean = false) =
         flatten(it, this, separator, leafOnly)
     }.toMap()
 
+fun <V> templateOf(pair: Pair<String, V>): Template = Template(mapOf(pair))
+
+fun <V> templateOf(vararg pairs: Pair<String, V>): Template =
+    Template(mapOf(*pairs))
 
 @Suppress("UNCHECKED_CAST")
 private fun <T> flatten(

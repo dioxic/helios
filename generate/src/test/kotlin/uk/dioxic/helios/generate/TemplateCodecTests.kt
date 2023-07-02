@@ -3,6 +3,7 @@ package uk.dioxic.helios.generate
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.shouldForAll
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.maps.shouldContainKeys
@@ -11,9 +12,16 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.json.*
+import org.bson.Document
+import org.bson.codecs.EncoderContext
+import org.bson.json.JsonMode
+import org.bson.json.JsonWriter
+import org.bson.json.JsonWriterSettings
+import org.bson.types.ObjectId
 import uk.dioxic.helios.generate.codecs.TemplateCodec
 import uk.dioxic.helios.generate.operators.*
 import uk.dioxic.helios.generate.test.shouldBeWrapped
+import java.io.StringWriter
 
 class TemplateCodecTests : FunSpec({
 
@@ -137,56 +145,53 @@ class TemplateCodecTests : FunSpec({
     }
 
     context("encoding") {
-        fun encodeAndPrint(template: Template): JsonObject =
-            template.toJson().let {
-                println(it)
-                Json.decodeFromString<JsonObject>(it)
-            }
+        val rootKey = getOperatorKey<RootOperator>()
+        val writerSettings = JsonWriterSettings.builder()
+            .indent(true)
+            .outputMode(JsonMode.RELAXED)
+            .build()
+
+        fun encodeAndPrint(template: Template, collectible: Boolean = false): Document {
+            val writer = JsonWriter(StringWriter(), writerSettings)
+            val encoderContext = EncoderContext.builder().isEncodingCollectibleDocument(collectible).build()
+            Template.defaultCodec.encode(writer, template, encoderContext)
+            val json = writer.writer.toString()
+            println(json)
+            return Document.parse(json)
+        }
 
         test("root operator is a map containing operators") {
-            val template = Template(mapOf(
-                getOperatorKey<RootOperator>() to mapOf(
-                    "address" to mapOf(
-                        "cities" to ChooseOperator(
-                            from = { listOf("London", "Belfast") }
-                        )
-                    )
+            val cities = listOf("London", "Belfast")
+            val root = mapOf(
+                "address" to mapOf(
+                    "cities" to ChooseOperator(from = { cities })
                 )
-            ))
+            )
+            val template = templateOf(rootKey to root)
 
             encodeAndPrint(template).should {
                 it shouldContainKey "address"
-                it["address"].shouldBeInstanceOf<JsonObject>().should { address ->
+                it["address"].shouldBeInstanceOf<Document>().should { address ->
                     address shouldContainKey "cities"
-                    address["cities"].shouldBeInstanceOf<JsonPrimitive>().should { cities ->
-                        cities.isString shouldBe true
-                    }
+                    println(address["cities"])
+                    address["cities"] shouldBeIn cities
                 }
             }
         }
 
         test("root operator is a simple map") {
-            val template = Template(
-                mapOf(
-                    getOperatorKey<RootOperator>() to mapOf("animal" to "halibut")
-                )
+            val template = templateOf(
+                rootKey to mapOf("animal" to "halibut")
             )
 
             encodeAndPrint(template).should {
                 it shouldContainKey "animal"
-                it["animal"].should { type ->
-                    type.shouldBeInstanceOf<JsonPrimitive>()
-                    type.isString shouldBe true
-                }
+                it["animal"] shouldBe "halibut"
             }
         }
 
         test("should fail when root operator is not a map") {
-            val template = Template(
-                mapOf(
-                    getOperatorKey<RootOperator>() to "halibut"
-                )
-            )
+            val template = templateOf(rootKey to "halibut")
 
             shouldThrowExactly<IllegalArgumentException> {
                 encodeAndPrint(template)
@@ -202,18 +207,13 @@ class TemplateCodecTests : FunSpec({
                 "type" to "org",
                 "orgId" to 123
             )
-            val template = Template(mapOf(
-                getOperatorKey<RootOperator>() to ChooseOperator(
-                    from = { listOf(personMap, orgMap) }
-                )
+            val template = templateOf(rootKey to ChooseOperator(
+                from = { listOf(personMap, orgMap) }
             ))
 
             encodeAndPrint(template).should {
                 it shouldContainKey "type"
-                it["type"].should { type ->
-                    type.shouldBeInstanceOf<JsonPrimitive>()
-                    type.isString shouldBe true
-                }
+                it["type"] shouldBeIn listOf("person", "org")
             }
         }
     }
