@@ -30,7 +30,7 @@ sealed interface MongoSessionExecutor : Executor {
 }
 
 @Serializable
-sealed class CollectionExecutor : Executor {
+sealed class CollectionExecutor : MongoSessionExecutor {
     abstract val database: String
     abstract val collection: String
 
@@ -41,7 +41,7 @@ sealed class CollectionExecutor : Executor {
 }
 
 @Serializable
-sealed class DatabaseExecutor : Executor {
+sealed class DatabaseExecutor : MongoSessionExecutor {
     abstract val database: String
 
     context(ResourceRegistry)
@@ -66,6 +66,10 @@ data class CommandExecutor(
     override val database: String,
     val command: Template
 ) : DatabaseExecutor() {
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(session: ClientSession) = CommandResult(
+        getDatabase().runCommand(session, command)
+    )
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() = CommandResult(
@@ -79,7 +83,7 @@ data class InsertOneExecutor(
     override val database: String,
     override val collection: String,
     val template: Template
-) : CollectionExecutor(), MongoSessionExecutor {
+) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession): ExecutionResult =
