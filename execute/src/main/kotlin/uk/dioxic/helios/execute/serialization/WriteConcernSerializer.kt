@@ -23,13 +23,14 @@ object WriteConcernSerializer : KSerializer<WriteConcern> {
         when (val jsonElement = decoder.asJsonDecoder().decodeJsonElement()) {
             is JsonObject -> {
                 deserializeW(jsonElement["w"]).let { wc ->
-                    wc.withJournal(jsonElement["j"]?.jsonPrimitive?.boolean).let {wc ->
+                    wc.withJournal(jsonElement["j"]?.jsonPrimitive?.boolean).let { wcj ->
                         jsonElement["wtimeout"]?.let {
-                            wc.withWTimeout(it.jsonPrimitive.long, TimeUnit.MILLISECONDS)
+                            wcj.withWTimeout(it.jsonPrimitive.long, TimeUnit.MILLISECONDS)
                         } ?: wc
                     }
                 }
             }
+
             else -> deserializeW(jsonElement)
         }
 

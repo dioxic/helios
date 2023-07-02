@@ -6,23 +6,26 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.bson.Document
+import org.bson.codecs.DecoderContext
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.TemplateCodec
-import uk.dioxic.helios.generate.extensions.asJsonDecoder
+import uk.dioxic.helios.generate.extensions.asBsonDecoder
+import uk.dioxic.helios.generate.extensions.asBsonEncoder
 
-object TemplateSerializer : KSerializer<Template> {
+object BsonTemplateSerializer : KSerializer<Template> {
     override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("TemplateSerializer", PrimitiveKind.STRING)
+        PrimitiveSerialDescriptor("BsonTemplateSerializer", PrimitiveKind.STRING)
 
     private val templateCodec = TemplateCodec()
 
     override fun deserialize(decoder: Decoder): Template =
-        templateCodec.decode(decoder.asJsonDecoder().decodeJsonElement())
+        templateCodec.decode(decoder.asBsonDecoder().reader(), DecoderContext.builder().build())
 
     override fun serialize(encoder: Encoder, value: Template) {
         require(value.definition != null) {
             "Template definition not set"
         }
-//        encoder.asJsonEncoder().encodeJsonElement(value.definition)
+        encoder.asBsonEncoder().encodeBsonValue(Document(value.definition).toBsonDocument())
     }
 }

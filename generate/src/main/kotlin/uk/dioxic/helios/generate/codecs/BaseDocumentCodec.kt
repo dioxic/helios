@@ -27,11 +27,11 @@ sealed interface BaseDocumentCodec<T : MutableMap<String, Any?>> : Codec<T> {
     fun readValue(
         reader: BsonReader,
         decoderContext: DecoderContext,
-    ): Any? {
+    ): Pair<Any?,Any?> {
         val bsonType = reader.currentBsonType
         return if (bsonType == BsonType.NULL) {
             reader.readNull()
-            null
+            null to null
         } else {
             var codec = bsonTypeCodecMap[bsonType]
 
@@ -55,7 +55,9 @@ sealed interface BaseDocumentCodec<T : MutableMap<String, Any?>> : Codec<T> {
                     else -> {}
                 }
             }
-            valueTransformer.transform(codec.decode(reader, decoderContext))
+            val decoded = codec.decode(reader, decoderContext)
+            val transformed = valueTransformer.transform(decoded)
+            decoded to transformed
         }
     }
 
@@ -80,7 +82,7 @@ sealed interface BaseDocumentCodec<T : MutableMap<String, Any?>> : Codec<T> {
 
     companion object {
         const val idFieldName: String = "_id"
-        private val rootOperatorKey = getOperatorKey<RootOperator>()
+        val rootOperatorKey = getOperatorKey<RootOperator>()
         val defaultBsonTypeClassMap: BsonTypeClassMap = BsonTypeClassMap()
     }
 

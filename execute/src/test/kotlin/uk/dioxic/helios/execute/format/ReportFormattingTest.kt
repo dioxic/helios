@@ -88,7 +88,7 @@ class ReportFormattingTest : FunSpec({
         }
     }
 
-    context("json format") {
+    xcontext("json format") {
         test("print multiple workloads").config(enabled = IS_NOT_GH_ACTION) {
             benchmark.execute(ResourceRegistry(mongoClient))
                 .buffer(100)

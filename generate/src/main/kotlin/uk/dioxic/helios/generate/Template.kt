@@ -1,8 +1,6 @@
 package uk.dioxic.helios.generate
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 import org.bson.Document
 import org.bson.UuidRepresentation
 import org.bson.codecs.Encoder
@@ -11,11 +9,11 @@ import org.bson.json.JsonMode
 import org.bson.json.JsonWriter
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.helios.generate.codecs.TemplateCodec
-import uk.dioxic.helios.generate.serialization.TemplateSerializer
+import uk.dioxic.helios.generate.serialization.BsonTemplateSerializer
 import java.io.StringWriter
 
-@Serializable(TemplateSerializer::class)
-class Template(map: Map<String, *>, val definition: JsonElement? = null) : Document(map) {
+@Serializable(BsonTemplateSerializer::class)
+class Template(map: Map<String, *>, val definition: Map<String, *>? = null) : Document(map) {
 
     private val defaultJsonWriter = JsonWriterSettings.builder()
         .indent(true)
@@ -37,7 +35,7 @@ class Template(map: Map<String, *>, val definition: JsonElement? = null) : Docum
     companion object {
         val defaultCodec = TemplateCodec(uuidRepresentation = UuidRepresentation.STANDARD)
 
-        val EMPTY = Template(emptyMap<String, Any>(), JsonObject(mapOf()))
+        val EMPTY = Template(emptyMap<String, Any>())
 
     }
 }

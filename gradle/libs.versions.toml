@@ -10,7 +10,6 @@ commonsMath = "3.6.1"
 dokka = "1.8.20"
 faker = "1.14.0"
 junit = "5.9.3"
-kbson = "0.5.0"
 kotest = "5.6.2"
 kotestArrowAssertions = "1.3.3"
 kotlin = "1.8.22"
@@ -45,7 +44,6 @@ commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons
 commons-math = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath" }
 faker = { module = "io.github.serpro69:kotlin-faker", version.ref = "faker" }
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
-kbson = { module = "com.github.jershell:kbson", version.ref = "kbson" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }

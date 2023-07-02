@@ -13,7 +13,7 @@ import uk.dioxic.helios.generate.test.hydrateAndPrint
 class HydrationTests : FunSpec({
 
     test("top level operators") {
-        val hydrated = mapOf(
+        val hydrated = templateOf(
             "name" to NameOperator(),
             "oid" to ObjectIdOperator()
         ).hydrateAndPrint()
@@ -24,7 +24,7 @@ class HydrationTests : FunSpec({
     }
 
     test("nested operators") {
-        val hydrated = mapOf(
+        val hydrated = templateOf(
             "subDoc" to mapOf(
                 "subSubDoc" to mapOf(
                     "oid" to ObjectIdOperator()
@@ -40,7 +40,7 @@ class HydrationTests : FunSpec({
     }
 
     test("operators as input to operators") {
-        val hydrated = mapOf(
+        val hydrated = templateOf(
             "array" to ArrayOperator(
                 of = { ObjectIdOperator() },
                 number = { 3 }
@@ -58,7 +58,7 @@ class HydrationTests : FunSpec({
     }
 
     test("map with nested operators as input to operators") {
-        val hydrated = mapOf(
+        val hydrated = templateOf(
             "array" to ArrayOperator(
                 of = { mapOf("name" to NameOperator(), "id" to ObjectIdOperator()) },
                 number = { 3 }
@@ -80,7 +80,7 @@ class HydrationTests : FunSpec({
     }
 
     test("array with nested operators as input to operators") {
-        val hydrated = mapOf(
+        val hydrated = templateOf(
             "array" to ArrayOperator(
                 of = { listOf(ObjectIdOperator(), ObjectIdOperator()) },
                 number = { 3 }
@@ -111,7 +111,7 @@ class HydrationTests : FunSpec({
             "type" to "org",
             "orgId" to 123
         )
-        val hydrated = mapOf(
+        val hydrated = templateOf(
             getOperatorKey<RootOperator>() to ChooseOperator(
                 from = { listOf(personMap, orgMap) }
             )

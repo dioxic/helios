@@ -13,6 +13,7 @@ import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultBsonTypeClassMap
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.idFieldName
+import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.rootOperatorKey
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
 import uk.dioxic.helios.generate.putRootOperator
 import uk.dioxic.helios.generate.codecs.DocumentCodecProvider as HeliosDocumentCodecProvider
@@ -47,16 +48,31 @@ class TemplateCodec(
         Template::class.java
 
     override fun decode(reader: BsonReader, decoderContext: DecoderContext): Template {
-        val map = mutableMapOf<String, Any?>()
+        val tMap = mutableMapOf<String, Any?>()
+        val dMap = mutableMapOf<String, Any?>()
 
-        reader.readStartDocument()
-        while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-            map[reader.readName()] = readValue(reader, decoderContext)
+        when (reader.currentBsonType) {
+            BsonType.DOCUMENT -> {
+                reader.readStartDocument()
+                while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
+                    val name = reader.readName()
+                    readValue(reader, decoderContext).also { (original, transformed) ->
+                        dMap[name] = original
+                        tMap[name] = transformed
+                    }
+                }
+                reader.readEndDocument()
+            }
+            BsonType.STRING -> {
+                readValue(reader, decoderContext).also { (original, transformed) ->
+                    dMap[rootOperatorKey] = original
+                    tMap[rootOperatorKey] = transformed
+                }
+            }
+            else -> error("Cannot decode ${reader.readBsonType()} to a Template")
         }
 
-        reader.readEndDocument()
-
-        return Template(map)
+        return Template(tMap, dMap)
     }
 
     fun decode(definition: JsonElement): Template {
@@ -76,7 +92,7 @@ class TemplateCodec(
             else -> error("template root definition must be an object or a string but was $definition")
         }
 
-        return Template(document, definition)
+        return Template(document)
     }
 
     override fun getDocumentId(template: Template): BsonValue {

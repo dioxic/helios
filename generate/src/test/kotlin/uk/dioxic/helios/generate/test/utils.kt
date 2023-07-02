@@ -36,7 +36,7 @@ fun printJson(jsonObject: JsonObject) {
 //    return res
 //}
 
-fun Map<String, Any?>.hydrateAndPrint(): Map<String, *> {
+fun Template.hydrateAndPrint(): Map<String, *> {
     val res = with(OperatorContext.EMPTY) { this@hydrateAndPrint.hydrate() }
     println(res)
     return res

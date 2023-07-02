@@ -4,8 +4,8 @@ package uk.dioxic.helios.execute.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import uk.dioxic.helios.execute.serialization.FixedRateSerializer
-import uk.dioxic.helios.execute.serialization.RateSerializer
+import uk.dioxic.helios.execute.serialization.BsonFixedRateSerializer
+import uk.dioxic.helios.execute.serialization.BsonRateSerializer
 import kotlin.math.min
 import kotlin.random.Random
 import kotlin.time.Duration
@@ -13,13 +13,13 @@ import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
-@Serializable(RateSerializer::class)
+@Serializable(BsonRateSerializer::class)
 sealed class Rate {
     context(ExecutionContext)
     abstract fun calculateDelay(): Duration
 }
 
-@Serializable(FixedRateSerializer::class)
+@Serializable(BsonFixedRateSerializer::class)
 sealed class FixedRate: Rate() {
     abstract fun calculateBaseDelay(): Duration
 }

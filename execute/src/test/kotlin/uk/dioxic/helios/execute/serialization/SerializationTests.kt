@@ -8,9 +8,15 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
+import org.bson.Document
 import java.util.concurrent.TimeUnit
 
 class SerializationTests : FunSpec({
+
+    fun stringifyAndPrint(jsonElement: JsonElement) =
+        Json.encodeToString(jsonElement).also {
+            println(it)
+        }
 
     context("WriteConcern") {
         context("serialization") {
@@ -39,7 +45,7 @@ class SerializationTests : FunSpec({
         }
         context("deserialization") {
             test("{ w: 'majority' }") {
-                val str = Json.encodeToString(
+                val str = stringifyAndPrint(
                     buildJsonObject {
                         put("w", "majority")
                     }
@@ -51,7 +57,7 @@ class SerializationTests : FunSpec({
             }
 
             test("{ w: 'majority', wtimeout: 1000 }") {
-                val str = Json.encodeToString(
+                val str = stringifyAndPrint(
                     buildJsonObject {
                         put("w", "majority")
                         put("wtimeout", 1000)
@@ -65,7 +71,7 @@ class SerializationTests : FunSpec({
             }
 
             test("{ w: 1 }") {
-                val str = Json.encodeToString(
+                val str = stringifyAndPrint(
                     buildJsonObject {
                         put("w", 1)
                     }
@@ -77,7 +83,7 @@ class SerializationTests : FunSpec({
             }
 
             test("{ w: 1, j: false }") {
-                val str = Json.encodeToString(
+                val str = stringifyAndPrint(
                     buildJsonObject {
                         put("w", 1)
                         put("j", false)
@@ -120,8 +126,40 @@ class SerializationTests : FunSpec({
         }
     }
 
+    context("UpdateOptions") {
+        val optionsStr = stringifyAndPrint(buildJsonObject {
+            put("upsert", true)
+            put("bypassDocumentValidation", true)
+            put("hintString", "myHint")
+            putJsonObject("hint") {
+                put("status", 1)
+            }
+            put("comment", "myComment")
+            putJsonArray("arrayFilters") {
+                addJsonObject {
+                    put("first.a", 123)
+                }
+                addJsonObject {
+                    put("second.b", "abc")
+                }
+            }
+        })
+
+        test("deserialize") {
+            Json.decodeFromString(UpdateOptionsSerializer, optionsStr).should {
+                it.isUpsert shouldBe true
+                it.comment?.asString()?.value shouldBe "myComment"
+                it.hintString shouldBe "myHint"
+                it.hint.shouldBeInstanceOf<Document>().should {hint ->
+                    hint["status"] shouldBe 1
+                }
+                it.bypassDocumentValidation shouldBe true
+            }
+        }
+    }
+
     context("TransactionOptions") {
-        val txOptionsStr = Json.encodeToString(buildJsonObject {
+        val txOptionsStr = stringifyAndPrint(buildJsonObject {
             put("readConcern", "available")
             put("readPreference", "nearest")
             put("writeConcern", 1)

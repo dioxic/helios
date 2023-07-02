@@ -1,0 +1,83 @@
+{
+  "name": "example benchmark",
+  "variables": {
+    "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
+  },
+  "stages": [
+    {
+      "type": "parallel",
+      "name": "setup",
+      "workloads": [
+        {
+          "name": "drop people collection",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "drop": "people"
+            }
+          }
+        },
+        {
+          "name": "drop animals collection",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "drop": "animals"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "parallel",
+      "name": "load data",
+      "variables": {
+        "person": {
+          "name": "$name",
+          "address": {
+            "city": { "$choose": ["London", "Belfast", "Madrid"] }
+          },
+          "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
+          "favFood": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
+          "age": { "$int":  { "min":  1, "max":  99 }}
+        }
+      },
+      "constants": {
+        "date": "$objectId",
+        "number": "$int",
+        "altName": "$name"
+      },
+      "workloads": [
+        {
+          "name": "people",
+          "executor": {
+            "type": "insertOne",
+            "database": "test",
+            "collection": "people",
+            "template": "$var.person"
+          },
+          "rate": {
+            "tps": 500
+          },
+          "count": 100
+        },
+        {
+          "name": "animals",
+          "executor": {
+            "type": "insertOne",
+            "database": "test",
+            "collection": "animals",
+            "template": {
+              "name": "badger",
+              "salutation": "$var.person.salutation",
+              "number": "$const.number"
+            }
+          },
+          "count": 200
+        }
+      ]
+    }
+  ]
+}

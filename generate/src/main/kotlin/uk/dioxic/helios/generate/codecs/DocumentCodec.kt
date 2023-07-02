@@ -37,7 +37,7 @@ class DocumentCodec(
         reader.readStartDocument()
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
             val fieldName = reader.readName()
-            document[fieldName] = readValue(reader, decoderContext)
+            document[fieldName] = readValue(reader, decoderContext).first
         }
 
         reader.readEndDocument()

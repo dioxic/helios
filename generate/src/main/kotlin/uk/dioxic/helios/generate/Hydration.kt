@@ -13,6 +13,10 @@ context (OperatorContext)
 fun Map<String, *>.hydrate(): Map<String, *> =
     hydrate(this) as Map<String, *>
 
+context (OperatorContext)
+fun Template.hydrate(): Map<String, *> =
+    hydrate(this) as Map<String, *>
+
 private val rootOperatorKey = getOperatorKey<RootOperator>()
 
 context (OperatorContext)
