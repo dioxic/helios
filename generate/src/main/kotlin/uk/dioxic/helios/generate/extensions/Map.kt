@@ -35,7 +35,7 @@ private fun <T> flatten(
                 val newKey = getKey(key, separator, k.toString())
                 flatten(map, v as T, separator, leafOnly, newKey)
             }
-            if (!leafOnly) {
+            if (!leafOnly && key.isNotEmpty()) {
                 map[key] = value
             }
         }
