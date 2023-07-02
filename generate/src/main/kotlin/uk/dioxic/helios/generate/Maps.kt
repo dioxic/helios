@@ -1,4 +1,4 @@
-package uk.dioxic.helios.generate.extensions
+package uk.dioxic.helios.generate
 
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject

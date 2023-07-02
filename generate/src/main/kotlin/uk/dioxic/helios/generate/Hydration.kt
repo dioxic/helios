@@ -2,7 +2,6 @@
 
 package uk.dioxic.helios.generate
 
-import uk.dioxic.helios.generate.extensions.flatten
 import uk.dioxic.helios.generate.operators.RootOperator
 
 fun Template.hydrateAndFlatten(named: Named) =
