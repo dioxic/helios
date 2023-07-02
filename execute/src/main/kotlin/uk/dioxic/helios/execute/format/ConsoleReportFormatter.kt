@@ -201,7 +201,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
             .mapValues { (_, v) -> v.jsonPrimitive.content }
 
     private fun OutputResult.toFlatMap(json: Json): Map<String, JsonElement> =
-        json.encodeToJsonElement(this).jsonObject.flatten(' ', false)
+        json.encodeToJsonElement(this).jsonObject.flatten(' ', true)
 
     private fun TimedResult.toResultMap(stageName: String = ""): ResultMap =
         toOutputResult(stageName)

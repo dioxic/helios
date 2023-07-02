@@ -5,19 +5,19 @@ import kotlinx.serialization.json.JsonObject
 import org.bson.BsonDocument
 import org.bson.BsonValue
 
-fun Map<String, Any?>.flatten(separator: Char = '.', incBranches: Boolean = true) =
+fun Map<String, Any?>.flatten(separator: Char = '.', leafOnly: Boolean = false) =
     mutableMapOf<String, Any?>().also {
-        flatten(it, this, separator, incBranches)
+        flatten(it, this, separator, leafOnly)
     }.toMap()
 
-fun JsonObject.flatten(separator: Char = '.', incBranches: Boolean = true) =
+fun JsonObject.flatten(separator: Char = '.', leafOnly: Boolean = false) =
     mutableMapOf<String, JsonElement>().also {
-        flatten(it, this, separator, incBranches)
+        flatten(it, this, separator, leafOnly)
     }.toMap()
 
-fun BsonDocument.flatten(separator: Char = '.', incBranches: Boolean = true) =
+fun BsonDocument.flatten(separator: Char = '.', leafOnly: Boolean = false) =
     mutableMapOf<String, BsonValue>().also {
-        flatten(it, this, separator, incBranches)
+        flatten(it, this, separator, leafOnly)
     }.toMap()
 
 
@@ -26,16 +26,16 @@ private fun <T> flatten(
     map: MutableMap<String, T>,
     value: T,
     separator: Char,
-    incBranches: Boolean = true,
+    leafOnly: Boolean,
     key: String = ""
 ) {
     when (value) {
         is Map<*, *> -> {
             value.filterValues { it != null }.forEach { (k, v) ->
                 val newKey = getKey(key, separator, k.toString())
-                flatten(map, v as T, separator, incBranches, newKey)
+                flatten(map, v as T, separator, leafOnly, newKey)
             }
-            if (incBranches) {
+            if (!leafOnly) {
                 map[key] = value
             }
         }
@@ -43,9 +43,9 @@ private fun <T> flatten(
         is Iterable<*> -> {
             value.filterNotNull().forEachIndexed { i, v ->
                 val newKey = getKey(key, separator, i.toString())
-                flatten(map, v as T, separator, incBranches, newKey)
+                flatten(map, v as T, separator, leafOnly, newKey)
             }
-            if (incBranches) {
+            if (!leafOnly) {
                 map[key] = value
             }
         }
