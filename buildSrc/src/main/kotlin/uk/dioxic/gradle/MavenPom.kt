@@ -23,8 +23,6 @@ internal fun MavenPublication.configurePom(
                 id.set("dioxic")
                 name.set("Mark Baker-Munton")
                 email.set("dioxic@gmail.com")
-                organization.set("MongoDB")
-                organizationUrl.set("https://www.mongodb.com/")
             }
         }
 
