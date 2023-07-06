@@ -9,10 +9,6 @@ plugins {
     distribution
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation(project(":generate"))
     implementation(project(":execute"))
