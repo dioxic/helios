@@ -5,33 +5,34 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.bson.buildBsonDocument
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
 import org.bson.Document
 import uk.dioxic.helios.generate.operators.ChooseOperator
 import uk.dioxic.helios.generate.operators.IntOperator
 
-@OptIn(ExperimentalSerializationApi::class)
 class TemplateSerializationTests : FunSpec({
 
-    val json = Json { prettyPrint = true }
-    val jsonObject = buildJsonObject {
+    val bson = Bson { prettyPrint = true }
+
+    val jsonObject = buildBsonDocument {
         putOperatorObject<ChooseOperator>("color") {
-            putJsonArray("from") {
+            putBsonArray("from") {
                 addAll(listOf("blue", "red", "green"))
             }
         }
         putOperator<IntOperator>("height")
-        putJsonObject("address") {
+        putBsonDocument("address") {
             putOperator<ChooseOperator>("city", listOf("london", "new york", "dulwich"))
         }
     }
-    val jsonString = json.encodeToString(jsonObject)
+    val jsonString = bson.encodeToString(jsonObject)
     println(jsonString)
 
     test("decode") {
-        json.decodeFromString<Template>(jsonString).should {
+        bson.decodeFromString<Template>(jsonString).should {
             it.shouldBeInstanceOf<Document>()
             it["color"].shouldBeInstanceOf<ChooseOperator>()
             it["height"].shouldBeInstanceOf<IntOperator>()
@@ -46,7 +47,7 @@ class TemplateSerializationTests : FunSpec({
         val template = Template(emptyMap<String, String>())
 
         shouldThrow<IllegalArgumentException> {
-            json.encodeToString(template)
+            bson.encodeToString(template)
         }
     }
 
@@ -54,7 +55,7 @@ class TemplateSerializationTests : FunSpec({
         val template = Template(emptyMap<String, String>(), jsonObject)
 
         shouldNotThrowAny {
-            json.encodeToString(template)
+            bson.encodeToString(template)
         }
     }
 

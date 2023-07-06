@@ -7,9 +7,9 @@ import io.kotest.matchers.longs.shouldBeExactly
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.put
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.test.readResource
 import uk.dioxic.helios.generate.Operator
@@ -19,7 +19,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class SerializationTest : FunSpec({
-    val json = Json {
+    val bson = Bson {
         prettyPrint = true
     }
 
@@ -33,9 +33,9 @@ class SerializationTest : FunSpec({
             }
         }
 
-        val str = json.encodeToString(benchmark)
+        val str = bson.encodeToString(benchmark)
         println(str)
-        val decoded = json.decodeFromString<Benchmark>(str)
+        val decoded = bson.decodeFromString<Benchmark>(str)
         decoded.stages[0].workloads.first().count shouldBeExactly Long.MAX_VALUE
     }
 
@@ -47,9 +47,9 @@ class SerializationTest : FunSpec({
                 )
             }
         }
-        val str = json.encodeToString(benchmark)
+        val str = bson.encodeToString(benchmark)
         println(str)
-        val decoded = json.decodeFromString<Benchmark>(str)
+        val decoded = bson.decodeFromString<Benchmark>(str)
         decoded.stages[0].workloads.first().executor.shouldBeInstanceOf<CommandExecutor>()
     }
 
@@ -65,9 +65,9 @@ class SerializationTest : FunSpec({
                 )
             }
         }
-        val str = json.encodeToString(benchmark)
+        val str = bson.encodeToString(benchmark)
         println(str)
-        val decoded = json.decodeFromString<Benchmark>(str)
+        val decoded = bson.decodeFromString<Benchmark>(str)
         decoded.stages[0].workloads.first().executor.shouldBeInstanceOf<InsertOneExecutor>()
     }
 
@@ -106,7 +106,7 @@ class SerializationTest : FunSpec({
         }
         """.trimIndent()
 
-        val stage = json.decodeFromString<Stage>(str)
+        val stage = bson.decodeFromString<Stage>(str)
 
         stage.shouldBeInstanceOf<ParallelStage>()
             .workloads.should {
@@ -116,7 +116,7 @@ class SerializationTest : FunSpec({
                     .rate.shouldBeInstanceOf<TpsRate>()
             }
 
-        println(json.encodeToString(stage))
+        println(bson.encodeToString(stage))
 
     }
 
@@ -151,10 +151,10 @@ class SerializationTest : FunSpec({
             }
         }
 
-        val output = json.encodeToString(benchmark)
+        val output = bson.encodeToString(benchmark)
         println(output)
 
-        val decoded = json.decodeFromString<Benchmark>(output)
+        val decoded = bson.decodeFromString<Benchmark>(output)
 
         decoded.stages.filterIsInstance<ParallelStage>().first().timeout shouldBe 5.milliseconds
     }
@@ -169,7 +169,7 @@ class SerializationTest : FunSpec({
             }
         }
 
-        val decodedBenchmark = Json.decodeFromString<Benchmark>(json.encodeToString(benchmark))
+        val decodedBenchmark = Bson.decodeFromString<Benchmark>(bson.encodeToString(benchmark))
 
         decodedBenchmark.stages
             .shouldHaveSize(1)
@@ -187,7 +187,9 @@ class SerializationTest : FunSpec({
         val str = readResource("/benchmarkInvalid.json")
 
         shouldThrow<IllegalArgumentException> {
-            json.decodeFromString<Benchmark>(str)
+            println(bson.decodeFromString<Benchmark>(str))
+        }.also {
+            println(it)
         }
     }
 

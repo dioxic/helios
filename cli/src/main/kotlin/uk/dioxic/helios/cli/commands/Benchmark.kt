@@ -15,7 +15,8 @@ import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.mongodb.MongoClientSettings
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.decodeFromString
 import uk.dioxic.helios.cli.checkConnection
 import uk.dioxic.helios.cli.options.AuthOptions
 import uk.dioxic.helios.cli.options.ConnectionOptions
@@ -47,7 +48,7 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
-    ).convert { Json.decodeFromString<ExBenchmark>(it.readText()) }
+    ).convert { Bson.decodeFromString<ExBenchmark>(it.readText()) }
 
     @OptIn(ExperimentalTime::class)
     override fun run() {

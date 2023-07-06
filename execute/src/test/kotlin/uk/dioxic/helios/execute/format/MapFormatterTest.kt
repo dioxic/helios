@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.maps.shouldContainKeys
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.should
-import kotlinx.serialization.json.*
+import kotlinx.serialization.bson.buildBsonDocument
 import org.bson.BsonArray
 import org.bson.BsonDocument
 import org.bson.BsonElement
@@ -144,11 +144,11 @@ class MapFormatterTest : FunSpec({
 
     context("JsonObject") {
         test("complex nested object is correct") {
-            val jsonObject = buildJsonObject {
+            val jsonObject = buildBsonDocument {
                 put("name", "Bob")
-                putJsonObject("nested") {
-                    putJsonArray("array") {
-                        addJsonObject {
+                putBsonDocument("nested") {
+                    putBsonArray("array") {
+                        addBsonDocument {
                             put("date", "myDate")
                         }
                         add("n")

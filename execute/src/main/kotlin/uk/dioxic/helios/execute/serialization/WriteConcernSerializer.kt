@@ -1,16 +1,22 @@
 package uk.dioxic.helios.execute.serialization
 
 import com.mongodb.WriteConcern
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.bson.BsonValueSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.encodeStructure
-import kotlinx.serialization.json.*
+import org.bson.BsonDocument
+import org.bson.BsonNumber
+import org.bson.BsonString
+import org.bson.BsonValue
 import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalSerializationApi::class)
 object WriteConcernSerializer : KSerializer<WriteConcern> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("WriteConcern") {
@@ -20,27 +26,24 @@ object WriteConcernSerializer : KSerializer<WriteConcern> {
         }
 
     override fun deserialize(decoder: Decoder): WriteConcern =
-        when (val jsonElement = decoder.asJsonDecoder().decodeJsonElement()) {
-            is JsonObject -> {
-                deserializeW(jsonElement["w"]).let { wc ->
-                    wc.withJournal(jsonElement["j"]?.jsonPrimitive?.boolean).let { wcj ->
-                        jsonElement["wtimeout"]?.let {
-                            wcj.withWTimeout(it.jsonPrimitive.long, TimeUnit.MILLISECONDS)
-                        } ?: wc
+        when (val bsonValue = decoder.decodeSerializableValue(BsonValueSerializer)) {
+            is BsonDocument -> {
+                deserializeW(bsonValue["w"]).let { wc ->
+                    wc.withJournal(bsonValue["j"]?.asBoolean()?.value).let { wcj ->
+                        bsonValue["wtimeout"]?.let {
+                            wcj.withWTimeout(it.asNumber().longValue(), TimeUnit.MILLISECONDS)
+                        } ?: wcj
                     }
                 }
             }
 
-            else -> deserializeW(jsonElement)
+            else -> deserializeW(bsonValue)
         }
 
-    private fun deserializeW(w: JsonElement?) =
+    private fun deserializeW(w: BsonValue?) =
         when (w) {
-            is JsonPrimitive -> when {
-                w.isString -> WriteConcern(w.content)
-                else -> WriteConcern(w.int)
-            }
-
+            is BsonString -> WriteConcern(w.value)
+            is BsonNumber -> WriteConcern(w.intValue())
             else -> WriteConcern.MAJORITY
         }
 

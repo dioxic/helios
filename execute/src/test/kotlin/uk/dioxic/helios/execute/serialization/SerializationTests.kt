@@ -6,15 +6,19 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
-import org.bson.Document
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.bson.BsonValueSerializer
+import kotlinx.serialization.bson.buildBsonDocument
+import kotlinx.serialization.bson.toBson
+import org.bson.*
 import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalSerializationApi::class)
 class SerializationTests : FunSpec({
 
-    fun stringifyAndPrint(jsonElement: JsonElement) =
-        Json.encodeToString(jsonElement).also {
+    fun stringifyAndPrint(bsonValue: BsonValue) =
+        Bson.encodeToString(BsonValueSerializer, bsonValue).also {
             println(it)
         }
 
@@ -22,23 +26,20 @@ class SerializationTests : FunSpec({
         context("serialization") {
 
             test("majority") {
-                Json.encodeToJsonElement(WriteConcernSerializer, WriteConcern.MAJORITY).should {
-                    it.shouldBeInstanceOf<JsonObject>()
+                Bson.encodeToBsonDocument(WriteConcernSerializer, WriteConcern.MAJORITY).should {
+                    it.shouldBeInstanceOf<BsonDocument>()
                     it["w"].should { w ->
                         w.shouldNotBeNull()
-                        w.shouldBeInstanceOf<JsonPrimitive>()
-                        w.isString shouldBe true
+                        w.shouldBeInstanceOf<BsonString>()
                     }
                 }
             }
             test("w1") {
-                Json.encodeToJsonElement(WriteConcernSerializer, WriteConcern.W1).should {
-                    it.shouldBeInstanceOf<JsonObject>()
+                Bson.encodeToBsonDocument(WriteConcernSerializer, WriteConcern.W1).should {
+                    it.shouldBeInstanceOf<BsonDocument>()
                     it["w"].should { w ->
                         w.shouldNotBeNull()
-                        w.shouldBeInstanceOf<JsonPrimitive>()
-                        w.isString shouldBe false
-                        w.intOrNull.shouldNotBeNull()
+                        w.shouldBeInstanceOf<BsonInt32>()
                     }
                 }
             }
@@ -46,25 +47,25 @@ class SerializationTests : FunSpec({
         context("deserialization") {
             test("{ w: 'majority' }") {
                 val str = stringifyAndPrint(
-                    buildJsonObject {
+                    buildBsonDocument {
                         put("w", "majority")
                     }
                 )
 
-                Json.decodeFromString(WriteConcernSerializer, str).should {
+                Bson.decodeFromString(WriteConcernSerializer, str).should {
                     it.wObject shouldBe "majority"
                 }
             }
 
             test("{ w: 'majority', wtimeout: 1000 }") {
                 val str = stringifyAndPrint(
-                    buildJsonObject {
+                    buildBsonDocument {
                         put("w", "majority")
                         put("wtimeout", 1000)
                     }
                 )
 
-                Json.decodeFromString(WriteConcernSerializer, str).should {
+                Bson.decodeFromString(WriteConcernSerializer, str).should {
                     it.wObject shouldBe "majority"
                     it.getWTimeout(TimeUnit.MILLISECONDS) shouldBe 1000
                 }
@@ -72,25 +73,25 @@ class SerializationTests : FunSpec({
 
             test("{ w: 1 }") {
                 val str = stringifyAndPrint(
-                    buildJsonObject {
+                    buildBsonDocument {
                         put("w", 1)
                     }
                 )
 
-                Json.decodeFromString(WriteConcernSerializer, str).should {
+                Bson.decodeFromString(WriteConcernSerializer, str).should {
                     it.wObject shouldBe 1
                 }
             }
 
             test("{ w: 1, j: false }") {
                 val str = stringifyAndPrint(
-                    buildJsonObject {
+                    buildBsonDocument {
                         put("w", 1)
                         put("j", false)
                     }
                 )
 
-                Json.decodeFromString(WriteConcernSerializer, str).should {
+                Bson.decodeFromString(WriteConcernSerializer, str).should {
                     it.wObject shouldBe 1
                     it.journal shouldBe false
                 }
@@ -100,13 +101,13 @@ class SerializationTests : FunSpec({
 
     context("ReadConcern") {
         test("deserialize") {
-            Json.decodeFromString(ReadConcernSerializer, "\"majority\"").should {
+            Bson.decodeFromString(ReadConcernSerializer, "\"majority\"").should {
                 it.level shouldBe ReadConcernLevel.MAJORITY
             }
         }
 
         test("serialize") {
-            Json.encodeToString(ReadConcernSerializer, ReadConcern.MAJORITY).should {
+            Bson.encodeToString(ReadConcernSerializer, ReadConcern.MAJORITY).should {
                 it shouldBe "\"majority\""
             }
         }
@@ -114,39 +115,39 @@ class SerializationTests : FunSpec({
 
     context("ReadPreference") {
         test("deserialize") {
-            Json.decodeFromString(ReadPreferenceSerializer, "\"secondaryPreferred\"").should {
+            Bson.decodeFromString(ReadPreferenceSerializer, "\"secondaryPreferred\"").should {
                 it.name shouldBe ReadPreference.secondaryPreferred().name
             }
         }
 
         test("serialize") {
-            Json.encodeToString(ReadPreferenceSerializer, ReadPreference.secondaryPreferred()).should {
+            Bson.encodeToString(ReadPreferenceSerializer, ReadPreference.secondaryPreferred()).should {
                 it shouldBe "\"secondaryPreferred\""
             }
         }
     }
 
     context("UpdateOptions") {
-        val optionsStr = stringifyAndPrint(buildJsonObject {
+        val optionsStr = stringifyAndPrint(buildBsonDocument {
             put("upsert", true)
             put("bypassDocumentValidation", true)
             put("hintString", "myHint")
-            putJsonObject("hint") {
+            putBsonDocument("hint") {
                 put("status", 1)
             }
             put("comment", "myComment")
-            putJsonArray("arrayFilters") {
-                addJsonObject {
+            putBsonArray("arrayFilters") {
+                addBsonDocument {
                     put("first.a", 123)
                 }
-                addJsonObject {
+                addBsonDocument {
                     put("second.b", "abc")
                 }
             }
         })
 
         test("deserialize") {
-            Json.decodeFromString(UpdateOptionsSerializer, optionsStr).should {
+            Bson.decodeFromString(UpdateOptionsSerializer, optionsStr).should {
                 it.isUpsert shouldBe true
                 it.comment?.asString()?.value shouldBe "myComment"
                 it.hintString shouldBe "myHint"
@@ -159,7 +160,7 @@ class SerializationTests : FunSpec({
     }
 
     context("TransactionOptions") {
-        val txOptionsStr = stringifyAndPrint(buildJsonObject {
+        val txOptionsStr = stringifyAndPrint(buildBsonDocument {
             put("readConcern", "available")
             put("readPreference", "nearest")
             put("writeConcern", 1)
@@ -167,8 +168,7 @@ class SerializationTests : FunSpec({
         })
 
         test("deserialize") {
-
-            Json.decodeFromString(TransactionOptionsSerializer, txOptionsStr).should {
+            Bson.decodeFromString(TransactionOptionsSerializer, txOptionsStr).should {
                 it.readConcern shouldBe ReadConcern.AVAILABLE
                 it.writeConcern shouldBe WriteConcern.W1
                 it.readPreference.shouldNotBeNull().name shouldBe ReadPreference.nearest().name
@@ -184,19 +184,19 @@ class SerializationTests : FunSpec({
                 .readPreference(ReadPreference.nearest())
                 .build()
 
-            Json.encodeToJsonElement(TransactionOptionsSerializer, txOptions).should {
-                it.shouldBeInstanceOf<JsonObject>()
+            Bson.encodeToBsonDocument(TransactionOptionsSerializer, txOptions).should {
+                it.shouldBeInstanceOf<BsonDocument>()
                 it["readConcern"].should { rc ->
-                    rc.shouldBeInstanceOf<JsonPrimitive>().content shouldBe "available"
+                    rc shouldBe "available".toBson()
                 }
                 it["readPreference"].should { rp ->
-                    rp.shouldBeInstanceOf<JsonPrimitive>().content shouldBe "nearest"
+                    rp shouldBe "nearest".toBson()
                 }
                 it["writeConcern"].should { wc ->
-                    wc.shouldBeInstanceOf<JsonObject>()
+                    wc.shouldBeInstanceOf<BsonDocument>()
                 }
                 it["maxCommitTimeMS"].should { wc ->
-                    wc.shouldBeInstanceOf<JsonPrimitive>().intOrNull shouldBe 1000
+                    wc shouldBe 1000L.toBson()
                 }
             }
         }

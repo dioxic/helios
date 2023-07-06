@@ -1,13 +1,10 @@
 package uk.dioxic.helios.generate.codecs
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
 import org.bson.*
 import org.bson.codecs.*
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.codecs.jsr310.Jsr310CodecProvider
-import org.bson.json.JsonReader
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorTransformer
 import uk.dioxic.helios.generate.Template
@@ -15,7 +12,6 @@ import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.defaultBsonT
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.idFieldName
 import uk.dioxic.helios.generate.codecs.BaseDocumentCodec.Companion.rootOperatorKey
 import uk.dioxic.helios.generate.operators.ObjectIdOperator
-import uk.dioxic.helios.generate.putRootOperator
 import uk.dioxic.helios.generate.codecs.DocumentCodecProvider as HeliosDocumentCodecProvider
 
 class TemplateCodec(
@@ -51,7 +47,7 @@ class TemplateCodec(
         val tMap = mutableMapOf<String, Any?>()
         val dMap = mutableMapOf<String, Any?>()
 
-        when (reader.currentBsonType) {
+        when (reader.currentBsonType ?: reader.readBsonType()) {
             BsonType.DOCUMENT -> {
                 reader.readStartDocument()
                 while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
@@ -69,30 +65,10 @@ class TemplateCodec(
                     tMap[rootOperatorKey] = transformed
                 }
             }
-            else -> error("Cannot decode ${reader.readBsonType()} to a Template")
+            else -> error("Cannot decode ${reader.currentBsonType} to a Template")
         }
 
         return Template(tMap, dMap)
-    }
-
-    fun decode(definition: JsonElement): Template {
-        val document = when (definition)  {
-            is JsonObject -> {
-                val jsonReader = JsonReader(Json.encodeToString(definition))
-                decode(jsonReader, DecoderContext.builder().build())
-            }
-            is JsonPrimitive -> {
-                require(definition.isString) {
-                    "template root definition must be a string but was $definition"
-                }
-                decode(buildJsonObject {
-                    putRootOperator(definition.content)
-                })
-            }
-            else -> error("template root definition must be an object or a string but was $definition")
-        }
-
-        return Template(document)
     }
 
     override fun getDocumentId(template: Template): BsonValue {

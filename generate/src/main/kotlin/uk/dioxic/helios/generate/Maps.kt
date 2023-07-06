@@ -1,17 +1,10 @@
 package uk.dioxic.helios.generate
 
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 import org.bson.BsonDocument
 import org.bson.BsonValue
 
 fun Map<String, Any?>.flatten(separator: Char = '.', leafOnly: Boolean = false) =
     mutableMapOf<String, Any?>().also {
-        flatten(it, this, separator, leafOnly)
-    }.toMap()
-
-fun JsonObject.flatten(separator: Char = '.', leafOnly: Boolean = false) =
-    mutableMapOf<String, JsonElement>().also {
         flatten(it, this, separator, leafOnly)
     }.toMap()
 

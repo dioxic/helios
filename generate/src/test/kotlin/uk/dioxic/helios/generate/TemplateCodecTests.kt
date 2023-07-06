@@ -1,5 +1,6 @@
 package uk.dioxic.helios.generate
 
+import io.kotest.assertions.asClue
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.shouldForAll
@@ -11,14 +12,16 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.json.*
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.bson.buildBsonDocument
+import kotlinx.serialization.bson.decodeFromBsonDocument
+import org.bson.BsonDocument
 import org.bson.Document
 import org.bson.codecs.EncoderContext
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriter
 import org.bson.json.JsonWriterSettings
 import org.bson.types.ObjectId
-import uk.dioxic.helios.generate.codecs.TemplateCodec
 import uk.dioxic.helios.generate.operators.*
 import uk.dioxic.helios.generate.test.shouldBeWrapped
 import java.io.StringWriter
@@ -27,18 +30,20 @@ class TemplateCodecTests : FunSpec({
 
     context("decode") {
 
-        fun decodeAndPrint(jsonObject: JsonObject): Template =
-            TemplateCodec().decode(jsonObject).also {
-                println(it)
+        fun decodeAndPrint(document: BsonDocument): Template {
+            println("bson: $document")
+            return Bson.decodeFromBsonDocument<Template>(document).also {
+                println("template: $it")
             }
+        }
 
         test("top level operators") {
-            val jsonObject = buildJsonObject {
+            val document = buildBsonDocument {
                 putOperator<NameOperator>("name")
                 putOperator<ObjectIdOperator>("oid")
             }
 
-            decodeAndPrint(jsonObject).should { template ->
+            decodeAndPrint(document).should { template ->
                 template.shouldContainKeys("name", "oid")
                 template["name"].shouldBeInstanceOf<NameOperator>()
                 template["oid"].shouldBeInstanceOf<ObjectIdOperator>()
@@ -47,21 +52,29 @@ class TemplateCodecTests : FunSpec({
         }
 
         test("nested operators") {
-            val jsonObject = buildJsonObject {
-                putJsonObject("subDoc") {
-                    putJsonObject("subSubDoc") {
+            val document = buildBsonDocument {
+                putBsonDocument("subDoc") {
+                    putBsonDocument("subSubDoc") {
                         putOperator<ObjectIdOperator>("oid")
                     }
                 }
             }
 
-            decodeAndPrint(jsonObject).should { template ->
-                template shouldContainKey "subDoc"
-                template["subDoc"].shouldBeInstanceOf<Map<String, Any>>().should { subDoc ->
-                    subDoc shouldContainKey "subSubDoc"
-                    subDoc["subSubDoc"].shouldBeInstanceOf<Map<String, Any>>().should { subSubDoc ->
-                        subSubDoc shouldContainKey "oid"
-                        subSubDoc["oid"].shouldBeInstanceOf<ObjectIdOperator>()
+            decodeAndPrint(document).should { template ->
+                "verifying template=$template".asClue {
+                    template shouldContainKey "subDoc"
+                    template["subDoc"].should { subDoc ->
+                        "verifying subDoc=$subDoc".asClue {
+                            subDoc.shouldBeInstanceOf<Map<String, Any>>()
+                            subDoc shouldContainKey "subSubDoc"
+                            subDoc["subSubDoc"].should { subSubDoc ->
+                                "verifying subSubDoc=$subSubDoc".asClue {
+                                    subSubDoc.shouldBeInstanceOf<Map<String, Any>>()
+                                    subSubDoc shouldContainKey "oid"
+                                    subSubDoc["oid"].shouldBeInstanceOf<ObjectIdOperator>()
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -69,14 +82,14 @@ class TemplateCodecTests : FunSpec({
         }
 
         test("operators as input to operators") {
-            val jsonObject = buildJsonObject {
+            val document = buildBsonDocument {
                 putOperatorObject<ArrayOperator>("array") {
                     putOperator<ObjectIdOperator>("of")
                     put("number", 3)
                 }
             }
 
-            decodeAndPrint(jsonObject).should { template ->
+            decodeAndPrint(document).should { template ->
                 template shouldContainKey "array"
                 template["array"]
                     .shouldBeInstanceOf<ArrayOperator>()
@@ -89,9 +102,9 @@ class TemplateCodecTests : FunSpec({
         }
 
         test("map with nested operators as input to operators") {
-            val jsonObject = buildJsonObject {
+            val document = buildBsonDocument {
                 putOperatorObject<ArrayOperator>("array") {
-                    putJsonObject("of") {
+                    putBsonDocument("of") {
                         putOperator<NameOperator>("name")
                         putOperator<ObjectIdOperator>("id")
                     }
@@ -99,7 +112,7 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            decodeAndPrint(jsonObject).should { template ->
+            decodeAndPrint(document).should { template ->
                 template shouldContainKey "array"
                 template["array"]
                     .shouldBeInstanceOf<ArrayOperator>()
@@ -117,9 +130,9 @@ class TemplateCodecTests : FunSpec({
         }
 
         test("array with nested operators as input to operators") {
-            val jsonObject = buildJsonObject {
+            val document = buildBsonDocument {
                 putOperatorObject<ArrayOperator>("array") {
-                    putJsonArray("of") {
+                    putBsonArray("of") {
                         addOperator<ObjectIdOperator>()
                         addOperator<ObjectIdOperator>()
                     }
@@ -127,7 +140,7 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            decodeAndPrint(jsonObject).should { template ->
+            decodeAndPrint(document).should { template ->
                 template shouldContainKey "array"
                 template["array"]
                     .shouldBeInstanceOf<ArrayOperator>()

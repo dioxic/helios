@@ -18,8 +18,8 @@ import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
 import com.mongodb.MongoClientSettings
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.put
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.decodeFromString
 import uk.dioxic.helios.cli.checkConnection
 import uk.dioxic.helios.cli.options.*
 import uk.dioxic.helios.execute.buildBenchmark
@@ -66,7 +66,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
-    ).convert { Json.decodeFromString<Template>(it.readText()) }
+    ).convert { Bson.decodeFromString<Template>(it.readText()) }
 
     @OptIn(ExperimentalTime::class)
     override fun run() {

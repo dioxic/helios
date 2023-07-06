@@ -1,17 +1,16 @@
 package uk.dioxic.helios.execute.serialization
 
-import kotlinx.serialization.json.JsonContentPolymorphicSerializer
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.bson.BsonContentPolymorphicSerializer
+import org.bson.BsonDocument
 import uk.dioxic.helios.execute.model.FixedRate
 import uk.dioxic.helios.execute.model.PeriodRate
 import uk.dioxic.helios.execute.model.TpsRate
 
-object FixedRateSerializer : JsonContentPolymorphicSerializer<FixedRate>(FixedRate::class) {
+object FixedRateSerializer : BsonContentPolymorphicSerializer<FixedRate>(FixedRate::class) {
 
-    override fun selectDeserializer(element: JsonElement) = when {
-        "tps" in element.jsonObject -> TpsRate.serializer()
-        "period" in element.jsonObject -> PeriodRate.serializer()
+    override fun selectDeserializer(element: BsonDocument) = when {
+        "tps" in element.asDocument() -> TpsRate.serializer()
+        "period" in element.asDocument() -> PeriodRate.serializer()
         else -> error("cannot deserialize $element")
     }
 }

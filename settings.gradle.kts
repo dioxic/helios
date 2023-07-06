@@ -13,6 +13,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        mavenLocal()
     }
 }
 include("generate")

@@ -9,11 +9,11 @@ import org.bson.json.JsonMode
 import org.bson.json.JsonWriter
 import org.bson.json.JsonWriterSettings
 import uk.dioxic.helios.generate.codecs.TemplateCodec
-import uk.dioxic.helios.generate.serialization.BsonTemplateSerializer
+import uk.dioxic.helios.generate.serialization.TemplateSerializer
 import java.io.StringWriter
 
-@Serializable(BsonTemplateSerializer::class)
-class Template(map: Map<String, *>, val definition: Map<String, *>? = null) : Document(map) {
+@Serializable(TemplateSerializer::class)
+class Template(val map: Map<String, *>, val definition: Map<String, *>? = null) : Document(map) {
 
     private val defaultJsonWriter = JsonWriterSettings.builder()
         .indent(true)
@@ -35,8 +35,12 @@ class Template(map: Map<String, *>, val definition: Map<String, *>? = null) : Do
     companion object {
         val defaultCodec = TemplateCodec(uuidRepresentation = UuidRepresentation.STANDARD)
 
-        val EMPTY = Template(emptyMap<String, Any>())
+        val EMPTY = Template(emptyMap<String, Any>(), emptyMap<String, Any>())
 
+    }
+
+    override fun toString(): String {
+        return "Template{$map}"
     }
 }
 

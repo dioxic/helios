@@ -17,6 +17,7 @@ kotlinCoroutines = "1.7.2"
 kotlinDatetime = "0.4.0"
 kotlinPoet = "1.13.2"
 kotlinSerialization = "1.5.1"
+kotlinBsonSerialization = "1.0-SNAPSHOT"
 ksp = "1.8.22-1.0.11"
 log4j = "2.20.0"
 mockk = "1.13.5"
@@ -56,6 +57,7 @@ kotlin-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.r
 kotlin-poet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinPoet" }
 kotlin-poetKsp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinPoet" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-serialization-bson = { module = "uk.dioxic.kotlinx:kotlinx-serialization-bson", version.ref = "kotlinBsonSerialization" }
 kotlin-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinSerialization" }
 kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
