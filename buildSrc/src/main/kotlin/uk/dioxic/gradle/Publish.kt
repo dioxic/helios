@@ -33,3 +33,14 @@ internal fun MavenPublication.configurePom(
         }
     }
 }
+
+internal fun MavenPublication.configureVersionMapping() {
+    versionMapping {
+        usage("java-api") {
+            fromResolutionOf("runtimeClasspath")
+        }
+        usage("java-runtime") {
+            fromResolutionResult()
+        }
+    }
+}
