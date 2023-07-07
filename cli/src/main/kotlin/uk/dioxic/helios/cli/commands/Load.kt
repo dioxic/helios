@@ -120,7 +120,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                         benchmark.execute(registry, concurrency)
                             .format(ReportFormatter.create(outputFormat))
                             .collect {
-                                print(it)
+                                println(it)
                             }
                     }
                     println("\nCompleted in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")
