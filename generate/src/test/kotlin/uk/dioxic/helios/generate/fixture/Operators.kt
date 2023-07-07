@@ -1,9 +1,9 @@
 package uk.dioxic.helios.generate.fixture
 
-import uk.dioxic.helios.generate.KeyedOperator
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.Wrapped
 import uk.dioxic.helios.generate.annotations.Alias
+import uk.dioxic.helios.generate.operators.KeyedOperator
 
 
 sealed class AbstractTestOperator : Operator<String> {

@@ -3,6 +3,7 @@ package uk.dioxic.helios.generate
 import kotlinx.serialization.bson.*
 import uk.dioxic.helios.generate.OperatorFactory.operatorPrefix
 import uk.dioxic.helios.generate.annotations.Alias
+import uk.dioxic.helios.generate.operators.KeyedOperator
 import uk.dioxic.helios.generate.operators.RootOperator
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind

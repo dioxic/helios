@@ -5,6 +5,7 @@ import arrow.core.mapOrAccumulate
 import arrow.core.nonEmptyListOf
 import arrow.core.raise.*
 import uk.dioxic.helios.generate.exceptions.*
+import uk.dioxic.helios.generate.operators.KeyedOperator
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.KType
