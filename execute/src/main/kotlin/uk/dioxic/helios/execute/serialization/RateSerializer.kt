@@ -9,9 +9,9 @@ import uk.dioxic.helios.execute.model.TpsRate
 
 object RateSerializer : BsonContentPolymorphicSerializer<Rate>(Rate::class) {
 
-    override fun selectDeserializer(element: BsonDocument) = when {
-        "period" in element.asDocument() -> PeriodRate.serializer()
-        "rampDuration" in element.asDocument() -> RampedRate.serializer()
+    override fun selectDeserializer(document: BsonDocument) = when {
+        "period" in document.asDocument() -> PeriodRate.serializer()
+        "rampDuration" in document.asDocument() -> RampedRate.serializer()
         else -> TpsRate.serializer()
     }
 }

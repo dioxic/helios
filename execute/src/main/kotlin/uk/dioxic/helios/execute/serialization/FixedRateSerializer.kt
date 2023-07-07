@@ -8,9 +8,9 @@ import uk.dioxic.helios.execute.model.TpsRate
 
 object FixedRateSerializer : BsonContentPolymorphicSerializer<FixedRate>(FixedRate::class) {
 
-    override fun selectDeserializer(element: BsonDocument) = when {
-        "tps" in element.asDocument() -> TpsRate.serializer()
-        "period" in element.asDocument() -> PeriodRate.serializer()
-        else -> error("cannot deserialize $element")
+    override fun selectDeserializer(document: BsonDocument) = when {
+        "tps" in document.asDocument() -> TpsRate.serializer()
+        "period" in document.asDocument() -> PeriodRate.serializer()
+        else -> error("cannot deserialize $document")
     }
 }
