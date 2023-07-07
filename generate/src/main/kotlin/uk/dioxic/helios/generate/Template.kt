@@ -1,46 +1,27 @@
 package uk.dioxic.helios.generate
 
 import kotlinx.serialization.Serializable
+import org.bson.BsonDocument
+import org.bson.BsonDocumentWrapper
+import org.bson.BsonValue
 import org.bson.Document
-import org.bson.UuidRepresentation
-import org.bson.codecs.Encoder
-import org.bson.codecs.EncoderContext
-import org.bson.json.JsonMode
-import org.bson.json.JsonWriter
-import org.bson.json.JsonWriterSettings
-import uk.dioxic.helios.generate.codecs.TemplateCodec
+import org.bson.codecs.configuration.CodecRegistry
+import org.bson.conversions.Bson
 import uk.dioxic.helios.generate.serialization.TemplateSerializer
-import java.io.StringWriter
 
 @Serializable(TemplateSerializer::class)
-class Template(val map: Map<String, *>, val definition: Map<String, *>? = null) : Document(map) {
-
-    private val defaultJsonWriter = JsonWriterSettings.builder()
-        .indent(true)
-        .outputMode(JsonMode.RELAXED)
-        .build()
-
-    override fun toJson(writerSettings: JsonWriterSettings?, encoder: Encoder<Document>): String =
-        throw UnsupportedOperationException()
-
-    override fun toJson(writerSettings: JsonWriterSettings): String {
-        val writer = JsonWriter(StringWriter(), writerSettings)
-        defaultCodec.encode(writer, this, EncoderContext.builder().build())
-        return writer.writer.toString()
-    }
-
-    override fun toJson(): String =
-        this.toJson(defaultJsonWriter)
+class Template(val execution: Document, val definition: BsonValue? = null): Bson {
 
     companion object {
-        val defaultCodec = TemplateCodec(uuidRepresentation = UuidRepresentation.STANDARD)
-
-        val EMPTY = Template(emptyMap<String, Any>(), emptyMap<String, Any>())
-
+        val EMPTY = Template(Document(), BsonDocument())
     }
 
-    override fun toString(): String {
-        return "Template{$map}"
+    override fun <TDocument : Any> toBsonDocument(
+        documentClass: Class<TDocument>,
+        codecRegistry: CodecRegistry
+    ): BsonDocument {
+        return BsonDocumentWrapper(execution, codecRegistry[Document::class.java])
     }
+
 }
 

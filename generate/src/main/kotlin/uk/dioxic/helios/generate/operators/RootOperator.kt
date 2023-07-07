@@ -6,9 +6,9 @@ import uk.dioxic.helios.generate.Wrapped
 import uk.dioxic.helios.generate.annotations.Alias
 
 @Alias("root")
-class RootOperator(val value: Wrapped<Map<String,Any?>>) : Operator<Map<String,Any?>> {
+class RootOperator(val value: Wrapped<Any?>) : Operator<Any?> {
 
     context(OperatorContext)
-    override fun invoke(): Map<String,Any?> =
+    override fun invoke(): Any? =
         value.invoke()
 }

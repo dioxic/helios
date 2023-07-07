@@ -12,47 +12,51 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.serialization.bson.Bson
 import kotlinx.serialization.bson.buildBsonDocument
-import kotlinx.serialization.bson.decodeFromBsonDocument
 import org.bson.BsonDocument
+import org.bson.BsonInvalidOperationException
 import org.bson.Document
+import org.bson.codecs.DecoderContext
 import org.bson.codecs.EncoderContext
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriter
 import org.bson.json.JsonWriterSettings
 import org.bson.types.ObjectId
+import uk.dioxic.helios.generate.codecs.DocumentCodec
 import uk.dioxic.helios.generate.operators.*
 import uk.dioxic.helios.generate.test.shouldBeWrapped
 import java.io.StringWriter
 
-class TemplateCodecTests : FunSpec({
+class DocumentCodecTests : FunSpec({
+
+    fun BsonDocument.decode(): Document {
+        println("bson: $this")
+        return DocumentCodec().decode(asBsonReader(), DecoderContext.builder().build())
+    }
 
     context("decode") {
 
-        fun decodeAndPrint(document: BsonDocument): Template {
-            println("bson: $document")
-            return Bson.decodeFromBsonDocument<Template>(document).also {
-                println("template: $it")
-            }
-        }
+//        fun decodeAndPrint(document: BsonDocument): Document {
+//            println("bson: $document")
+//            return DocumentCodec().decode(document.asBsonReader(), DecoderContext.builder().build())
+//        }
 
         test("top level operators") {
-            val document = buildBsonDocument {
+            val definition = buildBsonDocument {
                 putOperator<NameOperator>("name")
                 putOperator<ObjectIdOperator>("oid")
             }
 
-            decodeAndPrint(document).should { template ->
-                template.shouldContainKeys("name", "oid")
-                template["name"].shouldBeInstanceOf<NameOperator>()
-                template["oid"].shouldBeInstanceOf<ObjectIdOperator>()
+            definition.decode().should { document ->
+                document.shouldContainKeys("name", "oid")
+                document["name"].shouldBeInstanceOf<NameOperator>()
+                document["oid"].shouldBeInstanceOf<ObjectIdOperator>()
             }
 
         }
 
         test("nested operators") {
-            val document = buildBsonDocument {
+            val definition = buildBsonDocument {
                 putBsonDocument("subDoc") {
                     putBsonDocument("subSubDoc") {
                         putOperator<ObjectIdOperator>("oid")
@@ -60,10 +64,10 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            decodeAndPrint(document).should { template ->
-                "verifying template=$template".asClue {
-                    template shouldContainKey "subDoc"
-                    template["subDoc"].should { subDoc ->
+            definition.decode().should { document ->
+                "verifying document=$document".asClue {
+                    document shouldContainKey "subDoc"
+                    document["subDoc"].should { subDoc ->
                         "verifying subDoc=$subDoc".asClue {
                             subDoc.shouldBeInstanceOf<Map<String, Any>>()
                             subDoc shouldContainKey "subSubDoc"
@@ -82,16 +86,16 @@ class TemplateCodecTests : FunSpec({
         }
 
         test("operators as input to operators") {
-            val document = buildBsonDocument {
+            val definition = buildBsonDocument {
                 putOperatorObject<ArrayOperator>("array") {
                     putOperator<ObjectIdOperator>("of")
                     put("number", 3)
                 }
             }
 
-            decodeAndPrint(document).should { template ->
-                template shouldContainKey "array"
-                template["array"]
+            definition.decode().should { document ->
+                document shouldContainKey "array"
+                document["array"]
                     .shouldBeInstanceOf<ArrayOperator>()
                     .should { array ->
                         array.of.shouldBeInstanceOf<ObjectIdOperator>()
@@ -102,7 +106,7 @@ class TemplateCodecTests : FunSpec({
         }
 
         test("map with nested operators as input to operators") {
-            val document = buildBsonDocument {
+            val definition = buildBsonDocument {
                 putOperatorObject<ArrayOperator>("array") {
                     putBsonDocument("of") {
                         putOperator<NameOperator>("name")
@@ -112,9 +116,9 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            decodeAndPrint(document).should { template ->
-                template shouldContainKey "array"
-                template["array"]
+            definition.decode().should { document ->
+                document shouldContainKey "array"
+                document["array"]
                     .shouldBeInstanceOf<ArrayOperator>()
                     .should { array ->
                         array.of.shouldBeWrapped<Map<String, Any?>> { of ->
@@ -130,7 +134,7 @@ class TemplateCodecTests : FunSpec({
         }
 
         test("array with nested operators as input to operators") {
-            val document = buildBsonDocument {
+            val definition = buildBsonDocument {
                 putOperatorObject<ArrayOperator>("array") {
                     putBsonArray("of") {
                         addOperator<ObjectIdOperator>()
@@ -140,9 +144,9 @@ class TemplateCodecTests : FunSpec({
                 }
             }
 
-            decodeAndPrint(document).should { template ->
-                template shouldContainKey "array"
-                template["array"]
+            definition.decode().should { document ->
+                document shouldContainKey "array"
+                document["array"]
                     .shouldBeInstanceOf<ArrayOperator>()
                     .should { array ->
                         array.of.shouldBeWrapped<List<*>> { of ->
@@ -164,102 +168,109 @@ class TemplateCodecTests : FunSpec({
             .outputMode(JsonMode.RELAXED)
             .build()
 
-        fun encodeAndPrint(template: Template, collectible: Boolean = false): Document {
+        fun encode(document: Document, collectible: Boolean = true): Document {
             val writer = JsonWriter(StringWriter(), writerSettings)
             val encoderContext = EncoderContext.builder().isEncodingCollectibleDocument(collectible).build()
-            Template.defaultCodec.encode(writer, template, encoderContext)
-            val json = writer.writer.toString()
-            println(json)
-            return Document.parse(json)
+            DocumentCodec().encode(writer, document, encoderContext)
+            return writer.writer.toString().let { json ->
+                Document.parse(json)
+            }
         }
 
-        test("root operator is a map containing operators") {
+        test("nested operators") {
             val cities = listOf("London", "Belfast")
-            val root = mapOf(
+            val document = mapOf(
                 "address" to mapOf(
                     "cities" to ChooseOperator(from = { cities })
                 )
-            )
-            val template = templateOf(rootKey to root)
+            ).toDocument()
 
-            encodeAndPrint(template).should {
-                it shouldContainKey "address"
+            encode(document).should {
+                it.shouldContainKeys("address")
                 it["address"].shouldBeInstanceOf<Document>().should { address ->
                     address shouldContainKey "cities"
-                    println(address["cities"])
                     address["cities"] shouldBeIn cities
                 }
             }
         }
 
-        test("root operator is a simple map") {
-            val template = templateOf(
-                rootKey to mapOf("animal" to "halibut")
-            )
+        context("root operator") {
 
-            encodeAndPrint(template).should {
-                it shouldContainKey "animal"
-                it["animal"] shouldBe "halibut"
+            test("should fail when root operator is not a document") {
+                val document = mapOf(rootKey to RootOperator { "halibut" }).toDocument()
+
+                shouldThrowExactly<BsonInvalidOperationException> {
+                    encode(document)
+                }
             }
-        }
 
-        test("should fail when root operator is not a map") {
-            val template = templateOf(rootKey to "halibut")
+            test("operator without _id") {
+                val personDoc = mapOf(
+                    "type" to "person",
+                    "height" to 12
+                ).toDocument()
+                val orgDoc = mapOf(
+                    "type" to "org",
+                    "orgId" to 123
+                ).toDocument()
+                val document = mapOf(rootKey to RootOperator(
+                    ChooseOperator(
+                        from = { listOf(personDoc, orgDoc) }
+                    )
+                )).toDocument()
 
-            shouldThrowExactly<IllegalArgumentException> {
-                encodeAndPrint(template)
+                encode(document).should {
+                    it.shouldContainKeys("_id", "type")
+                    it["_id"].shouldBeInstanceOf<ObjectId>()
+                    it["type"] shouldBeIn listOf("person", "org")
+                }
             }
-        }
 
-        test("root operator is an operator") {
-            val personMap = mapOf(
-                "type" to "person",
-                "height" to 12
-            )
-            val orgMap = mapOf(
-                "type" to "org",
-                "orgId" to 123
-            )
-            val template = templateOf(rootKey to ChooseOperator(
-                from = { listOf(personMap, orgMap) }
-            ))
+            test("operator with _id") {
+                val personDoc = mapOf(
+                    "_id" to "Bob",
+                    "type" to "person",
+                    "height" to 12
+                ).toDocument()
+                val document = mapOf(rootKey to RootOperator(
+                    ChooseOperator(
+                        from = { listOf(personDoc) }
+                    )
+                )).toDocument()
 
-            encodeAndPrint(template).should {
-                it shouldContainKey "type"
-                it["type"] shouldBeIn listOf("person", "org")
+                encode(document).should {
+                    it.shouldContainKeys("_id", "type")
+                    it["_id"] shouldBe "Bob"
+                    it["type"] shouldBeIn listOf("person", "org")
+                }
             }
-        }
 
-        test("takes the _id from the root operator if present") {
-            val root = mapOf(
-                "_id" to "myId",
-                "name" to "Bob",
-            )
-            val template = templateOf(rootKey to root)
+            test("document with _id") {
+                val root = mapOf(
+                    "_id" to "myId",
+                    "name" to "Bob",
+                ).toDocument()
+                val document = mapOf(rootKey to RootOperator { root }).toDocument()
 
-            Template.defaultCodec.generateIdIfAbsentFromDocument(template)
-
-            encodeAndPrint(template, true).should {
-                it.shouldContainKeys("_id", "name")
-                it["_id"] shouldBe root["_id"]
-                it["name"] shouldBe root["name"]
+                encode(document, true).should {
+                    it.shouldContainKeys("_id", "name")
+                    it["_id"] shouldBe root["_id"]
+                    it["name"] shouldBe root["name"]
+                }
             }
-        }
 
-        test("takes the _id from the template if not present on the root") {
-            val root = mapOf(
-                "name" to "Bob",
-            )
-            val template = templateOf(rootKey to root)
+            test("document without _id") {
+                val root = mapOf(
+                    "name" to "Bob",
+                ).toDocument()
+                val document = mapOf(rootKey to RootOperator { root }).toDocument()
 
-            Template.defaultCodec.generateIdIfAbsentFromDocument(template)
-
-            encodeAndPrint(template, true).should {
-                it.shouldContainKeys("_id", "name")
-                it["_id"].shouldBeInstanceOf<ObjectId>()
-                it["name"] shouldBe "Bob"
+                encode(document, true).should {
+                    it.shouldContainKeys("_id", "name")
+                    it["_id"].shouldBeInstanceOf<ObjectId>()
+                    it["name"] shouldBe root["name"]
+                }
             }
         }
     }
-
 })

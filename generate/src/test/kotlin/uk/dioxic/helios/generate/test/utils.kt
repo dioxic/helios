@@ -1,7 +1,6 @@
 package uk.dioxic.helios.generate.test
 
 import uk.dioxic.helios.generate.OperatorContext
-import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.hydrate
 
 fun readResource(filename: String) =
@@ -23,7 +22,7 @@ fun <R> withEmptyContext(block: OperatorContext.() -> R) = with(OperatorContext.
 //    return res
 //}
 
-fun Template.hydrateAndPrint(): Map<String, *> {
+fun Map<String, *>.hydrateAndPrint(): Map<String, *> {
     val res = with(OperatorContext.EMPTY) { this@hydrateAndPrint.hydrate() }
     println(res)
     return res

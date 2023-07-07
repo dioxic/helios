@@ -6,15 +6,15 @@ import org.bson.codecs.Codec
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.EncoderContext
 import org.bson.codecs.configuration.CodecRegistry
-import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.OperatorContext
+import uk.dioxic.helios.generate.Wrapped
 
-class OperatorExecutionCodec(
+class WrappedCodec(
     private val registry: CodecRegistry
-) : Codec<Operator<*>> {
+) : Codec<Wrapped<*>> {
 
     @Suppress("UNCHECKED_CAST")
-    override fun encode(writer: BsonWriter, value: Operator<*>, encoderContext: EncoderContext) {
+    override fun encode(writer: BsonWriter, value: Wrapped<*>, encoderContext: EncoderContext) {
         with(OperatorContext.threadLocal.get()) {
             when (val unwrappedValue = value()) {
                 null -> writer.writeNull()
@@ -26,10 +26,10 @@ class OperatorExecutionCodec(
         }
     }
 
-    override fun getEncoderClass(): Class<Operator<*>> =
-        Operator::class.java
+    override fun getEncoderClass(): Class<Wrapped<*>> =
+        Wrapped::class.java
 
-    override fun decode(reader: BsonReader, decoderContext: DecoderContext): Operator<*> {
-        error("Decode not implemented")
+    override fun decode(reader: BsonReader, decoderContext: DecoderContext): Wrapped<*> {
+        throw UnsupportedOperationException("decode not supported for operator codecs")
     }
 }
