@@ -1,7 +1,6 @@
 package uk.dioxic.helios.execute.serialization
 
 import com.mongodb.WriteConcern
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.bson.BsonValueSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -16,7 +15,6 @@ import org.bson.BsonString
 import org.bson.BsonValue
 import java.util.concurrent.TimeUnit
 
-@OptIn(ExperimentalSerializationApi::class)
 object WriteConcernSerializer : KSerializer<WriteConcern> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor("WriteConcern") {
