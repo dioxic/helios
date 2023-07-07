@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import uk.dioxic.gradle.libs
 
 plugins {
@@ -5,6 +6,10 @@ plugins {
     alias(libs.plugins.ksp)
     `kotlin-conventions`
     `with-docs`
+}
+
+tasks.withType<KotlinCompilationTask<*>> {
+    compilerOptions.freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
 }
 
 dependencies {
