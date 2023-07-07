@@ -28,7 +28,7 @@ import uk.dioxic.helios.execute.format.ReportFormat
 import uk.dioxic.helios.execute.format.ReportFormatter
 import uk.dioxic.helios.execute.format.format
 import uk.dioxic.helios.execute.model.CommandExecutor
-import uk.dioxic.helios.execute.model.InsertOneExecutor
+import uk.dioxic.helios.execute.model.InsertManyExecutor
 import uk.dioxic.helios.execute.model.TpsRate
 import uk.dioxic.helios.execute.model.UnlimitedRate
 import uk.dioxic.helios.execute.mongodb.cached
@@ -98,12 +98,12 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                     name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
                     count = number / amendedBatchSize,
                     rate = amendedRate,
-                    executor = InsertOneExecutor(
+                    executor = InsertManyExecutor(
                         database = namespaceOptions.database,
                         collection = namespaceOptions.collection,
                         template = template,
-//                        number = amendedBatchSize,
-//                        ordered = ordered,
+                        count = amendedBatchSize,
+                        ordered = ordered,
                     )
                 )
             }
