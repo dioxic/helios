@@ -15,8 +15,9 @@ inline fun buildTemplate(builderAction: BsonDocumentBuilder.() -> Unit): Templat
     return Bson.decodeFromBsonDocument<Template>(buildBsonDocument(builderAction))
 }
 
+
 /**
- * Add an operator to a JsonArray.
+ * Add an operator to a BsonArray.
  *
  * Example output:
  * ```
@@ -29,7 +30,7 @@ inline fun <reified T> BsonArrayBuilder.addOperatorObject(noinline builderAction
     }
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -39,7 +40,7 @@ inline fun <reified T> BsonArrayBuilder.addOperatorObject(noinline builderAction
  *   }
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  */
 fun BsonDocumentBuilder.putOperatorObject(
     key: String,
@@ -51,7 +52,7 @@ fun BsonDocumentBuilder.putOperatorObject(
     }
 
 /**
- * Puts a keyed operator in a JsonObject.
+ * Puts a keyed operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -61,7 +62,7 @@ fun BsonDocumentBuilder.putOperatorObject(
  *   }
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  * @param subKey the key of the KeyedOperator
  */
 inline fun <reified T : KeyedOperator<*>> BsonDocumentBuilder.putKeyedOperatorObject(
@@ -74,7 +75,7 @@ inline fun <reified T : KeyedOperator<*>> BsonDocumentBuilder.putKeyedOperatorOb
     }
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -84,7 +85,7 @@ inline fun <reified T : KeyedOperator<*>> BsonDocumentBuilder.putKeyedOperatorOb
  *   }
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  */
 inline fun <reified T> BsonDocumentBuilder.putOperatorObject(
     key: String,
@@ -108,7 +109,7 @@ inline fun <reified T> getOperatorKey(subkey: String): String =
     "${getOperatorKey<T>()}.$subkey"
 
 /**
- * Add an operator to a JsonArray.
+ * Add an operator to a BsonArray.
  *
  * Example output:
  * ```
@@ -122,7 +123,7 @@ inline fun <reified T : Operator<*>> BsonArrayBuilder.addOperator(value: String)
     }
 
 /**
- * Add an operator to a JsonArray.
+ * Add an operator to a BsonArray.
  *
  * Example output:
  * ```
@@ -133,7 +134,7 @@ inline fun <reified T : Operator<*>> BsonArrayBuilder.addOperator(): Boolean =
     add(getOperatorKey<T>())
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -141,14 +142,14 @@ inline fun <reified T : Operator<*>> BsonArrayBuilder.addOperator(): Boolean =
  *   "key": "$operator.subKey"
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  * @param subKey the sub key of the KeyedOperator
  */
 inline fun <reified T : Operator<*>> BsonDocumentBuilder.putKeyedOperator(key: String, subKey: String): Boolean =
     put(key, "${getOperatorKey<T>()}.$subKey")
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -156,13 +157,13 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putKeyedOperator(key: S
  *   "key": "$operator"
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  */
 inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String): Boolean =
     put(key, getOperatorKey<T>())
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -172,7 +173,7 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String
  *   }
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  * @param value the value to pass to the Operator
  */
 inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String, value: String): Boolean =
@@ -181,7 +182,7 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String
     }
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -195,7 +196,7 @@ fun BsonDocumentBuilder.putRootOperator(value: String): Boolean =
     put(getOperatorKey<RootOperator>(), value)
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -205,7 +206,7 @@ fun BsonDocumentBuilder.putRootOperator(value: String): Boolean =
  *   }
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  * @param value the value to pass to the Operator
  */
 inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String, value: Number): Boolean =
@@ -214,7 +215,7 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String
     }
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -224,7 +225,7 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String
  *   }
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  * @param value the value to pass to the Operator
  */
 inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String, value: Boolean): Boolean =
@@ -233,7 +234,7 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String
     }
 
 /**
- * Puts an operator in a JsonObject.
+ * Puts an operator in a BsonDocument.
  *
  * Example output:
  * ```
@@ -243,7 +244,7 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String
  *   }
  * }
  * ```
- * @param key the key in the JsonObject
+ * @param key the key in the BsonDocument
  * @param value the value to pass to the Operator
  */
 inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String, value: List<String>): Boolean =
