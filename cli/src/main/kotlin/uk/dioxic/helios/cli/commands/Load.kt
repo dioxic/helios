@@ -100,7 +100,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                         database = namespaceOptions.database,
                         collection = namespaceOptions.collection,
                         template = template,
-                        count = amendedBatchSize,
+                        size = amendedBatchSize,
                         ordered = ordered,
                     )
                 )

@@ -113,8 +113,8 @@ class InsertManyExecutor(
     override val database: String,
     override val collection: String,
     val template: Template,
-    val count: Int,
-    private val ordered: Boolean,
+    val size: Int = 1,
+    private val ordered: Boolean = true,
 ) : CollectionExecutor(), WriteModelExecutor {
 
     @Transient
@@ -122,14 +122,14 @@ class InsertManyExecutor(
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<Template>().insertMany(session, List(count) { template }, options).standardize()
+        getCollection<Template>().insertMany(session, List(size) { template }, options).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().insertMany(List(count) { template }, options).standardize()
+        getCollection<Template>().insertMany(List(size) { template }, options).standardize()
 
     override suspend fun writeModel() =
-        List(count) { InsertOneModel(template) }
+        List(size) { InsertOneModel(template) }
 }
 
 @Serializable
