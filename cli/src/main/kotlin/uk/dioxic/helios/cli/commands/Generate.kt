@@ -29,7 +29,7 @@ class Generate : CliktCommand(help = "Generate data and output to a file or stdo
     private val outputType by option(help = "output type").switch(
         "--pretty" to OutputType.PRETTY,
         "--jsonArray" to OutputType.ARRAY
-    ).default(OutputType.NEWLINE)
+    ).default(OutputType.PRETTY)
     private val template by argument(name = "template").file(
         mustBeReadable = true,
         mustExist = true,
