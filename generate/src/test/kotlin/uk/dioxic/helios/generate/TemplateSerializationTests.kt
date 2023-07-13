@@ -32,7 +32,7 @@ class TemplateSerializationTests : FunSpec({
 
     test("decode") {
         bson.decodeFromBsonDocument<Template>(definition).should {template ->
-            template.execution.should {
+            template.should {
                 it["color"].shouldBeInstanceOf<ChooseOperator>()
                 it["height"].shouldBeInstanceOf<IntOperator>()
                 it["address"].should { addr ->

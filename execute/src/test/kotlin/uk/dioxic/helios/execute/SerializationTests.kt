@@ -393,7 +393,7 @@ class SerializationTests : FunSpec({
                 .first()
                 .executor
                 .shouldBeInstanceOf<InsertOneExecutor>()
-                .template.execution["name"]
+                .template["name"]
                 .shouldBeInstanceOf<Operator<String>>()
         }
 

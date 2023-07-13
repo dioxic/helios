@@ -38,7 +38,7 @@ class Generate : CliktCommand(help = "Generate data and output to a file or stdo
 
     override fun run() {
         outputStream.bufferedWriter().use {
-            val seq = generateSequence { template.execution }
+            val seq = generateSequence { template }
                 .take(number)
 
             it.writeJson(seq, HeliosDocumentCodec(), outputType.jsonWriterSettings(), outputType.isArray())
