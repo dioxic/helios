@@ -39,7 +39,6 @@ import uk.dioxic.helios.generate.buildTemplate
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
-import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 import uk.dioxic.helios.generate.codecs.DocumentCodec as HeliosDocumentCodec
 
@@ -68,7 +67,6 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         canBeDir = false
     ).convert { Bson.decodeFromString<Template>(it.readText()) }
 
-    @OptIn(ExperimentalTime::class)
     override fun run() {
 
         val mcs = MongoClientSettings.builder()
