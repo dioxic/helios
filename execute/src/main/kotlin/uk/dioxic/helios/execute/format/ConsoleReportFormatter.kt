@@ -94,6 +94,8 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                                 val outMsg = "\n${fRes.context.workload.name} completed in ${fRes.duration}"
                                 when (fRes) {
                                     is TimedMessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
+                                    is TimedCommandResult -> emit ("$outMsg [res:${fRes.value.document}")
+                                    is TimedErrorResult -> emit( "$outMsg [err: ${fRes.value.error.message}")
                                     else -> emit(outMsg)
                                 }
                             } else {
