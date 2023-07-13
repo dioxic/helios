@@ -18,6 +18,21 @@ tasks.withType<DependencyUpdatesTask> {
     }
 }
 
+
+repositories {
+    mavenCentral()
+    maven {
+        url = uri("https://maven.pkg.github.com/dioxic/kotlinx-serialization-bson")
+        credentials {
+            val ghUsername: String? by project
+            val ghToken: String? by project
+            username = ghUsername
+            password = ghToken
+        }
+    }
+}
+
+
 fun isNonStable(version: String): Boolean {
     val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
     val regex = "^[0-9,.v-]+(-r)?$".toRegex()

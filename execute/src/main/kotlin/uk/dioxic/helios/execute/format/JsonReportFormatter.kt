@@ -2,8 +2,8 @@ package uk.dioxic.helios.execute.format
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.bson.Bson
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import uk.dioxic.helios.execute.FrameworkMessage
 import uk.dioxic.helios.execute.ProgressMessage
 import uk.dioxic.helios.execute.StageCompleteMessage
@@ -13,7 +13,7 @@ import uk.dioxic.helios.execute.results.TimedResult
 
 object JsonReportFormatter : ReportFormatter() {
 
-    val json = Json {
+    val json = Bson {
         encodeDefaults = false
     }
 

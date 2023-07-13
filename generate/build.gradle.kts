@@ -11,7 +11,7 @@ dependencies {
     implementation(libs.arrow.core)
     implementation(libs.kotlin.datetime)
     implementation(libs.kotlin.serialization.core)
-    implementation(libs.kotlin.serialization.json)
+    implementation(libs.kotlin.serialization.bson)
     implementation(libs.faker)
     implementation(libs.kotlin.reflect)
     implementation(libs.reflections)

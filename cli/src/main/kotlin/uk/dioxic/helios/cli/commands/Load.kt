@@ -18,8 +18,8 @@ import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
 import com.mongodb.MongoClientSettings
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.put
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.decodeFromString
 import uk.dioxic.helios.cli.checkConnection
 import uk.dioxic.helios.cli.options.*
 import uk.dioxic.helios.execute.buildBenchmark
@@ -28,7 +28,7 @@ import uk.dioxic.helios.execute.format.ReportFormat
 import uk.dioxic.helios.execute.format.ReportFormatter
 import uk.dioxic.helios.execute.format.format
 import uk.dioxic.helios.execute.model.CommandExecutor
-import uk.dioxic.helios.execute.model.InsertOneExecutor
+import uk.dioxic.helios.execute.model.InsertManyExecutor
 import uk.dioxic.helios.execute.model.TpsRate
 import uk.dioxic.helios.execute.model.UnlimitedRate
 import uk.dioxic.helios.execute.mongodb.cached
@@ -36,12 +36,12 @@ import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoClient
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
-import uk.dioxic.helios.generate.codecs.TemplateCodec
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
+import uk.dioxic.helios.generate.codecs.DocumentCodec as HeliosDocumentCodec
 
 class Load : CliktCommand(help = "Load data directly into MongoDB") {
     init {
@@ -66,7 +66,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
-    ).convert { Json.decodeFromString<Template>(it.readText()) }
+    ).convert { Bson.decodeFromString<Template>(it.readText()) }
 
     @OptIn(ExperimentalTime::class)
     override fun run() {
@@ -74,7 +74,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         val mcs = MongoClientSettings.builder()
             .applyAuthOptions(authOptions)
             .applyConnectionOptions(connOptions)
-            .codecRegistry(TemplateCodec.defaultRegistry)
+            .codecRegistry(HeliosDocumentCodec.defaultRegistry)
             .build()
 
         val amendedBatchSize = min(batchSize, number.toInt())
@@ -98,12 +98,12 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                     name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
                     count = number / amendedBatchSize,
                     rate = amendedRate,
-                    executor = InsertOneExecutor(
+                    executor = InsertManyExecutor(
                         database = namespaceOptions.database,
                         collection = namespaceOptions.collection,
                         template = template,
-//                        number = amendedBatchSize,
-//                        ordered = ordered,
+                        count = amendedBatchSize,
+                        ordered = ordered,
                     )
                 )
             }
@@ -120,7 +120,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                         benchmark.execute(registry, concurrency)
                             .format(ReportFormatter.create(outputFormat))
                             .collect {
-                                print(it)
+                                println(it)
                             }
                     }
                     println("\nCompleted in $duration (${(number / duration.toDouble(DurationUnit.SECONDS)).roundToInt()} inserts/s)")

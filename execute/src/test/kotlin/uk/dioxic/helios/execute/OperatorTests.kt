@@ -8,9 +8,8 @@ import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.bson.Bson
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.put
 import org.bson.types.ObjectId
 import uk.dioxic.helios.execute.model.Benchmark
 import uk.dioxic.helios.execute.model.MessageExecutor
@@ -24,7 +23,7 @@ import kotlin.time.Duration
 
 class OperatorTests : FunSpec({
 
-    val json = Json {
+    val bson = Bson {
         prettyPrint = true
     }
 
@@ -39,7 +38,7 @@ class OperatorTests : FunSpec({
                 put("animal", "halibut")
             }
 
-            println(json.encodeToString(template))
+            println(bson.encodeToString(template))
 
             suspend fun Benchmark.verify() {
                 execute().filterIsInstance<ProgressMessage>().collect { msg ->

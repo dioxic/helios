@@ -23,8 +23,6 @@ internal fun MavenPublication.configurePom(
                 id.set("dioxic")
                 name.set("Mark Baker-Munton")
                 email.set("dioxic@gmail.com")
-                organization.set("MongoDB")
-                organizationUrl.set("https://www.mongodb.com/")
             }
         }
 
@@ -32,6 +30,17 @@ internal fun MavenPublication.configurePom(
             connection.set("scm:git:git://github.com/dioxic/helios.git")
             developerConnection.set("scm:git:git@github.com:dioxic/helios.git")
             url.set("https://github.com/dioxic/helios")
+        }
+    }
+}
+
+internal fun MavenPublication.configureVersionMapping() {
+    versionMapping {
+        usage("java-api") {
+            fromResolutionOf("runtimeClasspath")
+        }
+        usage("java-runtime") {
+            fromResolutionResult()
         }
     }
 }

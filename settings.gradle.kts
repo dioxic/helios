@@ -10,11 +10,6 @@ pluginManagement {
     }
 }
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-    }
-}
 include("generate")
 include("cli")
 include("execute")

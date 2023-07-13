@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import uk.dioxic.gradle.libs
 
 plugins {
@@ -5,6 +6,10 @@ plugins {
     alias(libs.plugins.ksp)
     `kotlin-conventions`
     `with-docs`
+}
+
+tasks.withType<KotlinCompilationTask<*>> {
+    compilerOptions.freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
 }
 
 dependencies {
@@ -19,8 +24,8 @@ dependencies {
     implementation(libs.arrow.resilience)
     implementation(libs.kotlin.datetime)
     implementation(libs.kotlin.coroutines.core)
+    implementation(libs.kotlin.serialization.bson)
     implementation(libs.kotlin.serialization.core)
-    implementation(libs.kotlin.serialization.json)
     implementation(libs.bundles.logging)
     testImplementation(libs.kotlin.coroutines.test)
     testImplementation(libs.mockk)

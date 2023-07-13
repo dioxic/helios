@@ -1,7 +1,4 @@
-import uk.dioxic.gradle.configurePom
-import uk.dioxic.gradle.isJavaLibraryProject
-import uk.dioxic.gradle.isKotlinMultiplatformProject
-import uk.dioxic.gradle.isPlatformProject
+import uk.dioxic.gradle.*
 
 plugins {
     `maven-publish`
@@ -30,6 +27,7 @@ configure<PublishingExtension> {
                     }
 
                     configurePom(project)
+                    configureVersionMapping()
                 }
 
             isPlatformProject ->
@@ -46,13 +44,13 @@ configure<PublishingExtension> {
             else ->
                 println("Unknown publication")
         }
-    }
 
-    repositories {
-        maven {
-            name = "kotlinSpace"
-            url = uri("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-js-wrappers")
-            credentials(org.gradle.api.artifacts.repositories.PasswordCredentials::class)
+        repositories {
+            maven {
+                val releasesRepoUrl = layout.buildDirectory.dir("repos/releases")
+                val snapshotsRepoUrl = layout.buildDirectory.dir("repos/snapshots")
+                url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
+            }
         }
     }
 }
@@ -63,4 +61,10 @@ signing {
     })
 
     sign(publishing.publications)
+}
+
+tasks.javadoc {
+    if (JavaVersion.current().isJava9Compatible) {
+        (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
+    }
 }

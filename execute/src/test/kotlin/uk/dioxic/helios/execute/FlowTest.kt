@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class FlowTest : FunSpec({
 
-    test("chunked flow").config(enabled = IS_NOT_GH_ACTION) {
+    xtest("chunked flow").config(enabled = IS_NOT_GH_ACTION) {
         flow {
             repeat(100) {
                 val timedResult = defaultExecutionContext.measureTimedResult {

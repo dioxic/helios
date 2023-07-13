@@ -2,9 +2,11 @@ package uk.dioxic.helios.execute.format
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.json.*
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.bson.encodeToBsonDocument
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
+import org.bson.*
 import uk.dioxic.helios.execute.FrameworkMessage
 import uk.dioxic.helios.execute.ProgressMessage
 import uk.dioxic.helios.execute.StageCompleteMessage
@@ -14,6 +16,7 @@ import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.execute.serialization.DurationConsoleSerializer
 import uk.dioxic.helios.execute.serialization.IntPercentSerializer
 import uk.dioxic.helios.generate.flatten
+import java.time.Instant
 import kotlin.math.max
 import kotlin.time.Duration
 
@@ -34,7 +37,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
             p99 = Duration.ZERO,
             max = Duration.ZERO
         )
-    ).toFlatMap(Json { encodeDefaults = true })
+    ).toFlatMap(Bson { encodeDefaults = true })
     private val fieldOrder = defaultOutputMap
         .map { (k, _) -> k }
         .mapIndexed { i, s -> s to i }
@@ -52,11 +55,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
     }
 
     private fun getDefaultValue(key: String) =
-        when (val v = defaultOutputMap[key]) {
-            is JsonPrimitive -> v.content
-            is JsonElement -> ("Default not supported for type ${v::class}")
-            else -> error("Default value not found")
-        }
+        defaultOutputMap[key]?.stringify() ?: error("Default value not found for $key")
 
     private fun Map<String, String>.getOrDefault(key: String) =
         this.getOrDefault(key, getDefaultValue(key))
@@ -97,8 +96,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
                                     is TimedMessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
                                     else -> emit(outMsg)
                                 }
-                            }
-                            else {
+                            } else {
                                 val resultsMap = fRes.toResultMap()
                                 val headerTick = count % printHeaderEvery == 0L
 
@@ -152,7 +150,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
             return true
         }
         val currentMap = current.toMap()
-        new.forEach {(name, len) ->
+        new.forEach { (name, len) ->
             val c = currentMap[name]
             if (c == null || c < len) {
                 return true
@@ -188,7 +186,7 @@ internal object ConsoleReportFormatter : ReportFormatter() {
     private fun StringBuilder.appendPaddedAfter(value: String, length: Int, padChar: Char = ' '): StringBuilder =
         append(value).appendChar(length - value.length, padChar.toString())
 
-    private val json = Json {
+    private val json = Bson {
         encodeDefaults = false
         serializersModule = SerializersModule {
             contextual(DurationConsoleSerializer)
@@ -198,25 +196,42 @@ internal object ConsoleReportFormatter : ReportFormatter() {
 
     private fun OutputResult.toStringMap(): Map<String, String> =
         toFlatMap(json)
-            .mapValues { (_, v) -> v.jsonPrimitive.content }
+            .mapValues { (_, v) -> v.stringify() }
 
-    private fun OutputResult.toFlatMap(json: Json): Map<String, JsonElement> =
-        json.encodeToJsonElement(this).jsonObject.flatten(' ', true)
+    private fun OutputResult.toFlatMap(bson: Bson): Map<String, BsonValue> =
+        bson.encodeToBsonDocument(this).flatten(' ', true)
 
     private fun TimedResult.toResultMap(stageName: String = ""): ResultMap =
         toOutputResult(stageName)
             .toFlatMap(json)
-            .mapValues { (_, v) -> v.jsonPrimitive.content }
+            .mapValues { (_, v) -> v.stringify() }
 
     context(Duration)
     private fun SummarizedResult.toResultMap(stageName: String = ""): ResultMap =
         toOutputResult(stageName)
             .toFlatMap(json)
-            .mapValues { (_, v) -> v.jsonPrimitive.content }
+            .mapValues { (_, v) -> v.stringify() }
 
     private fun SummarizedResultsBatch.toResultMapList(stageName: String = ""): List<ResultMap> =
         with(batchDuration) {
             results.map { it.toResultMap(stageName) }
         }
+
+    private fun BsonValue.stringify() =
+        when (this) {
+            is BsonNumber -> this.toNumber().toString()
+            is BsonString -> this.value
+            is BsonBoolean -> this.value.toString()
+            is BsonDateTime -> Instant.ofEpochMilli(this.value).toString()
+            else -> error("cannot convert type ${this::class.simpleName} to a String")
+        }
+
+    private fun BsonNumber.toNumber(): Number = when (this) {
+        is BsonInt32 -> this.value
+        is BsonInt64 -> this.value
+        is BsonDouble -> this.value
+        is BsonDecimal128 -> this.value.bigDecimalValue()
+        else -> error("cannot convert type ${this::class.simpleName} to a Number")
+    }
 
 }

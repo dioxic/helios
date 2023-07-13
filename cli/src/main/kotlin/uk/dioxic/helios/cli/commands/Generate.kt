@@ -12,11 +12,12 @@ import com.github.ajalt.clikt.parameters.types.defaultStdout
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.outputStream
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.bson.Bson
+import kotlinx.serialization.decodeFromString
 import uk.dioxic.helios.cli.enums.OutputType
 import uk.dioxic.helios.cli.extensions.writeJson
 import uk.dioxic.helios.generate.Template
-import uk.dioxic.helios.generate.codecs.TemplateCodec
+import uk.dioxic.helios.generate.codecs.DocumentCodec as HeliosDocumentCodec
 
 class Generate : CliktCommand(help = "Generate data and output to a file or stdout") {
     init {
@@ -33,14 +34,14 @@ class Generate : CliktCommand(help = "Generate data and output to a file or stdo
         mustBeReadable = true,
         mustExist = true,
         canBeDir = false
-    ).convert { Json.decodeFromString<Template>(it.readText()) }
+    ).convert { Bson.decodeFromString<Template>(it.readText()) }
 
     override fun run() {
         outputStream.bufferedWriter().use {
-            val seq = generateSequence { template }
+            val seq = generateSequence { template.execution }
                 .take(number)
 
-            it.writeJson(seq, TemplateCodec(), outputType.jsonWriterSettings(), outputType.isArray())
+            it.writeJson(seq, HeliosDocumentCodec(), outputType.jsonWriterSettings(), outputType.isArray())
         }
 
     }

@@ -11,11 +11,10 @@ import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
-@OptIn(ExperimentalTime::class, FlowPreview::class)
+@OptIn(FlowPreview::class)
 fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry(),
     concurrency: Int = 4,
@@ -63,7 +62,6 @@ fun Benchmark.produceParallel(
     add(produceWeighted(stage, weightedWorkloads))
 }.merge().flowOn(Dispatchers.Default)
 
-@OptIn(ExperimentalTime::class)
 fun Benchmark.produceWeighted(
     stage: Stage,
     workloads: List<WeightedWorkload>
@@ -93,7 +91,6 @@ fun Benchmark.produceWeighted(
     }
 }
 
-@OptIn(ExperimentalTime::class)
 fun Benchmark.produceRated(
     stage: Stage,
     workload: RateWorkload
@@ -126,7 +123,6 @@ suspend fun ExecutionContext.delay() {
     }
 }
 
-@OptIn(ExperimentalTime::class)
 inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
 

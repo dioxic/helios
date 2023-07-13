@@ -1,17 +1,11 @@
 package uk.dioxic.helios.generate
 
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 import org.bson.BsonDocument
 import org.bson.BsonValue
+import org.bson.Document
 
 fun Map<String, Any?>.flatten(separator: Char = '.', leafOnly: Boolean = false) =
     mutableMapOf<String, Any?>().also {
-        flatten(it, this, separator, leafOnly)
-    }.toMap()
-
-fun JsonObject.flatten(separator: Char = '.', leafOnly: Boolean = false) =
-    mutableMapOf<String, JsonElement>().also {
         flatten(it, this, separator, leafOnly)
     }.toMap()
 
@@ -20,10 +14,8 @@ fun BsonDocument.flatten(separator: Char = '.', leafOnly: Boolean = false) =
         flatten(it, this, separator, leafOnly)
     }.toMap()
 
-fun <V> templateOf(pair: Pair<String, V>): Template = Template(mapOf(pair))
-
-fun <V> templateOf(vararg pairs: Pair<String, V>): Template =
-    Template(mapOf(*pairs))
+fun Map<String, Any?>.toDocument() =
+    Document(this)
 
 @Suppress("UNCHECKED_CAST")
 private fun <T> flatten(
@@ -64,3 +56,7 @@ private fun getKey(prefix: String, separator: Char, suffix: String) =
     } else {
         "$prefix$separator$suffix"
     }
+
+inline fun <reified O: Operator<*>> MutableMap<String, Any>.putOperator(key: String) {
+    put(key, getOperatorKey<O>())
+}

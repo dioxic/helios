@@ -1,6 +1,5 @@
 package uk.dioxic.helios.generate.operators
 
-import uk.dioxic.helios.generate.KeyedOperator
 import uk.dioxic.helios.generate.OperatorContext
 import uk.dioxic.helios.generate.annotations.Alias
 
