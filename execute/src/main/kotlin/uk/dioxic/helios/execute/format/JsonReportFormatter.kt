@@ -11,9 +11,9 @@ import uk.dioxic.helios.execute.StageStartMessage
 import uk.dioxic.helios.execute.results.SummarizedResultsBatch
 import uk.dioxic.helios.execute.results.TimedResult
 
-object JsonReportFormatter : ReportFormatter() {
+data object JsonReportFormatter : ReportFormatter() {
 
-    val json = Bson {
+    val bson = Bson {
         encodeDefaults = false
     }
 
@@ -31,13 +31,13 @@ object JsonReportFormatter : ReportFormatter() {
                             fRes.results.forEach { result ->
                                 with(fRes.batchDuration) {
                                     emit(
-                                        json.encodeToString(result.toOutputResult(currentStageName))
+                                        bson.encodeToString(result.toOutputResult(currentStageName))
                                     )
                                 }
                             }
                         }
                         is TimedResult -> {
-                            emit(json.encodeToString(fRes.toOutputResult(currentStageName)))
+                            emit(bson.encodeToString(fRes.toOutputResult(currentStageName)))
                         }
                     }
                 }

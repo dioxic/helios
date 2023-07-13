@@ -23,7 +23,7 @@ import kotlin.time.Duration
 private typealias Columns = List<Pair<String, Int>>
 private typealias ResultMap = Map<String, String>
 
-internal object ConsoleReportFormatter : ReportFormatter() {
+internal data object ConsoleReportFormatter : ReportFormatter() {
     private const val padding = 3
     private const val printHeaderEvery = 10
     private val defaultOutputMap = OutputResult(
