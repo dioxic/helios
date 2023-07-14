@@ -20,7 +20,7 @@ data class DocumentCodecProvider @JvmOverloads constructor(
         if (clazz == CodeWithScope::class.java) {
             return CodeWithScopeCodec(registry.get(Document::class.java)) as Codec<T>
         }
-        return if (clazz == Document::class.java) {
+        return if (Document::class.java.isAssignableFrom(clazz)) {
             DocumentCodec(
                 registry = registry,
                 bsonTypeClassMap = bsonTypeClassMap,
