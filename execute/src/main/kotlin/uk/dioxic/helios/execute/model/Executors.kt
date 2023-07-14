@@ -19,6 +19,7 @@ import uk.dioxic.helios.execute.resources.mongoSession
 import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.execute.serialization.TransactionOptionsSerializer
 import uk.dioxic.helios.generate.Template
+import uk.dioxic.helios.generate.buildTemplate
 import uk.dioxic.helios.generate.hydrate
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -66,6 +67,33 @@ class MessageExecutor(
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
         MessageResult(template.hydrate())
+
+}
+
+@Serializable
+@SerialName("drop")
+class DropExecutor(
+    override val database: String,
+    val collection: String?,
+) : DatabaseExecutor() {
+
+    val dropCommand = if (collection != null) {
+        CommandExecutor(database, buildTemplate {
+            put("dropDatabase", 1)
+        })
+    }else {
+        CommandExecutor(database, buildTemplate {
+            put("drop", database)
+        })
+    }
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(session: ClientSession): CommandResult =
+        dropCommand.execute(session)
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute() =
+        dropCommand.execute()
 
 }
 
