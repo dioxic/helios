@@ -81,11 +81,11 @@ class DropExecutor(
 
     val dropCommand = if (collection != null) {
         CommandExecutor(database, buildTemplate {
-            put("dropDatabase", 1)
+            put("drop", collection)
         })
     }else {
         CommandExecutor(database, buildTemplate {
-            put("drop", database)
+            put("dropDatabase", 1)
         })
     }
 
