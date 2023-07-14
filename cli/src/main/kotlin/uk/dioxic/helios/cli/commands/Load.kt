@@ -3,7 +3,7 @@ package uk.dioxic.helios.cli.commands
 import arrow.fx.coroutines.resourceScope
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context
-import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.convert
 import com.github.ajalt.clikt.parameters.groups.cooccurring
@@ -44,7 +44,7 @@ import uk.dioxic.helios.generate.codecs.DocumentCodec as HeliosDocumentCodec
 
 class Load : CliktCommand(help = "Load data directly into MongoDB") {
     init {
-        context { helpFormatter = CliktHelpFormatter(showDefaultValues = true) }
+        context { helpFormatter = { ctx -> MordantHelpFormatter(ctx, showDefaultValues = true)} }
     }
 
     private val authOptions by AuthOptions().cooccurring()

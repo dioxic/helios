@@ -2,7 +2,7 @@ package uk.dioxic.helios.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context
-import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.convert
 import com.github.ajalt.clikt.parameters.options.default
@@ -21,7 +21,7 @@ import uk.dioxic.helios.generate.codecs.DocumentCodec as HeliosDocumentCodec
 
 class Generate : CliktCommand(help = "Generate data and output to a file or stdout") {
     init {
-        context { helpFormatter = CliktHelpFormatter(showDefaultValues = true) }
+        context { helpFormatter = { ctx -> MordantHelpFormatter(ctx, showDefaultValues = true)} }
     }
 
     private val number by option("-n", "--number", help = "number of documents to generate").int().default(1)
