@@ -60,9 +60,9 @@
             "template": "$var.person"
           },
           "rate": {
-            "tps": 500
+            "tps": 300
           },
-          "count": 1000
+          "count": 100
         },
         {
           "name": "animals",
@@ -70,14 +70,56 @@
             "type": "insertMany",
             "database": "test",
             "collection": "animals",
-            "size": 100,
+            "size": 1000,
             "template": {
               "name": "$name",
               "salutation": "$var.person.salutation",
               "number": "$const.number"
             }
           },
-          "count": 2000
+          "count": 2000,
+          "rate": {
+            "tps": 800
+          }
+        }
+      ]
+    },
+    {
+      "type": "sequential",
+      "name": "deletes pre-index + bulk",
+      "workloads": [
+        {
+          "name": "bulk write",
+          "count": 100,
+          "executor": {
+            "type": "bulk",
+            "database": "test",
+            "collection": "birds",
+            "variables": {
+              "birdName": "$name"
+            },
+            "operations": [
+              {
+                "type": "insert",
+                "count": 100,
+                "template": {
+                  "birdName": "$var.birdName"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "delete animals",
+          "count": 1000,
+          "executor": {
+            "type": "deleteOne",
+            "database": "test",
+            "collection": "people",
+            "filter": {
+              "name": "$name"
+            }
+          }
         }
       ]
     },
@@ -117,7 +159,7 @@
     },
     {
       "type": "parallel",
-      "name": "deletes",
+      "name": "deletes post-index",
       "workloads": [
         {
           "name": "delete people",
@@ -133,7 +175,7 @@
         },
         {
           "name": "delete animals",
-          "count": 100000,
+          "count": 1000,
           "executor": {
             "type": "deleteOne",
             "database": "test",
