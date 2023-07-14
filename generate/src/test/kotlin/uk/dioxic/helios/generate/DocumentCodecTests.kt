@@ -52,7 +52,24 @@ class DocumentCodecTests : FunSpec({
                 document["name"].shouldBeInstanceOf<NameOperator>()
                 document["oid"].shouldBeInstanceOf<ObjectIdOperator>()
             }
+        }
 
+        test("root operator") {
+            val definition = buildBsonDocument {
+                putRoot {
+                    putOperator<NameOperator>("name")
+                    putOperator<ObjectIdOperator>("oid")
+                }
+            }
+
+            definition.decode().should { document ->
+                document.shouldContainKeys(rootKey)
+                document[rootKey].shouldBeInstanceOf<Document>().should { root ->
+                    root.shouldContainKeys("name", "oid")
+                    root["name"].shouldBeInstanceOf<NameOperator>()
+                    root["oid"].shouldBeInstanceOf<ObjectIdOperator>()
+                }
+            }
         }
 
         test("nested operators") {
@@ -162,7 +179,6 @@ class DocumentCodecTests : FunSpec({
     }
 
     context("encoding") {
-        val rootKey = getOperatorKey<RootOperator>()
         val writerSettings = JsonWriterSettings.builder()
             .indent(true)
             .outputMode(JsonMode.RELAXED)
@@ -173,6 +189,7 @@ class DocumentCodecTests : FunSpec({
             val encoderContext = EncoderContext.builder().isEncodingCollectibleDocument(collectible).build()
             DocumentCodec().encode(writer, document, encoderContext)
             return writer.writer.toString().let { json ->
+                println(json)
                 Document.parse(json)
             }
         }
@@ -197,7 +214,7 @@ class DocumentCodecTests : FunSpec({
         context("root operator") {
 
             test("should fail when root operator is not a document") {
-                val document = mapOf(rootKey to RootOperator { "halibut" }).toDocument()
+                val document = mapOf(rootKey to Wrapped { "halibut" }).toDocument()
 
                 shouldThrowExactly<BsonInvalidOperationException> {
                     encode(document)
@@ -213,11 +230,11 @@ class DocumentCodecTests : FunSpec({
                     "type" to "org",
                     "orgId" to 123
                 ).toDocument()
-                val document = mapOf(rootKey to RootOperator(
-                    ChooseOperator(
-                        from = { listOf(personDoc, orgDoc) }
-                    )
-                )).toDocument()
+                val document = mapOf(rootKey to
+                        ChooseOperator(
+                            from = { listOf(personDoc, orgDoc) }
+                        )
+                ).toDocument()
 
                 encode(document).should {
                     it.shouldContainKeys("_id", "type")
@@ -232,11 +249,11 @@ class DocumentCodecTests : FunSpec({
                     "type" to "person",
                     "height" to 12
                 ).toDocument()
-                val document = mapOf(rootKey to RootOperator(
-                    ChooseOperator(
-                        from = { listOf(personDoc) }
-                    )
-                )).toDocument()
+                val document = mapOf(rootKey to
+                        ChooseOperator(
+                            from = { listOf(personDoc) }
+                        )
+                ).toDocument()
 
                 encode(document).should {
                     it.shouldContainKeys("_id", "type")
@@ -250,7 +267,7 @@ class DocumentCodecTests : FunSpec({
                     "_id" to "myId",
                     "name" to "Bob",
                 ).toDocument()
-                val document = mapOf(rootKey to RootOperator { root }).toDocument()
+                val document = mapOf(rootKey to Wrapped { root }).toDocument()
 
                 encode(document, true).should {
                     it.shouldContainKeys("_id", "name")
@@ -263,7 +280,7 @@ class DocumentCodecTests : FunSpec({
                 val root = mapOf(
                     "name" to "Bob",
                 ).toDocument()
-                val document = mapOf(rootKey to RootOperator { root }).toDocument()
+                val document = mapOf(rootKey to Wrapped { root }).toDocument()
 
                 encode(document, true).should {
                     it.shouldContainKeys("_id", "name")

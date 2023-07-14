@@ -1,10 +1,11 @@
 package uk.dioxic.helios.generate
 
 import kotlinx.serialization.bson.*
+import org.bson.BsonDocument
 import uk.dioxic.helios.generate.OperatorFactory.operatorPrefix
 import uk.dioxic.helios.generate.annotations.Alias
 import uk.dioxic.helios.generate.operators.KeyedOperator
-import uk.dioxic.helios.generate.operators.RootOperator
+import uk.dioxic.helios.generate.operators.rootKey
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -193,8 +194,22 @@ inline fun <reified T : Operator<*>> BsonDocumentBuilder.putOperator(key: String
  * ```
  * @param value the value to pass to the Operator
  */
-fun BsonDocumentBuilder.putRootOperator(value: String): Boolean =
-    put(getOperatorKey<RootOperator>(), value)
+fun BsonDocumentBuilder.putRoot(value: String): Boolean =
+    put(rootKey, value)
+
+/**
+ * Add the [BSON object][BsonDocument] produced by the [builderAction] function to a root document operator.
+ * Example output:
+ * ```
+ * {
+ *   "$root": {
+ *     "builder1": 111,
+ *     "builder2": 222,
+ *   }
+ * }
+ */
+fun BsonDocumentBuilder.putRoot(builderAction: BsonDocumentBuilder.() -> Unit): Boolean =
+    put(rootKey, buildBsonDocument(builderAction))
 
 /**
  * Puts an operator in a BsonDocument.

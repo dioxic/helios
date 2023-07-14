@@ -20,7 +20,7 @@ class WrappedCodec(
                 null -> writer.writeNull()
                 else -> {
                     val codec = registry[unwrappedValue::class.java] as Codec<Any>
-                    encoderContext.encodeWithChildContext(codec, writer, unwrappedValue)
+                    codec.encode(writer, unwrappedValue, encoderContext)
                 }
             }
         }

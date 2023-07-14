@@ -13,7 +13,7 @@ import org.bson.BsonString
 import org.bson.codecs.DecoderContext
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.DocumentCodec
-import uk.dioxic.helios.generate.putRootOperator
+import uk.dioxic.helios.generate.putRoot
 
 object TemplateSerializer : KSerializer<Template> {
     override val descriptor: SerialDescriptor =
@@ -26,7 +26,7 @@ object TemplateSerializer : KSerializer<Template> {
         val bsonDoc = when (bsonValue) {
             is BsonDocument -> bsonValue
             is BsonString -> buildBsonDocument {
-                putRootOperator(bsonValue.value)
+                putRoot(bsonValue.value)
             }
             else -> error("deserialization from ${bsonValue.bsonType} not supported")
         }

@@ -112,7 +112,7 @@ class HydrationTests : FunSpec({
             "orgId" to 123
         )
         val hydrated = mapOf(
-            getOperatorKey<RootOperator>() to ChooseOperator(
+            rootKey to ChooseOperator(
                 from = { listOf(personMap, orgMap) }
             )
         ).hydrateAndPrint()

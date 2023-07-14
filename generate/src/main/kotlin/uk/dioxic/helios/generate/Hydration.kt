@@ -2,7 +2,7 @@
 
 package uk.dioxic.helios.generate
 
-import uk.dioxic.helios.generate.operators.RootOperator
+import uk.dioxic.helios.generate.operators.rootKey
 
 fun Template.hydrateAndFlatten(named: Named) =
     with(NamedContext(named)) {
@@ -17,13 +17,11 @@ context (OperatorContext)
 fun Template.hydrate(): Map<String, *> =
     hydrate(this) as Map<String, *>
 
-private val rootOperatorKey = getOperatorKey<RootOperator>()
-
 context (OperatorContext)
 fun hydrate(value: Any?): Any? =
     when (value) {
         is Map<*, *> -> {
-            value[rootOperatorKey]?.let { root ->
+            value[rootKey]?.let { root ->
                 hydrate(root).also {
                     require(it is Map<*, *>) {
                         "Root operator must resolve to a map"

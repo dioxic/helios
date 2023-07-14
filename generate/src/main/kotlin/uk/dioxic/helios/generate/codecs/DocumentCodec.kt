@@ -6,8 +6,7 @@ import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.codecs.jsr310.Jsr310CodecProvider
 import uk.dioxic.helios.generate.OperatorTransformer
-import uk.dioxic.helios.generate.getOperatorKey
-import uk.dioxic.helios.generate.operators.RootOperator
+import uk.dioxic.helios.generate.operators.rootKey
 import java.util.*
 import uk.dioxic.helios.generate.codecs.DocumentCodecProvider as HeliosDocumentCodecProvider
 
@@ -20,17 +19,14 @@ class DocumentCodec(
     private val uuidRepresentation: UuidRepresentation = UuidRepresentation.UNSPECIFIED
 ) : Codec<Document>, OverridableUuidRepresentationCodec<Document> {
 
-    private val rootOperatorCodec = RootOperatorCodec(registry)
-
     override fun getEncoderClass() =
         Document::class.java
 
     override fun encode(writer: BsonWriter, document: Document, encoderContext: EncoderContext) {
-        document[rootOperatorKey]?.let { rootOperator ->
-            if (rootOperator is RootOperator) {
-                rootOperatorCodec.encode(writer, rootOperator, encoderContext)
-                return
-            }
+        document[rootKey]?.let { root ->
+            val codec = registry.get(root.javaClass)
+            codec.encode(writer, root, encoderContext)
+            return
         }
 
         writer.writeStartDocument()
@@ -136,7 +132,6 @@ class DocumentCodec(
 
     companion object {
         const val idFieldName: String = "_id"
-        val rootOperatorKey = getOperatorKey<RootOperator>()
         val defaultBsonTypeClassMap: BsonTypeClassMap = BsonTypeClassMap()
         val defaultRegistry: CodecRegistry = CodecRegistries.fromProviders(
             listOf(
