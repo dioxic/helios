@@ -29,7 +29,6 @@ import uk.dioxic.helios.execute.format.format
 import uk.dioxic.helios.execute.format.toFormatString
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoClient
-import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 import uk.dioxic.helios.execute.model.Benchmark as ExBenchmark
 import uk.dioxic.helios.generate.codecs.DocumentCodec as HeliosDocumentCodec
@@ -50,7 +49,6 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
         canBeDir = false
     ).convert { Bson.decodeFromString<ExBenchmark>(it.readText()) }
 
-    @OptIn(ExperimentalTime::class)
     override fun run() {
 
         val mcs = MongoClientSettings.builder()
