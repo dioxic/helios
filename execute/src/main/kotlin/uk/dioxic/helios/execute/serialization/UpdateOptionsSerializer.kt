@@ -10,7 +10,6 @@ object UpdateOptionsSerializer : KSerializer<UpdateOptions> {
     override val descriptor: SerialDescriptor =
         UpdateOptionsSurrogate.serializer().descriptor
 
-
     override fun deserialize(decoder: Decoder): UpdateOptions {
         val surrogate = decoder.decodeSerializableValue(UpdateOptionsSurrogate.serializer())
         return UpdateOptions()
