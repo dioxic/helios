@@ -78,11 +78,15 @@ fun Benchmark.produceWeighted(
                 weights[it] = 0
                 weightSum = weights.sum()
             }
+            val variables = getLazyVariables(
+                benchmark = this@produceWeighted,
+                stage = stage,
+                workload = workloads[it],
+                context = contexts[it]
+            )
             contexts[it].copy(
                 executionCount = count,
-                variables = lazy(LazyThreadSafetyMode.NONE) {
-                    this@produceWeighted.variables + stage.variables + workloads[it].variables
-                }
+                variables = variables
             )
         }.also {
             emit(it)
@@ -97,17 +101,31 @@ fun Benchmark.produceRated(
 ): Flow<ExecutionContext> = flow {
     val context = workload.createContext(this@produceRated, stage)
     for (i in 1..context.workload.count) {
+        val variables = getLazyVariables(
+            benchmark = this@produceRated,
+            stage = stage,
+            workload = workload,
+            context = context
+        )
         context.copy(
             executionCount = i,
-            variables = lazy(LazyThreadSafetyMode.NONE) {
-                this@produceRated.variables + stage.variables + workload.variables
-            }
+            variables = variables
         ).also {
             emit(it)
             it.delay()
         }
     }
 }
+
+private fun getLazyVariables(benchmark: Benchmark, stage: Stage, workload: Workload, context: ExecutionContext) =
+    lazy(LazyThreadSafetyMode.NONE) {
+        val executor = context.executor
+        if (executor is Stateful) {
+            benchmark.variables + stage.variables + workload.variables + executor.variables
+        } else {
+            benchmark.variables + stage.variables + workload.variables
+        }
+    }
 
 suspend fun ExecutionContext.delay() {
     val delay = this.rate.calculateDelay()

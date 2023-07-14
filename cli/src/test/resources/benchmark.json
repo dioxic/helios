@@ -20,21 +20,25 @@
         {
           "name": "drop people collection",
           "executor": {
-            "type": "command",
+            "type": "drop",
             "database": "test",
-            "command": {
-              "drop": "people"
-            }
+            "collection": "people"
           }
         },
         {
           "name": "drop animals collection",
           "executor": {
-            "type": "command",
+            "type": "drop",
             "database": "test",
-            "command": {
-              "drop": "animals"
-            }
+            "collection": "animals"
+          }
+        },
+        {
+          "name": "drop birds collection",
+          "executor": {
+            "type": "drop",
+            "database": "test",
+            "collection": "birds"
           }
         }
       ]
@@ -99,6 +103,13 @@
               "birdName": "$name"
             },
             "operations": [
+              {
+                "type": "insert",
+                "count": 100,
+                "template": {
+                  "birdName": "$var.birdName"
+                }
+              },
               {
                 "type": "insert",
                 "count": 100,
