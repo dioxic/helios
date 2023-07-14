@@ -1,7 +1,16 @@
 {
   "name": "example benchmark",
   "variables": {
-    "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
+    "person": {
+      "_id": "$int",
+      "name": "$name",
+      "address": {
+        "city": { "$choose": ["London", "Belfast", "Madrid"] }
+      },
+      "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
+      "favFood": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
+      "age": { "$int":  { "min":  1, "max":  99 }}
+    }
   },
   "stages": [
     {
@@ -34,15 +43,7 @@
       "type": "parallel",
       "name": "load data",
       "variables": {
-        "person": {
-          "name": "$name",
-          "address": {
-            "city": { "$choose": ["London", "Belfast", "Madrid"] }
-          },
-          "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
-          "favFood": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
-          "age": { "$int":  { "min":  1, "max":  99 }}
-        }
+        "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
       },
       "constants": {
         "date": "$objectId",
@@ -61,21 +62,86 @@
           "rate": {
             "tps": 500
           },
-          "count": 100
+          "count": 1000
         },
         {
           "name": "animals",
           "executor": {
-            "type": "insertOne",
+            "type": "insertMany",
             "database": "test",
             "collection": "animals",
+            "size": 100,
             "template": {
-              "name": "badger",
+              "name": "$name",
               "salutation": "$var.person.salutation",
               "number": "$const.number"
             }
           },
-          "count": 200
+          "count": 2000
+        }
+      ]
+    },
+    {
+      "type": "sequential",
+      "name": "create indexes",
+      "constants": {
+        "indexes" : [{
+          "key": { "name":  1},
+          "name": "name_idx"
+        }]
+      },
+      "workloads": [
+        {
+          "name": "create indexes on people",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "createIndexes": "people",
+              "indexes": "$const.indexes"
+            }
+          }
+        },
+        {
+          "name": "create indexes on animals",
+          "executor": {
+            "type": "command",
+            "database": "test",
+            "command": {
+              "createIndexes": "animals",
+              "indexes": "$const.indexes"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "parallel",
+      "name": "deletes",
+      "workloads": [
+        {
+          "name": "delete people",
+          "count": 100,
+          "executor": {
+            "type": "deleteMany",
+            "database": "test",
+            "collection": "people",
+            "filter": {
+              "age": "$var.person.age"
+            }
+          }
+        },
+        {
+          "name": "delete animals",
+          "count": 100000,
+          "executor": {
+            "type": "deleteOne",
+            "database": "test",
+            "collection": "people",
+            "filter": {
+              "name": "$name"
+            }
+          }
         }
       ]
     }
