@@ -13,6 +13,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import uk.dioxic.helios.execute.Stateful
 import uk.dioxic.helios.execute.mongodb.withTransaction
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoSession
@@ -21,6 +22,7 @@ import uk.dioxic.helios.execute.serialization.TransactionOptionsSerializer
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
 import uk.dioxic.helios.generate.hydrate
+import uk.dioxic.helios.generate.hydrateAndFlatten
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -264,6 +266,30 @@ class UpdateManyExecutor(
 
     override suspend fun writeModel() =
         listOf(UpdateManyModel<Template>(filter, update, options))
+}
+
+@Serializable
+@SerialName("bulk")
+class BulkWriteExecutor(
+    override val database: String,
+    override val collection: String,
+    @SerialName("constants") override val constantsDefinition: Template = Template.EMPTY,
+    @SerialName("variables") override val variablesDefinition: Template = Template.EMPTY,
+    val operations: List<WriteOperation<Template>>
+) : CollectionExecutor(), Stateful {
+
+    @Transient
+    override val constants = lazy { constantsDefinition.hydrateAndFlatten(this) }
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(): ExecutionResult =
+        getCollection<Template>().bulkWrite(operations.flatMap { it.writeModels }).standardize()
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(session: ClientSession): ExecutionResult =
+        getCollection<Template>().bulkWrite(session, operations.flatMap { it.writeModels }).standardize()
+
+    override val name: String = "bulk"
 }
 
 @Serializable
