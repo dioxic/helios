@@ -42,8 +42,8 @@ sealed interface WriteModelExecutor : Executor {
 }
 
 @Serializable
-sealed class CollectionExecutor : MongoSessionExecutor {
-    abstract val database: String
+sealed class CollectionExecutor : DatabaseExecutor(), MongoSessionExecutor {
+    abstract override val database: String
     abstract val collection: String
 
     context(ResourceRegistry)
