@@ -14,6 +14,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
+typealias SharedVarsFlow = SharedFlow<Lazy<Map<String,Any?>>>
+
 /**
  * @param interval the message batching/summarization interval (0 to disable batching)
  */
@@ -63,7 +65,7 @@ fun Benchmark.produceExecutions(stage: Stage, variablesBufferSize: Int = 100): F
 @OptIn(ExperimentalCoroutinesApi::class)
 fun Benchmark.produceSequential(
     stage: SequentialStage,
-    variables: SharedFlow<Lazy<VarMap>>
+    variables: SharedVarsFlow
 ): Flow<ExecutionContext> =
     stage.workloads.asFlow().flatMapConcat { workload ->
         produceRated(stage, workload, variables)
@@ -71,7 +73,7 @@ fun Benchmark.produceSequential(
 
 fun Benchmark.produceParallel(
     stage: ParallelStage,
-    variables: SharedFlow<Lazy<VarMap>>
+    variables: SharedVarsFlow
 ): Flow<ExecutionContext> = buildList {
     val rateWorkloads = stage.workloads.filterIsInstance<RateWorkload>()
     val weightedWorkloads = stage.workloads.filterIsInstance<WeightedWorkload>()
@@ -83,7 +85,7 @@ fun Benchmark.produceParallel(
 fun Benchmark.produceWeighted(
     stage: Stage,
     workloads: List<WeightedWorkload>,
-    variables: SharedFlow<Lazy<VarMap>>
+    variables: SharedVarsFlow
 ): Flow<ExecutionContext> {
 
     val randomContext = flow {
@@ -120,7 +122,7 @@ fun Benchmark.produceWeighted(
 fun Benchmark.produceRated(
     stage: Stage,
     workload: RateWorkload,
-    variables: SharedFlow<Lazy<VarMap>>
+    variables: SharedVarsFlow
 ): Flow<ExecutionContext> {
     val context = workload.createContext(this@produceRated, stage)
 
