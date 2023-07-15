@@ -121,7 +121,7 @@ class OperatorTests : FunSpec({
                     }.distinctUntilChanged().count() shouldBe 4
             }
 
-            test("benchmark constant lookup is successful") {
+            test("benchmark variables lookup is successful") {
                 buildBenchmark(variables = variables) {
                     sequentialStage {
                         rateWorkload(executor = executor, count = 4)
@@ -129,7 +129,7 @@ class OperatorTests : FunSpec({
                 }.verify()
             }
 
-            test("stage constant lookup is successful") {
+            test("stage variables lookup is successful") {
                 buildBenchmark {
                     sequentialStage(variables = variables) {
                         rateWorkload(executor = executor, count = 4)
@@ -137,7 +137,7 @@ class OperatorTests : FunSpec({
                 }.verify()
             }
 
-            test("workload constant lookup is successful") {
+            test("workload variables lookup is successful") {
                 buildBenchmark {
                     sequentialStage {
                         rateWorkload(variables = variables, executor = executor, count = 4)
