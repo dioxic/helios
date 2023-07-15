@@ -52,7 +52,7 @@ fun Benchmark.produceExecutions(stage: Stage, variablesBufferSize: Int = 100): F
         }
     }.shareIn(
         scope = GlobalScope,
-        started = SharingStarted.WhileSubscribed(),
+        started = SharingStarted.Eagerly,
         replay = variablesBufferSize
     )
 
