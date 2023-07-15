@@ -24,15 +24,19 @@ fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry(),
     concurrency: Int = 4,
     interval: Duration = 1.seconds,
+    varBufferSize: Int = 100
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
         stages.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {
-                    produceExecutions(stage)
+                    produceExecutions(stage, varBufferSize)
                         .buffer(100)
-                        .parMapUnordered(concurrency) { execution -> execution.invoke() }
+                        .parMapUnordered(concurrency) { execution ->
+//                            println("variables: ${execution.variables.value}")
+                            execution.invoke()
+                        }
                         .chunked(interval)
                         .map { ProgressMessage(stage, it) }
                         .collect { emit(it) }
@@ -45,7 +49,7 @@ fun Benchmark.execute(
 
 context(CoroutineScope)
 @OptIn(DelicateCoroutinesApi::class)
-fun Benchmark.produceExecutions(stage: Stage, variablesBufferSize: Int = 100): Flow<ExecutionContext> {
+fun Benchmark.produceExecutions(stage: Stage, varBufferSize: Int): Flow<ExecutionContext> {
     val variablesFlow = flow {
         while (true) {
             emit(lazy { variables + stage.variables })
@@ -53,7 +57,7 @@ fun Benchmark.produceExecutions(stage: Stage, variablesBufferSize: Int = 100): F
     }.shareIn(
         scope = GlobalScope,
         started = SharingStarted.Eagerly,
-        replay = variablesBufferSize
+        replay = varBufferSize
     )
 
     return when (stage) {
