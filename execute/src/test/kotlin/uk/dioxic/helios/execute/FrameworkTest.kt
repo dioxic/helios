@@ -262,10 +262,9 @@ class FrameworkTest : FunSpec({
             }
         }
         benchmark.execute(interval = Duration.ZERO)
-            .filter { it is ProgressMessage }
-            .map { (it as ProgressMessage).result }
-            .filter { it is TimedMessageResult }
-            .map { it as TimedMessageResult }
+            .filterIsInstance<ProgressMessage>()
+            .map { it.result }
+            .filterIsInstance<TimedMessageResult> ()
             .map { it.value }
             .onEach { it.doc.shouldContainKeys("name", "cities", "species") }
             .map { it.doc.filter { (k, _) -> k != "species" } }
