@@ -13,7 +13,6 @@ import uk.dioxic.helios.execute.results.SummarizedResultsBatch
 import uk.dioxic.helios.execute.results.TimedResult
 import uk.dioxic.helios.execute.results.summarize
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -31,7 +30,7 @@ suspend fun Flow<Number>.average(): Double {
     return if (count == 0L) Double.NaN else sum / count
 }
 
-@OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class, ObsoleteCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, ObsoleteCoroutinesApi::class)
 fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> {
     return if (interval.isPositive()) {
         channelFlow {
