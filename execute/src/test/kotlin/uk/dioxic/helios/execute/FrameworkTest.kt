@@ -272,9 +272,6 @@ class FrameworkTest : FunSpec({
             .toList()
             .distinct().should { d ->
                 d.count() shouldBe 10
-                d.forEach {
-                    println(it)
-                }
             }
     }
 
