@@ -15,7 +15,11 @@ fun BsonDocument.flatten(separator: Char = '.', leafOnly: Boolean = false) =
     }.toMap()
 
 fun Map<String, Any?>.toDocument() =
-    Document(this)
+    if (this is Document) {
+        this
+    } else {
+        Document(this)
+    }
 
 @Suppress("UNCHECKED_CAST")
 private fun <T> flatten(
@@ -57,6 +61,6 @@ private fun getKey(prefix: String, separator: Char, suffix: String) =
         "$prefix$separator$suffix"
     }
 
-inline fun <reified O: Operator<*>> MutableMap<String, Any>.putOperator(key: String) {
+inline fun <reified O : Operator<*>> MutableMap<String, Any>.putOperator(key: String) {
     put(key, getOperatorKey<O>())
 }
