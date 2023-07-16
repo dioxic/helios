@@ -44,4 +44,3 @@ val defaultBenchmark = Benchmark(
 )
 
 val defaultExecutionContext = defaultWorkload.createContext(defaultBenchmark, defaultStage)
-
