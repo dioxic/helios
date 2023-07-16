@@ -1,4 +1,4 @@
-package uk.dioxic.helios.execute.fixtures
+package uk.dioxic.helios.execute
 
 import com.mongodb.ReadConcern
 import com.mongodb.ReadPreference
@@ -7,11 +7,11 @@ import uk.dioxic.helios.execute.serialization.ReadConcernSerializer
 import uk.dioxic.helios.execute.serialization.ReadPreferenceSerializer
 
 @Serializable
-data class DataClassWithReadConcern (
+data class DataClassWithReadConcern(
     @Serializable(with = ReadConcernSerializer::class) val readConcern: ReadConcern
 )
 
 @Serializable
-data class DataClassWithReadPreference (
+data class DataClassWithReadPreference(
     @Serializable(with = ReadPreferenceSerializer::class) val readPreference: ReadPreference
 )
