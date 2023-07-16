@@ -15,6 +15,38 @@ fun buildBenchmark(
     return builder.build()
 }
 
+fun buildSequentialStage(
+    name: String = "sequential",
+    constants: Template = Template.EMPTY,
+    variables: Template = Template.EMPTY,
+    init: SequentialStageBuilder.() -> Unit
+): SequentialStage {
+    val builder = SequentialStageBuilder(
+        name = name,
+        constants = constants,
+        variables = variables,
+    )
+    builder.init()
+    return builder.build()
+}
+
+fun buildParallelStage(
+    name: String = "parallel",
+    constants: Template = Template.EMPTY,
+    variables: Template = Template.EMPTY,
+    timeout: Duration = Duration.INFINITE,
+    init: ParallelStageBuilder.() -> Unit
+): ParallelStage {
+    val builder = ParallelStageBuilder(
+        name = name,
+        constants = constants,
+        variables = variables,
+        timeout = timeout
+    )
+    builder.init()
+    return builder.build()
+}
+
 class BenchmarkBuilder(
     private val name: String,
     private val constants: Template,
