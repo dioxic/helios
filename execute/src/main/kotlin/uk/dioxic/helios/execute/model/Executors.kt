@@ -81,7 +81,7 @@ class DropExecutor(
         CommandExecutor(database, buildTemplate {
             put("drop", collection)
         })
-    }else {
+    } else {
         CommandExecutor(database, buildTemplate {
             put("dropDatabase", 1)
         })
@@ -271,16 +271,32 @@ class UpdateManyExecutor(
 class BulkWriteExecutor(
     override val database: String,
     override val collection: String,
-    val operations: List<WriteOperation<Template>>
+    val operations: List<WriteOperation>
 ) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
-    override suspend fun execute(): ExecutionResult =
-        getCollection<Template>().bulkWrite(operations.flatMap { it.writeModels }).standardize()
+    override suspend fun execute(): ExecutionResult = createCache().let { cache ->
+        getCollection<EncodeContext>().bulkWrite(operations.flatMap {
+            it.getWriteModels(cache)
+        }).standardize()
+    }
 
     context(ExecutionContext, ResourceRegistry)
-    override suspend fun execute(session: ClientSession): ExecutionResult =
-        getCollection<Template>().bulkWrite(session, operations.flatMap { it.writeModels }).standardize()
+    override suspend fun execute(session: ClientSession): ExecutionResult = createCache().let { cache ->
+        getCollection<EncodeContext>().bulkWrite(session, operations.flatMap {
+            it.getWriteModels(cache)
+        }).standardize()
+    }
+
+    context(ExecutionContext)
+    private fun createCache(): VariablesCache {
+        val maxModels = operations.maxOfOrNull { it.count } ?: 100
+        return List(maxModels) {
+            lazy(LazyThreadSafetyMode.NONE) {
+                variables.value + workload.variables
+            }
+        }
+    }
 
 }
 

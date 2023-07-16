@@ -7,15 +7,29 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import uk.dioxic.helios.execute.serialization.DeleteOptionsSerializer
 import uk.dioxic.helios.execute.serialization.UpdateOptionsSerializer
+import uk.dioxic.helios.generate.OperatorContext
 import uk.dioxic.helios.generate.Template
 
-@Serializable
-sealed interface WriteOperation<T> {
-    val count: Int
-    val writeModels: List<WriteModel<T>>
-        get() = List(count) { toWriteModel() }
+typealias VariablesCache = List<Lazy<Map<String, Any?>>>
 
-    fun toWriteModel(): WriteModel<T>
+@Serializable
+sealed interface WriteOperation {
+    val count: Int
+
+    context(ExecutionContext)
+    fun getWriteModels(variables: VariablesCache): List<WriteModel<EncodeContext>> {
+        require(variables.size >= count)
+
+        return List(count) {
+            toWriteModel(
+                copy(
+                    variables = variables[it]
+                )
+            )
+        }
+    }
+
+    fun toWriteModel(context: OperatorContext): WriteModel<EncodeContext>
 }
 
 @Serializable
@@ -23,10 +37,10 @@ sealed interface WriteOperation<T> {
 data class InsertOneOperation(
     override val count: Int,
     val template: Template,
-) : WriteOperation<Template> {
+) : WriteOperation {
 
-    override fun toWriteModel(): WriteModel<Template> =
-        InsertOneModel(template)
+    override fun toWriteModel(context: OperatorContext): WriteModel<EncodeContext> =
+        InsertOneModel(EncodeContext(template, context))
 }
 
 @Serializable
@@ -36,10 +50,10 @@ data class UpdateOneOperation(
     val filter: Template,
     val update: Template,
     @Serializable(with = UpdateOptionsSerializer::class) val options: UpdateOptions,
-) : WriteOperation<Template> {
+) : WriteOperation {
 
-    override fun toWriteModel(): WriteModel<Template> =
-        UpdateOneModel(filter, update, options)
+    override fun toWriteModel(context: OperatorContext): WriteModel<EncodeContext> =
+        UpdateOneModel(EncodeContext(filter, context), EncodeContext(update, context), options)
 }
 
 @Serializable
@@ -49,10 +63,10 @@ data class UpdateManyOperation(
     val filter: Template,
     val update: Template,
     @Serializable(with = UpdateOptionsSerializer::class) val options: UpdateOptions,
-) : WriteOperation<Template> {
+) : WriteOperation {
 
-    override fun toWriteModel(): WriteModel<Template> =
-        UpdateManyModel(filter, update, options)
+    override fun toWriteModel(context: OperatorContext): WriteModel<EncodeContext> =
+        UpdateManyModel(EncodeContext(filter, context), EncodeContext(update, context), options)
 }
 
 @Serializable
@@ -61,10 +75,10 @@ data class DeleteOneOperation(
     override val count: Int,
     val filter: Template,
     @Serializable(with = DeleteOptionsSerializer::class) val options: DeleteOptions,
-) : WriteOperation<Template> {
+) : WriteOperation {
 
-    override fun toWriteModel(): WriteModel<Template> =
-        DeleteOneModel(filter, options)
+    override fun toWriteModel(context: OperatorContext): WriteModel<EncodeContext> =
+        DeleteOneModel(EncodeContext(filter, context), options)
 }
 
 @Serializable
@@ -73,8 +87,8 @@ data class DeleteManyOperation(
     override val count: Int,
     val filter: Template,
     @Serializable(with = DeleteOptionsSerializer::class) val options: DeleteOptions,
-) : WriteOperation<Template> {
+) : WriteOperation {
 
-    override fun toWriteModel(): WriteModel<Template> =
-        DeleteManyModel(filter, options)
+    override fun toWriteModel(context: OperatorContext): WriteModel<EncodeContext> =
+        DeleteManyModel(EncodeContext(filter, context), options)
 }
