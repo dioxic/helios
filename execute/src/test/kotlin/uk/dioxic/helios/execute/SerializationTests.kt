@@ -22,8 +22,6 @@ import org.bson.BsonDocument
 import org.bson.BsonInt32
 import org.bson.BsonString
 import org.bson.BsonValue
-import uk.dioxic.helios.execute.fixtures.DataClassWithReadConcern
-import uk.dioxic.helios.execute.fixtures.DataClassWithReadPreference
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.serialization.TransactionOptionsSerializer
 import uk.dioxic.helios.execute.serialization.UpdateOptionsSerializer
