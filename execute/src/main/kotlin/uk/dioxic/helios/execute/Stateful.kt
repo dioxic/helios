@@ -9,5 +9,5 @@ interface Stateful: Named {
     val variablesDefinition: Template
     val constants : Lazy<Map<String, Any?>>
     val variables
-        get() = variablesDefinition.hydrateAndFlatten(this)
+        get() = variablesDefinition.hydrateAndFlatten(name)
 }

@@ -6,16 +6,15 @@ interface OperatorContext {
     val variables: Lazy<Map<String, Any?>>
     val executionCount: Long
 
+    fun withConstants(constants: Lazy<Map<String, Any?>>): OperatorContext
+
+    fun withVariables(variables: Lazy<Map<String, Any?>>): OperatorContext
+
     companion object {
-        val EMPTY = object : OperatorContext {
-            override val identity = object : Named {
-                override val name = "EMPTY"
-            }
-            override val constants = lazy { emptyMap<String, Any?>() }
-            override val variables = lazy { emptyMap<String, Any?>() }
-            override val executionCount = 0L
-        }
+        val EMPTY: OperatorContext = NamedContext("EMPTY")
+
         val threadLocal: ThreadLocal<OperatorContext> =
             ThreadLocal.withInitial { EMPTY }
     }
+
 }
