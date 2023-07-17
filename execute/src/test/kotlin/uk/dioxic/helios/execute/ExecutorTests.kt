@@ -18,12 +18,9 @@ import org.bson.Document
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.CommandResult
-import uk.dioxic.helios.generate.Template
-import uk.dioxic.helios.generate.buildTemplate
+import uk.dioxic.helios.generate.*
 import uk.dioxic.helios.generate.operators.NameOperator
 import uk.dioxic.helios.generate.operators.VarOperator
-import uk.dioxic.helios.generate.putKeyedOperator
-import uk.dioxic.helios.generate.putOperator
 
 class ExecutorTests : FunSpec({
 
@@ -80,6 +77,9 @@ class ExecutorTests : FunSpec({
             val ctx = defaultExecutionContext.copy {
                 ExecutionContext.executor.set(executor)
                 ExecutionContext.workload.rateWorkload.variablesDefinition.set(variables)
+                ExecutionContext.stateContext.set(List(executor.variablesRequired) {
+                    StateContext(it.toLong(), variables = lazy { variables.hydrateAndFlatten() })
+                })
             }
 
             with(ResourceRegistry(client)) {
