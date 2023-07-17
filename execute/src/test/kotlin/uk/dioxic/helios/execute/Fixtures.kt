@@ -1,6 +1,7 @@
 package uk.dioxic.helios.execute
 
 import uk.dioxic.helios.execute.model.*
+import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
 import java.time.LocalDateTime
@@ -27,12 +28,12 @@ val defaultWorkload = RateWorkload(
 )
 
 val defaultParallelStage = ParallelStage(
-    name= "stage0",
+    name = "stage0",
     workloads = listOf(defaultWorkload)
 )
 
 val defaultSequentialStage = SequentialStage(
-    name= "stage0",
+    name = "stage0",
     workloads = listOf(defaultWorkload)
 )
 
@@ -43,8 +44,14 @@ val defaultBenchmark = Benchmark(
     stages = listOf(defaultStage)
 )
 
+val defaultStateContext = StateContext(
+    variables = lazy { emptyMap() },
+    constants = lazy { emptyMap() },
+    count = -1
+)
+
 val defaultExecutionContext = ExecutionContext(
     workload = defaultWorkload,
     rate = defaultWorkload.rate,
-    stateContext = emptyList()
+    stateContext = listOf(defaultStateContext)
 )
