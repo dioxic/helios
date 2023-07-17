@@ -53,7 +53,7 @@ class OperatorTests : FunSpec({
                 }
             }
 
-            test("benchmark constant lookup is successful") {
+            test("benchmark lookup is successful") {
                 buildBenchmark(constants = consts) {
                     sequentialStage {
                         rateWorkload(executor = executor)
@@ -61,7 +61,7 @@ class OperatorTests : FunSpec({
                 }.verify()
             }
 
-            test("stage constant lookup is successful") {
+            test("stage lookup is successful") {
                 buildBenchmark {
                     sequentialStage(constants = consts) {
                         rateWorkload(executor = executor)
@@ -69,7 +69,7 @@ class OperatorTests : FunSpec({
                 }.verify()
             }
 
-            test("workload constant lookup is successful") {
+            test("workload lookup is successful") {
                 buildBenchmark {
                     sequentialStage {
                         rateWorkload(constants = consts, executor = executor)
@@ -107,66 +107,52 @@ class OperatorTests : FunSpec({
     }
 
     context("variables") {
-        context("lookups") {
-            val variables = buildTemplate {
-                putOperator<ObjectIdOperator>("oid")
-            }
-            val template = buildTemplate {
-                putKeyedOperator<VarOperator>("myId", "oid")
-            }
-            val executor = MessageExecutor(template)
+        val variables = buildTemplate {
+            putOperator<ObjectIdOperator>("oid")
+        }
+        val template = buildTemplate {
+            putKeyedOperator<VarOperator>("myId", "oid")
+        }
+        val executor = MessageExecutor(template)
 
-            suspend fun Benchmark.verify(distinctCount: Int) {
-                execute(interval = Duration.ZERO).filterIsInstance<ProgressMessage>()
-                    .map { it.result }
-                    .filterIsInstance<TimedMessageResult>()
-                    .map { it.value }
-                    .toList().should { msgs ->
-                        msgs.forEach {
+        suspend fun Benchmark.verify(distinctCount: Int, linkVariables: Boolean = false) {
+            execute(
+                interval = Duration.ZERO,
+                linkedVariables = linkVariables
+            ).filterIsInstance<ProgressMessage>()
+                .map { it.result }
+                .filterIsInstance<TimedMessageResult>()
+                .map { it.value }
+                .toList().should { msgs ->
+                    msgs.forEach {
 //                            println(it.doc)
-                            it.doc["myId"].shouldBeInstanceOf<ObjectId>()
-                        }
-                        msgs.distinctBy { it.doc["myId"] }.count() shouldBe distinctCount
+                        it.doc["myId"].shouldBeInstanceOf<ObjectId>()
                     }
-            }
+                    msgs.distinctBy { it.doc["myId"] }.count() shouldBe distinctCount
+                }
+        }
+        context("unlinked") {
 
-            test("benchmark variables lookup is successful") {
+            test("benchmark lookup is successful") {
                 buildBenchmark(variables = variables) {
                     sequentialStage {
                         rateWorkload(executor = executor, count = 4)
+                        rateWorkload(executor = executor, count = 2)
                     }
-                }.verify(4)
+                }.verify(6)
             }
 
-            test("benchmark variables lookup is consistent across multiple workloads") {
-                buildBenchmark(variables = variables) {
-                    parallelStage {
-                        rateWorkload(executor = executor, count = 4, rate = PeriodRate(100.milliseconds))
+
+            test("stage lookup is successful") {
+                buildBenchmark {
+                    parallelStage(variables = variables) {
+                        rateWorkload(executor = executor, count = 4)
                         rateWorkload(executor = executor, count = 8)
-                        rateWorkload(executor = executor, count = 4)
                     }
-                }.verify(8)
+                }.verify(12)
             }
 
-            test("stage variables lookup is successful") {
-                buildBenchmark {
-                    parallelStage(variables = variables) {
-                        rateWorkload(executor = executor, count = 4)
-                    }
-                }.verify(4)
-            }
-
-            test("stage variables lookup is consistent across multiple workloads") {
-                buildBenchmark {
-                    parallelStage(variables = variables) {
-                        rateWorkload(executor = executor, count = 2, rate = PeriodRate(300.milliseconds))
-                        rateWorkload(executor = executor, count = 5, rate = PeriodRate(100.milliseconds))
-                        rateWorkload(executor = executor, count = 1)
-                    }
-                }.verify(5)
-            }
-
-            test("workload variables lookup is successful") {
+            test("workload lookup is successful") {
                 buildBenchmark {
                     parallelStage {
                         rateWorkload(variables = variables, executor = executor, count = 4)
@@ -177,15 +163,33 @@ class OperatorTests : FunSpec({
             }
         }
 
+        context("linked variables") {
+            test("benchmark variables linked") {
+                buildBenchmark(variables = variables) {
+                    parallelStage {
+                        rateWorkload(executor = executor, count = 4, rate = PeriodRate(100.milliseconds))
+                        rateWorkload(executor = executor, count = 8)
+                        rateWorkload(executor = executor, count = 4)
+                    }
+                }.verify(8, true)
+            }
+
+            test("stage variables linked") {
+                buildBenchmark {
+                    parallelStage(variables = variables) {
+                        rateWorkload(executor = executor, count = 2, rate = PeriodRate(300.milliseconds))
+                        rateWorkload(executor = executor, count = 5, rate = PeriodRate(100.milliseconds))
+                        rateWorkload(executor = executor, count = 1)
+                    }
+                }.verify(5, true)
+            }
+        }
+
         test("only call lazy variables if necessary") {
             mockkStatic("uk.dioxic.helios.generate.HydrationKt")
 
-            val template = buildTemplate {
+            val templateNoLookups = buildTemplate {
                 putOperator<NameOperator>("name")
-            }
-            val executor = MessageExecutor(template)
-            val variables = buildTemplate {
-                put("animal", "halibut")
             }
 
             every {
@@ -195,7 +199,7 @@ class OperatorTests : FunSpec({
 
             buildBenchmark(variables = variables) {
                 sequentialStage {
-                    rateWorkload(executor = executor)
+                    rateWorkload(executor = MessageExecutor(templateNoLookups))
                 }
             }.execute().collect()
 

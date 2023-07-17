@@ -23,14 +23,14 @@ fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry(),
     concurrency: Int = 4,
     interval: Duration = 1.seconds,
-    varBufferSize: Int = 100
+    linkedVariables: Boolean = false
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
         stages.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {
-                    produceExecutions(this@execute, stage, varBufferSize)
+                    produceExecutions(this@execute, stage, linkedVariables)
                         .buffer(100)
                         .parMapUnordered(concurrency) { execution ->
 //                            println("variables: ${execution.variables.value}")
@@ -50,9 +50,9 @@ fun Benchmark.execute(
 fun produceExecutions(
     benchmark: Benchmark,
     stage: Stage,
-    varBufferSize: Int
+    linkedVariables: Boolean
 ): Flow<ExecutionContext> {
-    val ctxFlow = flow {
+    val ctxFlow: Flow<StateContext> = flow {
         val constants = lazy { benchmark.constants.value + stage.constants.value }
         var count = 0L
         while (true) {
@@ -64,11 +64,18 @@ fun produceExecutions(
                 )
             )
         }
-    }.shareIn(
-        scope = GlobalScope,
-        started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
-        replay = varBufferSize
-    )
+    }.let {
+        if (linkedVariables) {
+            it.buffer(100).shareIn(
+                scope = GlobalScope,
+                started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
+                replay = 0
+            )
+        }
+        else {
+            it
+        }
+    }
 
     return when (stage) {
         is SequentialStage -> {
@@ -118,7 +125,7 @@ fun Flow<StateContext>.zip(workloads: List<WeightedWorkload>, rate: Rate): Flow<
         ExecutionContext(
             workload = workload,
             rate = rate,
-            constants =  lazy(LazyThreadSafetyMode.NONE) {
+            constants = lazy(LazyThreadSafetyMode.NONE) {
                 ctx.constants.value + workload.constants.value
             },
             variables = lazy(LazyThreadSafetyMode.NONE) {
