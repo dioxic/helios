@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package uk.dioxic.helios.execute
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -5,8 +7,7 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.channels.ticker
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.whileSelect
 import uk.dioxic.helios.execute.results.FrameworkResult
 import uk.dioxic.helios.execute.results.SummarizedResultsBatch
@@ -86,3 +87,11 @@ fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> {
 
 private val TimedResult.isSingleExecution
     get() = (context.workload.count == 1L)
+
+fun SharingStarted.Companion.WhileSubscribedAtLeast(threshold: Int) =
+    SharingStarted { subscriptionCount ->
+        subscriptionCount
+            .map { if (it >= threshold) SharingCommand.START else SharingCommand.STOP }
+            .dropWhile { it != SharingCommand.START } // don't emit any STOP/RESET_BUFFER to start with, only START
+            .distinctUntilChanged() // just in case somebody forgets it, don't leak our multiple sending of START
+    }
