@@ -140,6 +140,7 @@ class DocumentCodec(
                 CollectionCodecProvider(OperatorTransformer),
                 IterableCodecProvider(OperatorTransformer),
                 WrappedCodecProvider(),
+                EncodeContextCodecProvider(),
                 BsonValueCodecProvider(),
                 HeliosDocumentCodecProvider(),
                 MapCodecProvider(OperatorTransformer)

@@ -1,9 +1,9 @@
-package uk.dioxic.helios.execute.codec
+package uk.dioxic.helios.generate.codecs
 
 import org.bson.codecs.Codec
 import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
-import uk.dioxic.helios.execute.model.EncodeContext
+import uk.dioxic.helios.generate.EncodeContext
 
 class EncodeContextCodecProvider: CodecProvider {
 

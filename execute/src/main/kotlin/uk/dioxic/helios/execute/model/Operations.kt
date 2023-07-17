@@ -7,6 +7,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import uk.dioxic.helios.execute.serialization.DeleteOptionsSerializer
 import uk.dioxic.helios.execute.serialization.UpdateOptionsSerializer
+import uk.dioxic.helios.generate.EncodeContext
 import uk.dioxic.helios.generate.OperatorContext
 import uk.dioxic.helios.generate.Template
 

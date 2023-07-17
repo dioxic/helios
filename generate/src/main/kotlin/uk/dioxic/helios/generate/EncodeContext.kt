@@ -1,8 +1,7 @@
-package uk.dioxic.helios.execute.model
+package uk.dioxic.helios.generate
 
 import org.bson.Document
 import org.bson.conversions.Bson
-import uk.dioxic.helios.generate.OperatorContext
 
 /**
  * A way to get the context and the document to the encoder together.
