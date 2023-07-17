@@ -43,4 +43,8 @@ val defaultBenchmark = Benchmark(
     stages = listOf(defaultStage)
 )
 
-val defaultExecutionContext = defaultWorkload.createContext(defaultBenchmark, defaultStage)
+val defaultExecutionContext = ExecutionContext(
+    workload = defaultWorkload,
+    rate = defaultWorkload.rate,
+    stateContext = emptyList()
+)

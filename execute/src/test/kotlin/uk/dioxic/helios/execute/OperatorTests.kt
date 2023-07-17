@@ -125,7 +125,7 @@ class OperatorTests : FunSpec({
                 .map { it.value }
                 .toList().should { msgs ->
                     msgs.forEach {
-//                            println(it.doc)
+//                        println(it.doc)
                         it.doc["myId"].shouldBeInstanceOf<ObjectId>()
                     }
                     msgs.distinctBy { it.doc["myId"] }.count() shouldBe distinctCount

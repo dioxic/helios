@@ -15,8 +15,6 @@ import kotlin.time.Duration
     abstract val executor: Executor
     abstract val count: Long
 
-    abstract fun createContext(benchmark: Benchmark, stage: Stage): ExecutionContext
-
     @Transient
     override val constants = lazy { constantsDefinition.hydrateAndFlatten() }
 
@@ -34,18 +32,6 @@ import kotlin.time.Duration
     val startDelay: Duration = Duration.ZERO,
 ) : Workload() {
 
-    override fun createContext(benchmark: Benchmark, stage: Stage) = ExecutionContext(
-        workload = this,
-        executor = executor,
-        constants = lazy(LazyThreadSafetyMode.NONE) {
-            benchmark.constants.value + stage.constants.value + constants.value
-        },
-        variables = lazy(LazyThreadSafetyMode.NONE) {
-            benchmark.variables + stage.variables + variables
-        },
-        rate = rate,
-    )
-
     companion object
 }
 
@@ -58,23 +44,6 @@ import kotlin.time.Duration
     override val count: Long = 1,
     val weight: Int,
 ) : Workload() {
-
-    override fun createContext(benchmark: Benchmark, stage: Stage): ExecutionContext {
-        require(stage is ParallelStage) {
-            "Unexpected stage type of ${stage::class}"
-        }
-        return ExecutionContext(
-            workload = this,
-            executor = executor,
-            constants = lazy(LazyThreadSafetyMode.NONE) {
-                benchmark.constants.value + stage.constants.value + constants.value
-            },
-            variables = lazy(LazyThreadSafetyMode.NONE) {
-                benchmark.variables + stage.variables + variables
-            },
-            rate = stage.weightedWorkloadRate,
-        )
-    }
 
     companion object
 

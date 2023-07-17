@@ -31,58 +31,102 @@ suspend fun Flow<Number>.average(): Double {
     return if (count == 0L) Double.NaN else sum / count
 }
 
-@OptIn(ExperimentalCoroutinesApi::class, ObsoleteCoroutinesApi::class)
-fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> {
-    return if (interval.isPositive()) {
-        channelFlow {
-            require(interval.isPositive()) {
-                "interval must be positive, but was $interval"
-            }
-            val results = ArrayList<TimedResult>()
-            val flowChannel = produce { collect { send(it) } }
-            val tickerChannel = ticker(interval.inWholeMilliseconds)
-            var lastSummaryTime: TimeMark = TimeSource.Monotonic.markNow()
+/**
+ * Non-blocking group by operation.
+ * Expects the input flow to be sorted by group key
+ * @param keyFn the function to apply to get the group key
+ */
+fun <T, P, R> Flow<Pair<T, P>>.groupBy(
+    keyFn: (T) -> Any,
+    transform: (T, List<P>) -> R
+): Flow<R> = flow {
+    val results = ArrayList<P>()
+    var lastKey: Any? = null
+    var lastGroup: T? = null
 
-            try {
-                whileSelect {
-                    flowChannel.onReceive {
-                        if (it.isSingleExecution) {
-                            send(it)
-                            true
-                        } else {
-                            results.add(it)
-                        }
-                    }
-                    tickerChannel.onReceive {
-                        if (results.isNotEmpty()) {
-                            send(
-                                SummarizedResultsBatch(
-                                    batchDuration = lastSummaryTime.elapsedNow(),
-                                    results = results.summarize()
-                                )
-                            )
-                            lastSummaryTime = TimeSource.Monotonic.markNow()
-                            results.clear()
-                        }
-                        true
-                    }
-                }
-            } catch (e: ClosedReceiveChannelException) {
-                if (results.isNotEmpty()) {
-                    send(
-                        SummarizedResultsBatch(
-                            batchDuration = lastSummaryTime.elapsedNow(),
-                            results = results.summarize()
-                        )
-                    )
-                }
-            } finally {
-                tickerChannel.cancel()
-            }
+    onCompletion {
+        lastGroup?.let { group ->
+            emit(transform(group, results))
         }
-    } else {
-        this
+    }.collect {
+        val key = keyFn.invoke(it.first)
+        if (lastGroup != null && key != lastKey) {
+            emit(transform(lastGroup!!, results.toList()))
+            results.clear()
+        } else {
+            lastKey = key
+            lastGroup = it.first
+        }
+        results.add(it.second)
     }
+}
+
+fun <T> Flow<T>.chunkedUntilChanged(discriminator: (T) -> Any): Flow<List<T>> = flow {
+    val results = ArrayList<T>()
+    var lastValue: Any? = null
+
+    collect {
+        val value = discriminator.invoke(it)
+        if (lastValue != null && value != lastValue) {
+            emit(results)
+            results.clear()
+        } else {
+            results.add(it)
+            lastValue = value
+        }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class, ObsoleteCoroutinesApi::class)
+fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> = if (interval.isPositive()) {
+    channelFlow {
+        require(interval.isPositive()) {
+            "interval must be positive, but was $interval"
+        }
+        val results = ArrayList<TimedResult>()
+        val flowChannel = produce { collect { send(it) } }
+        val tickerChannel = ticker(interval.inWholeMilliseconds)
+        var lastSummaryTime: TimeMark = TimeSource.Monotonic.markNow()
+
+        try {
+            whileSelect {
+                flowChannel.onReceive {
+                    if (it.isSingleExecution) {
+                        send(it)
+                        true
+                    } else {
+                        results.add(it)
+                    }
+                }
+                tickerChannel.onReceive {
+                    if (results.isNotEmpty()) {
+                        send(
+                            SummarizedResultsBatch(
+                                batchDuration = lastSummaryTime.elapsedNow(),
+                                results = results.summarize()
+                            )
+                        )
+                        lastSummaryTime = TimeSource.Monotonic.markNow()
+                        results.clear()
+                    }
+                    true
+                }
+            }
+        } catch (e: ClosedReceiveChannelException) {
+            if (results.isNotEmpty()) {
+                send(
+                    SummarizedResultsBatch(
+                        batchDuration = lastSummaryTime.elapsedNow(),
+                        results = results.summarize()
+                    )
+                )
+            }
+        } finally {
+            tickerChannel.cancel()
+        }
+    }
+} else {
+    this
 }
 
 private val TimedResult.isSingleExecution
@@ -98,6 +142,7 @@ fun SharingStarted.Companion.StartWhenSubscribedAtLeast(threshold: Int): Sharing
                         started = true
                         SharingCommand.START
                     }
+
                     it <= 0 -> SharingCommand.STOP
                     started -> SharingCommand.START
                     else -> SharingCommand.STOP

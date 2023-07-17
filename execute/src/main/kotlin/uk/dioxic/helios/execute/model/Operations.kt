@@ -17,16 +17,8 @@ sealed interface WriteOperation {
     val count: Int
 
     context(ExecutionContext)
-    fun getWriteModels(variables: VariablesCache): List<WriteModel<EncodeContext>> {
-        require(variables.size >= count)
-
-        return List(count) {
-            toWriteModel(
-                copy(
-                    variables = variables[it]
-                )
-            )
-        }
+    fun getWriteModels(): List<WriteModel<EncodeContext>> = List(count) {
+        toWriteModel(stateContext[it])
     }
 
     fun toWriteModel(context: OperatorContext): WriteModel<EncodeContext>

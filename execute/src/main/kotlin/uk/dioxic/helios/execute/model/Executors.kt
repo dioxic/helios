@@ -8,7 +8,9 @@ import com.mongodb.client.ClientSession
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
-import com.mongodb.client.model.*
+import com.mongodb.client.model.InsertManyOptions
+import com.mongodb.client.model.ReplaceOptions
+import com.mongodb.client.model.UpdateOptions
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -26,17 +28,25 @@ import kotlin.time.Duration.Companion.seconds
 
 @Serializable
 sealed interface Executor {
+    @Transient
+    val variablesRequired: Int
+
     context(ExecutionContext, ResourceRegistry)
     suspend fun execute(): ExecutionResult
+
+    context(ExecutionContext)
+    fun Template.toEncodeContextList() = List(variablesRequired) {
+        EncodeContext(this, stateContext[it])
+    }
+
+    context(ExecutionContext)
+    fun Template.toSingleEncodeContext() =
+        EncodeContext(this, stateContext.first())
 }
 
 sealed interface MongoSessionExecutor : Executor {
     context(ExecutionContext, ResourceRegistry)
     suspend fun execute(session: ClientSession): ExecutionResult
-}
-
-sealed interface WriteModelExecutor : Executor {
-    suspend fun writeModel(): List<WriteModel<Template>>
 }
 
 @Serializable
@@ -52,6 +62,8 @@ sealed class CollectionExecutor : DatabaseExecutor(), MongoSessionExecutor {
 
 @Serializable
 sealed class DatabaseExecutor : MongoSessionExecutor {
+    @Transient
+    override val variablesRequired = 1
     abstract val database: String
 
     context(ResourceRegistry)
@@ -63,10 +75,14 @@ sealed class DatabaseExecutor : MongoSessionExecutor {
 class MessageExecutor(
     val template: Template
 ) : Executor {
+    @Transient
+    override val variablesRequired = 1
 
     context(ExecutionContext, ResourceRegistry)
-    override suspend fun execute() =
-        MessageResult(template.hydrate())
+    override suspend fun execute(): MessageResult =
+        with(stateContext.first()) {
+            MessageResult(template.hydrate())
+        }
 
 }
 
@@ -105,12 +121,12 @@ class CommandExecutor(
 ) : DatabaseExecutor() {
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) = CommandResult(
-        getDatabase().runCommand(session, command)
+        getDatabase().runCommand(session, command.toSingleEncodeContext())
     )
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() = CommandResult(
-        getDatabase().runCommand(command)
+        getDatabase().runCommand(command.toSingleEncodeContext())
     )
 }
 
@@ -120,19 +136,17 @@ class InsertOneExecutor(
     override val database: String,
     override val collection: String,
     val template: Template
-) : CollectionExecutor(), WriteModelExecutor {
+) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession): ExecutionResult =
-        getCollection<Template>().insertOne(session, template).standardize()
+        getCollection<EncodeContext>().insertOne(session, template.toSingleEncodeContext()).standardize()
 
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().insertOne(template).standardize()
+        getCollection<EncodeContext>().insertOne(template.toSingleEncodeContext()).standardize()
 
-    override suspend fun writeModel() =
-        listOf(InsertOneModel(template))
 }
 
 @Serializable
@@ -143,21 +157,22 @@ class InsertManyExecutor(
     val template: Template,
     val size: Int = 1,
     private val ordered: Boolean = true,
-) : CollectionExecutor(), WriteModelExecutor {
+) : CollectionExecutor() {
 
     @Transient
     private val options = InsertManyOptions().ordered(ordered)
 
+    @Transient
+    override val variablesRequired = size
+
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<Template>().insertMany(session, List(size) { template }, options).standardize()
+        getCollection<EncodeContext>().insertMany(session, template.toEncodeContextList(), options).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().insertMany(List(size) { template }, options).standardize()
+        getCollection<EncodeContext>().insertMany(template.toEncodeContextList(), options).standardize()
 
-    override suspend fun writeModel() =
-        List(size) { InsertOneModel(template) }
 }
 
 @Serializable
@@ -166,18 +181,16 @@ class DeleteOneExecutor(
     override val database: String,
     override val collection: String,
     val filter: Template,
-) : CollectionExecutor(), WriteModelExecutor {
+) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<Template>().deleteOne(session, filter).standardize()
+        getCollection<EncodeContext>().deleteOne(session, filter.toSingleEncodeContext()).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().deleteOne(filter).standardize()
+        getCollection<EncodeContext>().deleteOne(filter.toSingleEncodeContext()).standardize()
 
-    override suspend fun writeModel() =
-        listOf(DeleteOneModel<Template>(filter))
 }
 
 @Serializable
@@ -186,18 +199,16 @@ class DeleteManyExecutor(
     override val database: String,
     override val collection: String,
     val filter: Template,
-) : CollectionExecutor(), WriteModelExecutor {
+) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<Template>().deleteMany(session, filter).standardize()
+        getCollection<EncodeContext>().deleteMany(session, filter.toSingleEncodeContext()).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().deleteMany(filter).standardize()
+        getCollection<EncodeContext>().deleteMany(filter.toSingleEncodeContext()).standardize()
 
-    override suspend fun writeModel() =
-        listOf(DeleteManyModel<Template>(filter))
 }
 
 @Serializable
@@ -208,18 +219,25 @@ class ReplaceOneExecutor(
     val filter: Template,
     val replacement: Template,
     @Contextual val options: ReplaceOptions
-) : CollectionExecutor(), WriteModelExecutor {
+) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<Template>().replaceOne(session, filter, replacement, options).standardize()
+        getCollection<EncodeContext>().replaceOne(
+            session,
+            filter.toSingleEncodeContext(),
+            replacement.toSingleEncodeContext(),
+            options
+        ).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().replaceOne(filter, replacement, options).standardize()
+        getCollection<EncodeContext>().replaceOne(
+            filter.toSingleEncodeContext(),
+            replacement.toSingleEncodeContext(),
+            options
+        ).standardize()
 
-    override suspend fun writeModel() =
-        listOf(ReplaceOneModel<Template>(filter, replacement, options))
 }
 
 @Serializable
@@ -230,18 +248,25 @@ class UpdateOneExecutor(
     val filter: Template,
     val update: Template,
     @Contextual val options: UpdateOptions
-) : CollectionExecutor(), WriteModelExecutor {
+) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<Template>().updateOne(session, filter, update, options).standardize()
+        getCollection<EncodeContext>().updateOne(
+            session,
+            filter.toSingleEncodeContext(),
+            update.toSingleEncodeContext(),
+            options
+        ).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().updateOne(filter, update, options).standardize()
+        getCollection<EncodeContext>().updateOne(
+            filter.toSingleEncodeContext(),
+            update.toSingleEncodeContext(),
+            options
+        ).standardize()
 
-    override suspend fun writeModel() =
-        listOf(UpdateOneModel<Template>(filter, update, options))
 }
 
 @Serializable
@@ -252,18 +277,25 @@ class UpdateManyExecutor(
     val filter: Template,
     val update: Template,
     @Contextual val options: UpdateOptions
-) : CollectionExecutor(), WriteModelExecutor {
+) : CollectionExecutor() {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<Template>().updateMany(session, filter, update, options).standardize()
+        getCollection<Template>().updateMany(
+            session,
+            filter.toSingleEncodeContext(),
+            update.toSingleEncodeContext(),
+            options
+        ).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<Template>().updateMany(filter, update, options).standardize()
+        getCollection<Template>().updateMany(
+            filter.toSingleEncodeContext(),
+            update.toSingleEncodeContext(),
+            options
+        ).standardize()
 
-    override suspend fun writeModel() =
-        listOf(UpdateManyModel<Template>(filter, update, options))
 }
 
 @Serializable
@@ -274,29 +306,21 @@ class BulkWriteExecutor(
     val operations: List<WriteOperation>
 ) : CollectionExecutor() {
 
+    @Transient
+    override val variablesRequired =
+        operations.maxOfOrNull { it.count } ?: 0
+
     context(ExecutionContext, ResourceRegistry)
-    override suspend fun execute(): ExecutionResult = createCache().let { cache ->
+    override suspend fun execute(): ExecutionResult =
         getCollection<EncodeContext>().bulkWrite(operations.flatMap {
-            it.getWriteModels(cache)
+            it.getWriteModels()
         }).standardize()
-    }
 
     context(ExecutionContext, ResourceRegistry)
-    override suspend fun execute(session: ClientSession): ExecutionResult = createCache().let { cache ->
+    override suspend fun execute(session: ClientSession): ExecutionResult =
         getCollection<EncodeContext>().bulkWrite(session, operations.flatMap {
-            it.getWriteModels(cache)
+            it.getWriteModels()
         }).standardize()
-    }
-
-    context(ExecutionContext)
-    private fun createCache(): VariablesCache {
-        val maxModels = operations.maxOfOrNull { it.count } ?: 100
-        return List(maxModels) {
-            lazy(LazyThreadSafetyMode.NONE) {
-                variables.value + workload.variables
-            }
-        }
-    }
 
 }
 
@@ -308,6 +332,9 @@ class TransactionExecutor(
     val maxRetryTimeout: Duration = 120.seconds,
     val maxRetryAttempts: Int = 100,
 ) : Executor {
+
+    override val variablesRequired: Int
+        get() = TODO("Not yet implemented")
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(): ExecutionResult =

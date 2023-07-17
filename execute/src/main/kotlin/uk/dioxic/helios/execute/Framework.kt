@@ -32,8 +32,10 @@ fun Benchmark.execute(
                 withTimeoutOrNull(stage.timeout) {
                     produceExecutions(this@execute, stage, linkedVariables)
                         .buffer(100)
+//                        .onEach {
+//                            println("first state: ${it.stateContext.first().variables.value }")
+//                        }
                         .parMapUnordered(concurrency) { execution ->
-//                            println("variables: ${execution.variables.value}")
                             execution.invoke()
                         }
                         .chunked(interval)
@@ -52,7 +54,7 @@ fun produceExecutions(
     stage: Stage,
     linkedVariables: Boolean
 ): Flow<ExecutionContext> {
-    val ctxFlow: Flow<StateContext> = flow {
+    val stateFlow: Flow<StateContext> = flow {
         val constants = lazy { benchmark.constants.value + stage.constants.value }
         var count = 0L
         while (true) {
@@ -71,8 +73,7 @@ fun produceExecutions(
                 started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
                 replay = 0
             )
-        }
-        else {
+        } else {
             it
         }
     }
@@ -80,7 +81,7 @@ fun produceExecutions(
     return when (stage) {
         is SequentialStage -> {
             stage.workloads.asFlow().flatMapConcat { workload ->
-                ctxFlow.zip(workload)
+                workload.toCtx().zip(stateFlow)
             }
         }
 
@@ -88,8 +89,8 @@ fun produceExecutions(
             val rateWorkloads = stage.workloads.filterIsInstance<RateWorkload>()
             val weightedWorkloads = stage.workloads.filterIsInstance<WeightedWorkload>()
 
-            addAll(rateWorkloads.map { ctxFlow.zip(it) })
-            add(ctxFlow.zip(weightedWorkloads, stage.weightedWorkloadRate))
+            addAll(rateWorkloads.map { it.toCtx().zip(stateFlow) })
+            add(weightedWorkloads.toCtx(stage.weightedWorkloadRate).zip(stateFlow))
         }.merge()
     }.flowOn(Dispatchers.Default)
 }
@@ -103,57 +104,57 @@ fun Stage.subscriberCount(): Int =
         }
     }
 
-fun Flow<StateContext>.zip(workloads: List<WeightedWorkload>, rate: Rate): Flow<ExecutionContext> {
-    val workloadFlow = flow {
-        val weights = workloads.map { it.weight }.toMutableList()
-        val counts = MutableList(workloads.size) { 0L }
-        var weightSum = weights.sum()
-        while (weightSum > 0) {
-            emit(Random.nextElementIndex(weights, weightSum).let {
-                val count = ++counts[it]
-                if (count == workloads[it].count) {
-                    weights[it] = 0
-                    weightSum = weights.sum()
-                }
-                workloads[it] to count
-            })
-
-        }
+fun List<WeightedWorkload>.toCtx(rate: Rate): Flow<WorkloadContext> = flow {
+    val weights = map { it.weight }.toMutableList()
+    val counts = MutableList(size) { 0L }
+    var weightSum = weights.sum()
+    while (weightSum > 0) {
+        emit(Random.nextElementIndex(weights, weightSum).let {
+            val count = ++counts[it]
+            if (count == get(it).count) {
+                weights[it] = 0
+                weightSum = weights.sum()
+            }
+            get(it) to count
+        })
     }
-
-    return zip(workloadFlow) { ctx, (workload, i) ->
-        ExecutionContext(
-            workload = workload,
-            rate = rate,
-            constants = lazy(LazyThreadSafetyMode.NONE) {
-                ctx.constants.value + workload.constants.value
-            },
-            variables = lazy(LazyThreadSafetyMode.NONE) {
-                ctx.variables.value + workload.variables
-            },
-            count = i,
-        )
-    }.onEach {
-        it.delay()
-    }
+}.map { (workload, executionId) ->
+    WorkloadContext(
+        workload = workload,
+        rate = rate,
+        executionId = executionId,
+    )
 }
 
-fun Flow<StateContext>.zip(workload: RateWorkload): Flow<ExecutionContext> {
-    return zip((1..workload.count).asFlow()) { ctx, i ->
-        require(i == ctx.count) {
-            "something has gone wrong expected count [$i] to be the same as the context count [${ctx.count}]"
-        }
-        ExecutionContext(
-            workload = workload,
-            rate = workload.rate,
-            constants = lazy(LazyThreadSafetyMode.NONE) {
-                ctx.constants.value + workload.constants.value
-            },
-            variables = lazy(LazyThreadSafetyMode.NONE) {
-                ctx.variables.value + workload.variables
-            },
-            count = i,
+fun RateWorkload.toCtx(): Flow<WorkloadContext> =
+    (1..count).asFlow().map { executionId ->
+        WorkloadContext(
+            workload = this@toCtx,
+            rate = rate,
+            executionId = executionId,
         )
+    }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+fun Flow<WorkloadContext>.zip(stateFlow: Flow<StateContext>): Flow<ExecutionContext> {
+    return flatMapConcat { wCtx ->
+        (0 until wCtx.workload.executor.variablesRequired)
+            .map { wCtx }
+            .asFlow()
+    }.zip(stateFlow) { wCtx, sCtx ->
+        wCtx to sCtx.copy(
+            constants = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+                sCtx.constants.value + wCtx.workload.constants.value
+            },
+            variables = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+                sCtx.variables.value + wCtx.workload.variables
+            },
+        )
+//    }.onEach {
+//        println("ctx pairs: (workload: ${it.first.workload.name}, wkExId: ${it.first.executionId}, stateId: ${it.second.count})," +
+//                "stateVars: ${it.second.variables.value}")
+    }.groupBy({ it.workload to it.executionId }) { wCtx, sCtxList ->
+        ExecutionContext.create(wCtx, sCtxList)
     }.onEach {
         it.delay()
     }

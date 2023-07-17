@@ -27,13 +27,6 @@ import uk.dioxic.helios.generate.putOperator
 
 class ExecutorTests : FunSpec({
 
-    fun executeBenchmark(executor: Executor, client: MongoClient) =
-        buildBenchmark {
-            sequentialStage {
-                rateWorkload(executor = executor)
-            }
-        }.execute(ResourceRegistry(client))
-
     test("command executor") {
         val client = mockk<MongoClient> {
             every { getDatabase(any()) } returns mockk {
