@@ -78,7 +78,7 @@ fun produceExecutions(
         }
     }.shareIn(
         scope = GlobalScope,
-        started = SharingStarted.WhileSubscribedAtLeast(stage.subscriberCount()),
+        started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
         replay = varBufferSize
     )
 

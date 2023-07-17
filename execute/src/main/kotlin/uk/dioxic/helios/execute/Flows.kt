@@ -88,10 +88,22 @@ fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> {
 private val TimedResult.isSingleExecution
     get() = (context.workload.count == 1L)
 
-fun SharingStarted.Companion.WhileSubscribedAtLeast(threshold: Int) =
-    SharingStarted { subscriptionCount ->
+fun SharingStarted.Companion.StartWhenSubscribedAtLeast(threshold: Int): SharingStarted {
+    var started = false
+    return SharingStarted { subscriptionCount ->
         subscriptionCount
-            .map { if (it >= threshold) SharingCommand.START else SharingCommand.STOP }
+            .map {
+                when {
+                    it >= threshold -> {
+                        started = true
+                        SharingCommand.START
+                    }
+                    it <= 0 -> SharingCommand.STOP
+                    started -> SharingCommand.START
+                    else -> SharingCommand.STOP
+                }
+            }
             .dropWhile { it != SharingCommand.START } // don't emit any STOP/RESET_BUFFER to start with, only START
             .distinctUntilChanged() // just in case somebody forgets it, don't leak our multiple sending of START
     }
+}
