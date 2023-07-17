@@ -99,9 +99,6 @@
             "type": "bulk",
             "database": "test",
             "collection": "birds",
-            "variables": {
-              "birdName": "$name"
-            },
             "operations": [
               {
                 "type": "insert",
