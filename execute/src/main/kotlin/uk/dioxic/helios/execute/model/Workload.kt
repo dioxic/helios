@@ -18,7 +18,7 @@ import kotlin.time.Duration
     abstract fun createContext(benchmark: Benchmark, stage: Stage): ExecutionContext
 
     @Transient
-    override val constants = lazy { constantsDefinition.hydrateAndFlatten(name) }
+    override val constants = lazy { constantsDefinition.hydrateAndFlatten() }
 
     companion object
 }

@@ -16,7 +16,7 @@ sealed class Stage : Stateful {
     abstract val timeout: Duration
 
     @Transient
-    override val constants = lazy { constantsDefinition.hydrateAndFlatten(name) }
+    override val constants = lazy { constantsDefinition.hydrateAndFlatten() }
 
     companion object
 }

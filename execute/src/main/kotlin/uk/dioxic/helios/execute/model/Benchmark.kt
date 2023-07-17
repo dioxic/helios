@@ -18,7 +18,7 @@ data class Benchmark(
 ) : Stateful {
 
     @Transient
-    override val constants = lazy { constantsDefinition.hydrateAndFlatten(name) }
+    override val constants = lazy { constantsDefinition.hydrateAndFlatten() }
 
     companion object
 }

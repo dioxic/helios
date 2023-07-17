@@ -4,8 +4,8 @@ package uk.dioxic.helios.generate
 
 import uk.dioxic.helios.generate.operators.rootKey
 
-fun Template.hydrateAndFlatten(ctxName: String) =
-    with(NamedContext(ctxName)) {
+fun Template.hydrateAndFlatten() =
+    with(OperatorContext.EMPTY) {
         this@hydrateAndFlatten.hydrate().flatten()
     }
 

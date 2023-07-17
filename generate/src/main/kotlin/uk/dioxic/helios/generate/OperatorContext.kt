@@ -1,7 +1,6 @@
 package uk.dioxic.helios.generate
 
 interface OperatorContext {
-    val identity: Named
     val constants: Lazy<Map<String, Any?>>
     val variables: Lazy<Map<String, Any?>>
     val executionCount: Long

@@ -21,8 +21,6 @@ data class ExecutionContext(
     val startTime: ValueTimeMark = TimeSource.Monotonic.markNow(),
 ) : OperatorContext {
 
-    override val identity = workload
-
     override fun withConstants(constants: Lazy<Map<String, Any?>>) =
         copy(constants = constants)
 
