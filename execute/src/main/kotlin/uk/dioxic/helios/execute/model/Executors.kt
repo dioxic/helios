@@ -20,6 +20,7 @@ import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoSession
 import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.execute.serialization.TransactionOptionsSerializer
+import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
 import uk.dioxic.helios.generate.hydrate
@@ -34,19 +35,26 @@ sealed interface Executor {
     context(ExecutionContext, ResourceRegistry)
     suspend fun execute(): ExecutionResult
 
-    context(ExecutionContext)
-    fun Template.toEncodeContextList() = List(variablesRequired) {
-        EncodeContext(this, stateContext[it])
-    }
-
-    context(ExecutionContext)
-    fun Template.toSingleEncodeContext() =
-        EncodeContext(this, stateContext.first())
 }
 
 sealed interface MongoSessionExecutor : Executor {
     context(ExecutionContext, ResourceRegistry)
     suspend fun execute(session: ClientSession): ExecutionResult
+}
+
+sealed interface SingleVariableExecutor: Executor {
+    @Transient
+    override val variablesRequired
+        get() = 1
+
+    fun Template.toEncodeContext(stateContext: List<StateContext>) =
+        EncodeContext(this, stateContext.first())
+}
+
+sealed interface MultiVariableExecutor: Executor {
+    fun Template.toEncodeContext(stateContexts: List<StateContext>) = List(variablesRequired) {
+        EncodeContext(this, stateContexts[it])
+    }
 }
 
 @Serializable
@@ -62,8 +70,6 @@ sealed class CollectionExecutor : DatabaseExecutor(), MongoSessionExecutor {
 
 @Serializable
 sealed class DatabaseExecutor : MongoSessionExecutor {
-    @Transient
-    override val variablesRequired = 1
     abstract val database: String
 
     context(ResourceRegistry)
@@ -74,9 +80,7 @@ sealed class DatabaseExecutor : MongoSessionExecutor {
 @SerialName("message")
 class MessageExecutor(
     val template: Template
-) : Executor {
-    @Transient
-    override val variablesRequired = 1
+) : SingleVariableExecutor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(): MessageResult =
@@ -91,7 +95,7 @@ class MessageExecutor(
 class DropExecutor(
     override val database: String,
     val collection: String?,
-) : DatabaseExecutor() {
+) : DatabaseExecutor(), SingleVariableExecutor {
 
     val dropCommand = if (collection != null) {
         CommandExecutor(database, buildTemplate {
@@ -118,15 +122,17 @@ class DropExecutor(
 class CommandExecutor(
     override val database: String,
     val command: Template
-) : DatabaseExecutor() {
+) : DatabaseExecutor(), SingleVariableExecutor {
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) = CommandResult(
-        getDatabase().runCommand(session, command.toSingleEncodeContext())
+        getDatabase().runCommand(session, command.toEncodeContext(stateContext))
     )
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() = CommandResult(
-        getDatabase().runCommand(command.toSingleEncodeContext())
+        getDatabase().runCommand(
+            command.toEncodeContext(stateContext)
+        )
     )
 }
 
@@ -136,16 +142,16 @@ class InsertOneExecutor(
     override val database: String,
     override val collection: String,
     val template: Template
-) : CollectionExecutor() {
+) : CollectionExecutor(), SingleVariableExecutor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession): ExecutionResult =
-        getCollection<EncodeContext>().insertOne(session, template.toSingleEncodeContext()).standardize()
+        getCollection<EncodeContext>().insertOne(session, template.toEncodeContext(stateContext)).standardize()
 
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<EncodeContext>().insertOne(template.toSingleEncodeContext()).standardize()
+        getCollection<EncodeContext>().insertOne(template.toEncodeContext(stateContext)).standardize()
 
 }
 
@@ -157,7 +163,7 @@ class InsertManyExecutor(
     val template: Template,
     val size: Int = 1,
     private val ordered: Boolean = true,
-) : CollectionExecutor() {
+) : CollectionExecutor(), MultiVariableExecutor {
 
     @Transient
     private val options = InsertManyOptions().ordered(ordered)
@@ -167,11 +173,15 @@ class InsertManyExecutor(
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<EncodeContext>().insertMany(session, template.toEncodeContextList(), options).standardize()
+        getCollection<EncodeContext>().insertMany(
+            session,
+            template.toEncodeContext(stateContext),
+            options
+        ).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<EncodeContext>().insertMany(template.toEncodeContextList(), options).standardize()
+        getCollection<EncodeContext>().insertMany(template.toEncodeContext(stateContext), options).standardize()
 
 }
 
@@ -181,15 +191,15 @@ class DeleteOneExecutor(
     override val database: String,
     override val collection: String,
     val filter: Template,
-) : CollectionExecutor() {
+) : CollectionExecutor(), SingleVariableExecutor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<EncodeContext>().deleteOne(session, filter.toSingleEncodeContext()).standardize()
+        getCollection<EncodeContext>().deleteOne(session, filter.toEncodeContext(stateContext)).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<EncodeContext>().deleteOne(filter.toSingleEncodeContext()).standardize()
+        getCollection<EncodeContext>().deleteOne(filter.toEncodeContext(stateContext)).standardize()
 
 }
 
@@ -199,15 +209,15 @@ class DeleteManyExecutor(
     override val database: String,
     override val collection: String,
     val filter: Template,
-) : CollectionExecutor() {
+) : CollectionExecutor(), SingleVariableExecutor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
-        getCollection<EncodeContext>().deleteMany(session, filter.toSingleEncodeContext()).standardize()
+        getCollection<EncodeContext>().deleteMany(session, filter.toEncodeContext(stateContext)).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
-        getCollection<EncodeContext>().deleteMany(filter.toSingleEncodeContext()).standardize()
+        getCollection<EncodeContext>().deleteMany(filter.toEncodeContext(stateContext)).standardize()
 
 }
 
@@ -219,22 +229,22 @@ class ReplaceOneExecutor(
     val filter: Template,
     val replacement: Template,
     @Contextual val options: ReplaceOptions
-) : CollectionExecutor() {
+) : CollectionExecutor(), SingleVariableExecutor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
         getCollection<EncodeContext>().replaceOne(
             session,
-            filter.toSingleEncodeContext(),
-            replacement.toSingleEncodeContext(),
+            filter.toEncodeContext(stateContext),
+            replacement.toEncodeContext(stateContext),
             options
         ).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
         getCollection<EncodeContext>().replaceOne(
-            filter.toSingleEncodeContext(),
-            replacement.toSingleEncodeContext(),
+            filter.toEncodeContext(stateContext),
+            replacement.toEncodeContext(stateContext),
             options
         ).standardize()
 
@@ -248,22 +258,22 @@ class UpdateOneExecutor(
     val filter: Template,
     val update: Template,
     @Contextual val options: UpdateOptions
-) : CollectionExecutor() {
+) : CollectionExecutor(), SingleVariableExecutor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
         getCollection<EncodeContext>().updateOne(
             session,
-            filter.toSingleEncodeContext(),
-            update.toSingleEncodeContext(),
+            filter.toEncodeContext(stateContext),
+            update.toEncodeContext(stateContext),
             options
         ).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
         getCollection<EncodeContext>().updateOne(
-            filter.toSingleEncodeContext(),
-            update.toSingleEncodeContext(),
+            filter.toEncodeContext(stateContext),
+            update.toEncodeContext(stateContext),
             options
         ).standardize()
 
@@ -277,22 +287,22 @@ class UpdateManyExecutor(
     val filter: Template,
     val update: Template,
     @Contextual val options: UpdateOptions
-) : CollectionExecutor() {
+) : CollectionExecutor(), SingleVariableExecutor {
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
         getCollection<Template>().updateMany(
             session,
-            filter.toSingleEncodeContext(),
-            update.toSingleEncodeContext(),
+            filter.toEncodeContext(stateContext),
+            update.toEncodeContext(stateContext),
             options
         ).standardize()
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute() =
         getCollection<Template>().updateMany(
-            filter.toSingleEncodeContext(),
-            update.toSingleEncodeContext(),
+            filter.toEncodeContext(stateContext),
+            update.toEncodeContext(stateContext),
             options
         ).standardize()
 
@@ -304,7 +314,7 @@ class BulkWriteExecutor(
     override val database: String,
     override val collection: String,
     val operations: List<WriteOperation>
-) : CollectionExecutor() {
+) : CollectionExecutor(), MultiVariableExecutor {
 
     @Transient
     override val variablesRequired =
