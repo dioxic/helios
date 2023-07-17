@@ -13,7 +13,7 @@ import kotlin.time.TimeSource.Monotonic.ValueTimeMark
 @optics
 data class ExecutionContext(
     val workload: Workload,
-    val executor: Executor,
+    val executor: Executor = workload.executor,
     val rate: Rate,
     override val constants: Lazy<Map<String, Any?>>,
     override val variables: Lazy<Map<String, Any?>>,
@@ -31,7 +31,7 @@ data class ExecutionContext(
     suspend operator fun invoke(): TimedResult = measureTimedResult {
         try {
             OperatorContext.threadLocal.set(this)
-            workload.executor.execute()
+            executor.execute()
         } catch (e: MongoException) {
             ErrorResult(e)
         }

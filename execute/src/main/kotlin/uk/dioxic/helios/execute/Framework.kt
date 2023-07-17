@@ -52,18 +52,6 @@ fun produceExecutions(
     stage: Stage,
     varBufferSize: Int
 ): Flow<ExecutionContext> {
-//    val ctxFlow = MutableSharedFlow<NamedContext>(
-//        replay = varBufferSize,
-//        extraBufferCapacity = 0,
-//        onBufferOverflow = BufferOverflow.
-//    )
-//
-//    GlobalScope.launch {
-//        while(true) {
-//
-//        }
-//    }
-
     val ctxFlow = flow {
         val constants = lazy { benchmark.constants.value + stage.constants.value }
         var count = 0L
@@ -128,7 +116,6 @@ fun Flow<StateContext>.zip(workloads: List<WeightedWorkload>, rate: Rate): Flow<
     return zip(workloadFlow) { ctx, (workload, i) ->
         ExecutionContext(
             workload = workload,
-            executor = workload.executor,
             rate = rate,
             constants =  lazy(LazyThreadSafetyMode.NONE) {
                 ctx.constants.value + workload.constants.value
@@ -137,7 +124,6 @@ fun Flow<StateContext>.zip(workloads: List<WeightedWorkload>, rate: Rate): Flow<
                 ctx.variables.value + workload.variables
             },
             count = i,
-            startTime = TimeSource.Monotonic.markNow()
         )
     }
 }
@@ -149,7 +135,6 @@ fun Flow<StateContext>.zip(workload: RateWorkload): Flow<ExecutionContext> {
         }
         ExecutionContext(
             workload = workload,
-            executor = workload.executor,
             rate = workload.rate,
             constants = lazy(LazyThreadSafetyMode.NONE) {
                 ctx.constants.value + workload.constants.value
@@ -158,7 +143,6 @@ fun Flow<StateContext>.zip(workload: RateWorkload): Flow<ExecutionContext> {
                 ctx.variables.value + workload.variables
             },
             count = i,
-            startTime = TimeSource.Monotonic.markNow()
         )
     }.onEach {
         it.delay()
