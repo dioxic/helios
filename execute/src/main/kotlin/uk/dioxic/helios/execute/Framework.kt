@@ -110,6 +110,7 @@ fun Flow<StateContext>.zip(workloads: List<WeightedWorkload>, rate: Rate): Flow<
                 }
                 workloads[it] to count
             })
+
         }
     }
 
@@ -125,6 +126,8 @@ fun Flow<StateContext>.zip(workloads: List<WeightedWorkload>, rate: Rate): Flow<
             },
             count = i,
         )
+    }.onEach {
+        it.delay()
     }
 }
 
