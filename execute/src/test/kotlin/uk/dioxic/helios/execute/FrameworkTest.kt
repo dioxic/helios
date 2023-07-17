@@ -5,10 +5,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.mockk.*
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.withTimeout
 import uk.dioxic.helios.execute.model.ExecutionContext
@@ -40,6 +37,7 @@ class FrameworkTest : FunSpec({
                 }
             }
         } returns MessageResult()
+        every { executor.variablesRequired } returns 1
     }
 
     context("execution counts") {
@@ -187,6 +185,7 @@ class FrameworkTest : FunSpec({
                 }
             }
         } returns WriteResult(insertedCount = 20)
+        every { insertOneExecutor.variablesRequired } returns 1
 
         buildBenchmark {
             parallelStage {
