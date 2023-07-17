@@ -17,7 +17,7 @@ data class ExecutionContext(
     val rate: Rate,
     override val constants: Lazy<Map<String, Any?>>,
     override val variables: Lazy<Map<String, Any?>>,
-    override val executionCount: Long = 0,
+    override val count: Long = 0,
     val startTime: ValueTimeMark = TimeSource.Monotonic.markNow(),
 ) : OperatorContext {
 

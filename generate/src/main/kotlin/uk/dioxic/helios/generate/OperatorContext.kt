@@ -3,7 +3,7 @@ package uk.dioxic.helios.generate
 interface OperatorContext {
     val constants: Lazy<Map<String, Any?>>
     val variables: Lazy<Map<String, Any?>>
-    val executionCount: Long
+    val count: Long
 
     fun withConstants(constants: Lazy<Map<String, Any?>>): OperatorContext
 

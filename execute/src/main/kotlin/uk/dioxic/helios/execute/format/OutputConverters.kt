@@ -176,7 +176,7 @@ private fun SummarizedMessageResult.toOutputResult(stageName: String) = OutputRe
 )
 
 private val ExecutionContext.executionProgress
-    get() = executionCount.percentOf(workload.count)
+    get() = count.percentOf(workload.count)
 
 private infix fun Int.percentOf(divisor: Int): Percent = (this * 100) / divisor
 private infix fun Long.percentOf(divisor: Long): Percent = ((this * 100) / divisor).toInt()
