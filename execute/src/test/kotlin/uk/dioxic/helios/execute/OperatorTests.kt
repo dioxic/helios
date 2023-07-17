@@ -126,7 +126,7 @@ class OperatorTests : FunSpec({
 //                            println(it.doc)
                             it.doc["myId"].shouldBeInstanceOf<ObjectId>()
                         }
-                        msgs.distinct().count() shouldBe distinctCount
+                        msgs.distinctBy { it.doc["myId"] }.count() shouldBe distinctCount
                     }
             }
 
