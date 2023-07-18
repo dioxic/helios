@@ -39,7 +39,7 @@ sealed interface MongoSessionExecutor : Executor {
     suspend fun execute(session: ClientSession): ExecutionResult
 }
 
-sealed interface SingleVariableExecutor: Executor {
+sealed interface SingleVariableExecutor : Executor {
     @Transient
     override val variablesRequired
         get() = 1
@@ -48,7 +48,7 @@ sealed interface SingleVariableExecutor: Executor {
         EncodeContext(this, stateContext.first())
 }
 
-sealed interface MultiVariableExecutor: Executor {
+sealed interface MultiVariableExecutor : Executor {
     fun Template.toEncodeContext(stateContexts: List<StateContext>) = List(variablesRequired) {
         EncodeContext(this, stateContexts[it])
     }
@@ -121,16 +121,20 @@ class CommandExecutor(
     val command: Template
 ) : DatabaseExecutor(), SingleVariableExecutor {
     context(ExecutionContext, ResourceRegistry)
-    override suspend fun execute(session: ClientSession) = CommandResult(
-        getDatabase().runCommand(session, command.toEncodeContext(stateContext))
-    )
+    override suspend fun execute(session: ClientSession): CommandResult {
+        OperatorContext.threadLocal.set(stateContext.first())
+        return CommandResult(
+            getDatabase().runCommand(session, command.toEncodeContext(stateContext))
+        )
+    }
 
     context(ExecutionContext, ResourceRegistry)
-    override suspend fun execute() = CommandResult(
-        getDatabase().runCommand(
-            command.toEncodeContext(stateContext)
+    override suspend fun execute(): CommandResult {
+        OperatorContext.threadLocal.set(stateContext.first())
+        return CommandResult(
+            getDatabase().runCommand(command)
         )
-    )
+    }
 }
 
 @Serializable
