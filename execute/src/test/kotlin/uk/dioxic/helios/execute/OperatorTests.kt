@@ -115,10 +115,9 @@ class OperatorTests : FunSpec({
         }
         val executor = MessageExecutor(template)
 
-        suspend fun Benchmark.verify(distinctCount: Int, linkVariables: Boolean = false) {
+        suspend fun Benchmark.verify(distinctCount: Int) {
             execute(
                 interval = Duration.ZERO,
-                linkedVariables = linkVariables
             ).filterIsInstance<ProgressMessage>()
                 .map { it.result }
                 .filterIsInstance<TimedMessageResult>()
@@ -166,22 +165,22 @@ class OperatorTests : FunSpec({
         context("linked variables") {
             test("benchmark variables linked") {
                 buildBenchmark(variables = variables) {
-                    parallelStage {
+                    parallelStage(sync = true) {
                         rateWorkload(executor = executor, count = 4, rate = PeriodRate(100.milliseconds))
                         rateWorkload(executor = executor, count = 8)
                         rateWorkload(executor = executor, count = 4)
                     }
-                }.verify(8, true)
+                }.verify(8)
             }
 
             test("stage variables linked") {
                 buildBenchmark {
-                    parallelStage(variables = variables) {
+                    parallelStage(variables = variables, sync = true) {
                         rateWorkload(executor = executor, count = 2, rate = PeriodRate(300.milliseconds))
                         rateWorkload(executor = executor, count = 5, rate = PeriodRate(100.milliseconds))
                         rateWorkload(executor = executor, count = 1)
                     }
-                }.verify(5, true)
+                }.verify(5)
             }
         }
 

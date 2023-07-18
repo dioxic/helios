@@ -17,12 +17,14 @@ fun buildBenchmark(
 
 fun buildSequentialStage(
     name: String = "sequential",
+    sync: Boolean = false,
     constants: Template = Template.EMPTY,
     variables: Template = Template.EMPTY,
     init: SequentialStageBuilder.() -> Unit
 ): SequentialStage {
     val builder = SequentialStageBuilder(
         name = name,
+        sync = sync,
         constants = constants,
         variables = variables,
     )
@@ -32,6 +34,7 @@ fun buildSequentialStage(
 
 fun buildParallelStage(
     name: String = "parallel",
+    sync: Boolean = false,
     constants: Template = Template.EMPTY,
     variables: Template = Template.EMPTY,
     timeout: Duration = Duration.INFINITE,
@@ -39,6 +42,7 @@ fun buildParallelStage(
 ): ParallelStage {
     val builder = ParallelStageBuilder(
         name = name,
+        sync = sync,
         constants = constants,
         variables = variables,
         timeout = timeout
@@ -56,12 +60,14 @@ class BenchmarkBuilder(
 
     fun sequentialStage(
         name: String? = null,
+        sync: Boolean = false,
         constants: Template = Template.EMPTY,
         variables: Template = Template.EMPTY,
         init: SequentialStageBuilder.() -> Unit
     ) {
         val builder = SequentialStageBuilder(
             name = name ?: "stage${stages.size}",
+            sync = sync,
             constants = constants,
             variables = variables,
         )
@@ -71,6 +77,7 @@ class BenchmarkBuilder(
 
     fun parallelStage(
         name: String? = null,
+        sync: Boolean = false,
         constants: Template = Template.EMPTY,
         variables: Template = Template.EMPTY,
         timeout: Duration = Duration.INFINITE,
@@ -78,6 +85,7 @@ class BenchmarkBuilder(
     ) {
         val builder = ParallelStageBuilder(
             name = name ?: "stage${stages.size}",
+            sync = sync,
             timeout = timeout,
             constants = constants,
             variables = variables,
@@ -96,6 +104,7 @@ class BenchmarkBuilder(
 
 class SequentialStageBuilder(
     private val name: String,
+    private val sync: Boolean,
     private val constants: Template,
     private val variables: Template,
 ) {
@@ -123,6 +132,7 @@ class SequentialStageBuilder(
 
     fun build() = SequentialStage(
         name = name,
+        sync = sync,
         workloads = workloads,
         constantsDefinition = constants,
         variablesDefinition = variables,
@@ -131,6 +141,7 @@ class SequentialStageBuilder(
 
 class ParallelStageBuilder(
     private val name: String,
+    private val sync: Boolean,
     private val timeout: Duration,
     private val constants: Template,
     private val variables: Template,
@@ -179,6 +190,7 @@ class ParallelStageBuilder(
 
     fun build() = ParallelStage(
         name = name,
+        sync = sync,
         timeout = timeout,
         workloads = workloads,
         constantsDefinition = constants,

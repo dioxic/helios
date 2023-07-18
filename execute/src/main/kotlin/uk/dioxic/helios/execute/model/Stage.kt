@@ -12,6 +12,7 @@ import kotlin.time.Duration
 @optics
 @Serializable
 sealed class Stage : Stateful {
+    abstract val sync: Boolean
     abstract val workloads: List<Workload>
     abstract val timeout: Duration
 
@@ -26,8 +27,9 @@ sealed class Stage : Stateful {
 @SerialName("sequential")
 data class SequentialStage(
     override val name: String,
-    @SerialName("constants") override val constantsDefinition: Template  = Template.EMPTY,
-    @SerialName("variables") override val variablesDefinition: Template  = Template.EMPTY,
+    override val sync: Boolean = false,
+    @SerialName("constants") override val constantsDefinition: Template = Template.EMPTY,
+    @SerialName("variables") override val variablesDefinition: Template = Template.EMPTY,
     override val workloads: List<RateWorkload>,
     override val timeout: Duration = Duration.INFINITE,
 ) : Stage() {
@@ -39,9 +41,10 @@ data class SequentialStage(
 @SerialName("parallel")
 data class ParallelStage(
     override val name: String,
+    override val sync: Boolean = false,
     override val workloads: List<Workload>,
-    @SerialName("constants") override val constantsDefinition: Template  = Template.EMPTY,
-    @SerialName("variables") override val variablesDefinition: Template  = Template.EMPTY,
+    @SerialName("constants") override val constantsDefinition: Template = Template.EMPTY,
+    @SerialName("variables") override val variablesDefinition: Template = Template.EMPTY,
     override val timeout: Duration = Duration.INFINITE,
     val weightedWorkloadRate: Rate = UnlimitedRate,
 ) : Stage() {

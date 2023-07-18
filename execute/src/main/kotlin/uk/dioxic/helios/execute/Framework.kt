@@ -22,15 +22,14 @@ import kotlin.time.measureTime
 fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry(),
     concurrency: Int = 4,
-    interval: Duration = 1.seconds,
-    linkedVariables: Boolean = false
+    interval: Duration = 1.seconds
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
         stages.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {
-                    produceExecutions(this@execute, stage, linkedVariables)
+                    produceExecutions(this@execute, stage)
                         .buffer(100)
                         .parMapUnordered(concurrency) { execution ->
                             execution.invoke()
@@ -48,8 +47,7 @@ fun Benchmark.execute(
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 fun produceExecutions(
     benchmark: Benchmark,
-    stage: Stage,
-    linkedVariables: Boolean
+    stage: Stage
 ): Flow<ExecutionContext> {
     val stateFlow: Flow<StateContext> = flow {
         val constants = lazy { benchmark.constants.value + stage.constants.value }
@@ -64,7 +62,7 @@ fun produceExecutions(
             )
         }
     }.let {
-        if (linkedVariables) {
+        if (stage.sync) {
             it.buffer(100).shareIn(
                 scope = GlobalScope,
                 started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
