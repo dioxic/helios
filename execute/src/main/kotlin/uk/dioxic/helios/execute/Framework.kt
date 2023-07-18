@@ -32,9 +32,6 @@ fun Benchmark.execute(
                 withTimeoutOrNull(stage.timeout) {
                     produceExecutions(this@execute, stage, linkedVariables)
                         .buffer(100)
-//                        .onEach {
-//                            println("first state: ${it.stateContext.first().variables.value }")
-//                        }
                         .parMapUnordered(concurrency) { execution ->
                             execution.invoke()
                         }
@@ -136,29 +133,25 @@ fun RateWorkload.toCtx(): Flow<WorkloadContext> =
     }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun Flow<WorkloadContext>.zip(stateFlow: Flow<StateContext>): Flow<ExecutionContext> {
-    return flatMapConcat { wCtx ->
+fun Flow<WorkloadContext>.zip(stateFlow: Flow<StateContext>): Flow<ExecutionContext> =
+    flatMapConcat { wCtx ->
         (0 until wCtx.workload.executor.variablesRequired)
             .map { wCtx }
             .asFlow()
     }.zip(stateFlow) { wCtx, sCtx ->
         wCtx to sCtx.copy(
-            constants = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            constants = lazy(LazyThreadSafetyMode.NONE) {
                 sCtx.constants.value + wCtx.workload.constants.value
             },
-            variables = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            variables = lazy(LazyThreadSafetyMode.NONE) {
                 sCtx.variables.value + wCtx.workload.variables
             },
         )
-//    }.onEach {
-//        println("ctx pairs: (workload: ${it.first.workload.name}, wkExId: ${it.first.executionId}, stateId: ${it.second.count})," +
-//                "stateVars: ${it.second.variables.value}")
     }.groupBy({ it.workload to it.executionId }) { wCtx, sCtxList ->
         ExecutionContext.create(wCtx, sCtxList)
     }.onEach {
         it.delay()
     }
-}
 
 suspend fun ExecutionContext.delay() {
     val delay = this.rate.calculateDelay()
