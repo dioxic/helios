@@ -12,14 +12,16 @@ import uk.dioxic.helios.generate.hydrateAndFlatten
 @optics
 data class Benchmark(
     override val name: String,
-    @SerialName("constants") override val constantsDefinition: Template  = Template.EMPTY,
-    @SerialName("variables") override val variablesDefinition: Template  = Template.EMPTY,
+    @SerialName("constants") override val constantsDefinition: Template = Template.EMPTY,
+    @SerialName("variables") override val variablesDefinition: Template = Template.EMPTY,
     val stages: List<Stage>
 ) : Stateful {
 
     @Transient
     override val constants = lazy { constantsDefinition.hydrateAndFlatten() }
 
-    companion object
+    companion object {
+        val EMPTY = Benchmark("empty", stages = emptyList())
+    }
 }
 
