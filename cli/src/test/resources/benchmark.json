@@ -91,9 +91,12 @@
     {
       "type": "sequential",
       "name": "deletes pre-index + bulk",
+      "variables": {
+        "birdName": "$name"
+      },
       "workloads": [
         {
-          "name": "bulk write",
+          "name": "bulk write birds",
           "count": 100,
           "executor": {
             "type": "bulk",
