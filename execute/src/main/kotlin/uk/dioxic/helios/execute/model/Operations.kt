@@ -11,8 +11,6 @@ import uk.dioxic.helios.generate.EncodeContext
 import uk.dioxic.helios.generate.OperatorContext
 import uk.dioxic.helios.generate.Template
 
-typealias VariablesCache = List<Lazy<Map<String, Any?>>>
-
 @Serializable
 sealed interface WriteOperation {
     val count: Int
