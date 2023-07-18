@@ -36,8 +36,8 @@ suspend fun Flow<Number>.average(): Double {
  * Expects the input flow to be sorted by group key
  * @param keyFn the function to apply to get the group key
  */
-fun <T, P, R> Flow<Pair<T, P>>.groupBy(
-    keyFn: (T) -> Any,
+fun <T : Any, P, R> Flow<Pair<T, P>>.groupBy(
+    keyFn: (T) -> Any = { it },
     transform: (T, List<P>) -> R
 ): Flow<R> = flow {
     val results = ArrayList<P>()
@@ -48,16 +48,16 @@ fun <T, P, R> Flow<Pair<T, P>>.groupBy(
         lastGroup?.let { group ->
             emit(transform(group, results))
         }
-    }.collect {
-        val key = keyFn.invoke(it.first)
+    }.collect { (group, value) ->
+        val key = keyFn.invoke(group)
         if (lastGroup != null && key != lastKey) {
             emit(transform(lastGroup!!, results.toList()))
             results.clear()
-        } else {
-            lastKey = key
-            lastGroup = it.first
         }
-        results.add(it.second)
+
+        lastKey = key
+        lastGroup = group
+        results.add(value)
     }
 }
 
