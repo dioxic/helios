@@ -46,6 +46,7 @@
     {
       "type": "parallel",
       "name": "load data",
+      "sync": true,
       "variables": {
         "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
       },
@@ -64,9 +65,9 @@
             "template": "$var.person"
           },
           "rate": {
-            "tps": 300
+            "tps": 100
           },
-          "count": 100
+          "count": 1000
         },
         {
           "name": "animals",
@@ -74,9 +75,9 @@
             "type": "insertMany",
             "database": "test",
             "collection": "animals",
-            "size": 1000,
+            "size": 300,
             "template": {
-              "name": "$name",
+              "name": "$var.person.name",
               "salutation": "$var.person.salutation",
               "number": "$const.number"
             }
