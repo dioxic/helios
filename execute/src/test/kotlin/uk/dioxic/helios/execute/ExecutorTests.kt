@@ -4,9 +4,12 @@ import arrow.optics.copy
 import com.mongodb.bulk.BulkWriteResult
 import com.mongodb.client.MongoClient
 import com.mongodb.client.model.DeleteOptions
+import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.model.InsertOneModel
 import com.mongodb.client.model.WriteModel
+import com.mongodb.client.result.InsertManyResult
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
@@ -14,6 +17,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.every
 import io.mockk.mockk
+import org.bson.BsonString
 import org.bson.Document
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.ResourceRegistry
@@ -49,6 +53,50 @@ class ExecutorTests : FunSpec({
             it.failureCount shouldBe 0
             it.successCount shouldBe 1
             it.document.shouldNotBeNull()
+        }
+    }
+
+    test("insertMany executor") {
+        val variables = buildTemplate {
+            putOperator<NameOperator>("vName")
+        }
+        val template = buildTemplate {
+            putKeyedOperator<VarOperator>("name", "vName")
+        }
+        val documents = mutableListOf<List<EncodeContext>>()
+        val client = mockk<MongoClient> {
+            every { getDatabase(any()) } returns mockk {
+                every { getCollection(any(), any<Class<EncodeContext>>()) } returns mockk {
+                    every {
+                        insertMany(capture(documents), any<InsertManyOptions>())
+                    } returns InsertManyResult.acknowledged(mapOf(0 to BsonString("id")))
+                }
+            }
+        }
+        val executor = InsertManyExecutor(
+            database = "test",
+            collection = "test",
+            template = template,
+            size = 100
+        )
+        val ctx = defaultExecutionContext.copy {
+            ExecutionContext.executor.set(executor)
+            ExecutionContext.workload.rateWorkload.variablesDefinition.set(variables)
+            ExecutionContext.stateContext.set(List(executor.variablesRequired) {
+                StateContext(it.toLong(), variables = lazy { variables.hydrateAndFlatten() })
+            })
+        }
+
+        with(ResourceRegistry(client)) {
+            with(ctx) {
+                executor.execute()
+            }
+        }
+
+        documents.shouldHaveSize(1)
+        documents.forAll {encodeCtxList ->
+            encodeCtxList.shouldHaveSize(100)
+            encodeCtxList.map { it.operatorContext }.distinct().shouldHaveSize(100)
         }
 
     }
