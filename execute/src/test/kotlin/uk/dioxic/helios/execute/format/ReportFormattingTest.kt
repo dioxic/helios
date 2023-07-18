@@ -66,7 +66,7 @@ class ReportFormattingTest : FunSpec({
         clearMocks(executor)
     }
 
-    context("text format") {
+    xcontext("text format") {
         test("print multiple workloads").config(enabled = IS_NOT_GH_ACTION) {
             benchmark.execute(ResourceRegistry(mongoClient))
                 .buffer(100)

@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.*
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.*
+import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.extensions.nextElementIndex
 import kotlin.random.Random
 import kotlin.time.Duration
@@ -14,20 +15,25 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
 
+/**
+ * @param interval the message batching/summarization interval (0 to disable batching)
+ */
 @OptIn(FlowPreview::class)
 fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry(),
     concurrency: Int = 4,
-    interval: Duration = 1.seconds,
+    interval: Duration = 1.seconds
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
         stages.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {
-                    produceExecutions(stage)
+                    produceExecutions(this@execute, stage)
                         .buffer(100)
-                        .parMapUnordered(concurrency) { it() }
+                        .parMapUnordered(concurrency) { execution ->
+                            execution.invoke()
+                        }
                         .chunked(interval)
                         .map { ProgressMessage(stage, it) }
                         .collect { emit(it) }
@@ -38,76 +44,112 @@ fun Benchmark.execute(
     }
 }.flowOn(Dispatchers.Default)
 
-fun Benchmark.produceExecutions(stage: Stage): Flow<ExecutionContext> =
-    when (stage) {
-        is SequentialStage -> produceSequential(stage)
-        is ParallelStage -> produceParallel(stage)
+@OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+fun produceExecutions(
+    benchmark: Benchmark,
+    stage: Stage
+): Flow<ExecutionContext> {
+    val stateFlow: Flow<StateContext> = flow {
+        val constants = lazy { benchmark.constants.value + stage.constants.value }
+        var count = 0L
+        while (true) {
+            emit(
+                StateContext(
+                    variables = lazy { benchmark.variables + stage.variables },
+                    constants = constants,
+                    count = ++count
+                )
+            )
+        }
+    }.let {
+        if (stage.sync) {
+            it.buffer(100).shareIn(
+                scope = GlobalScope,
+                started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
+                replay = 0
+            )
+        } else {
+            it
+        }
     }
 
-@OptIn(ExperimentalCoroutinesApi::class)
-fun Benchmark.produceSequential(
-    stage: SequentialStage,
-): Flow<ExecutionContext> =
-    stage.workloads.asFlow().flatMapConcat { workload ->
-        produceRated(stage, workload)
+    return when (stage) {
+        is SequentialStage -> {
+            stage.workloads.asFlow().flatMapConcat { workload ->
+                workload.toCtx().zip(stateFlow)
+            }
+        }
+
+        is ParallelStage -> buildList {
+            val rateWorkloads = stage.workloads.filterIsInstance<RateWorkload>()
+            val weightedWorkloads = stage.workloads.filterIsInstance<WeightedWorkload>()
+
+            addAll(rateWorkloads.map { it.toCtx().zip(stateFlow) })
+            add(weightedWorkloads.toCtx(stage.weightedWorkloadRate).zip(stateFlow))
+        }.merge()
     }.flowOn(Dispatchers.Default)
+}
 
-fun Benchmark.produceParallel(
-    stage: ParallelStage,
-): Flow<ExecutionContext> = buildList {
-    val rateWorkloads = stage.workloads.filterIsInstance<RateWorkload>()
-    val weightedWorkloads = stage.workloads.filterIsInstance<WeightedWorkload>()
+fun Stage.subscriberCount(): Int =
+    workloads.size - workloads.filterIsInstance<WeightedWorkload>().count().let { count ->
+        if (count > 0) {
+            count - 1
+        } else {
+            count
+        }
+    }
 
-    addAll(rateWorkloads.map { produceRated(stage, it) })
-    add(produceWeighted(stage, weightedWorkloads))
-}.merge().flowOn(Dispatchers.Default)
-
-fun Benchmark.produceWeighted(
-    stage: Stage,
-    workloads: List<WeightedWorkload>
-): Flow<ExecutionContext> = flow {
-    val contexts = workloads.map { it.createContext(this@produceWeighted, stage) }
-    val weights = workloads.map { it.weight }.toMutableList()
-    val counts = MutableList(workloads.size) { 0L }
-
+fun List<WeightedWorkload>.toCtx(rate: Rate): Flow<WorkloadContext> = flow {
+    val weights = map { it.weight }.toMutableList()
+    val counts = MutableList(size) { 0L }
     var weightSum = weights.sum()
     while (weightSum > 0) {
-        Random.nextElementIndex(weights, weightSum).let {
+        emit(Random.nextElementIndex(weights, weightSum).let {
             val count = ++counts[it]
-            if (count == workloads[it].count) {
+            if (count == get(it).count) {
                 weights[it] = 0
                 weightSum = weights.sum()
             }
-            contexts[it].copy(
-                executionCount = count,
-                variables = lazy(LazyThreadSafetyMode.NONE) {
-                    this@produceWeighted.variables + stage.variables + workloads[it].variables
-                }
-            )
-        }.also {
-            emit(it)
-            it.delay()
-        }
+            get(it) to count
+        })
     }
+}.map { (workload, executionId) ->
+    WorkloadContext(
+        workload = workload,
+        rate = rate,
+        executionId = executionId,
+    )
 }
 
-fun Benchmark.produceRated(
-    stage: Stage,
-    workload: RateWorkload
-): Flow<ExecutionContext> = flow {
-    val context = workload.createContext(this@produceRated, stage)
-    for (i in 1..context.workload.count) {
-        context.copy(
-            executionCount = i,
-            variables = lazy(LazyThreadSafetyMode.NONE) {
-                this@produceRated.variables + stage.variables + workload.variables
-            }
-        ).also {
-            emit(it)
-            it.delay()
-        }
+fun RateWorkload.toCtx(): Flow<WorkloadContext> =
+    (1..count).asFlow().map { executionId ->
+        WorkloadContext(
+            workload = this@toCtx,
+            rate = rate,
+            executionId = executionId,
+        )
     }
-}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+fun Flow<WorkloadContext>.zip(stateFlow: Flow<StateContext>): Flow<ExecutionContext> =
+    flatMapConcat { wCtx ->
+        (0 until wCtx.workload.executor.variablesRequired)
+            .map { wCtx }
+            .asFlow()
+    }.zip(stateFlow) { wCtx, sCtx ->
+        wCtx to sCtx.copy(
+            constants = lazy(LazyThreadSafetyMode.NONE) {
+                sCtx.constants.value + wCtx.workload.constants.value
+            },
+            variables = lazy(LazyThreadSafetyMode.NONE) {
+                sCtx.variables.value + wCtx.workload.variables
+            },
+        )
+    }.groupBy({ it.workload to it.executionId }) { wCtx, sCtxList ->
+        ExecutionContext.create(wCtx, sCtxList)
+    }.onEach {
+        it.delay()
+    }
 
 suspend fun ExecutionContext.delay() {
     val delay = this.rate.calculateDelay()

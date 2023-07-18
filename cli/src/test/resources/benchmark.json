@@ -20,21 +20,25 @@
         {
           "name": "drop people collection",
           "executor": {
-            "type": "command",
+            "type": "drop",
             "database": "test",
-            "command": {
-              "drop": "people"
-            }
+            "collection": "people"
           }
         },
         {
           "name": "drop animals collection",
           "executor": {
-            "type": "command",
+            "type": "drop",
             "database": "test",
-            "command": {
-              "drop": "animals"
-            }
+            "collection": "animals"
+          }
+        },
+        {
+          "name": "drop birds collection",
+          "executor": {
+            "type": "drop",
+            "database": "test",
+            "collection": "birds"
           }
         }
       ]
@@ -42,6 +46,7 @@
     {
       "type": "parallel",
       "name": "load data",
+      "sync": true,
       "variables": {
         "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
       },
@@ -60,7 +65,7 @@
             "template": "$var.person"
           },
           "rate": {
-            "tps": 500
+            "tps": 100
           },
           "count": 1000
         },
@@ -70,14 +75,63 @@
             "type": "insertMany",
             "database": "test",
             "collection": "animals",
-            "size": 100,
+            "size": 300,
             "template": {
-              "name": "$name",
+              "name": "$var.person.name",
               "salutation": "$var.person.salutation",
               "number": "$const.number"
             }
           },
-          "count": 2000
+          "count": 2000,
+          "rate": {
+            "tps": 800
+          }
+        }
+      ]
+    },
+    {
+      "type": "sequential",
+      "name": "deletes pre-index + bulk",
+      "variables": {
+        "birdName": "$name"
+      },
+      "workloads": [
+        {
+          "name": "bulk write birds",
+          "count": 100,
+          "executor": {
+            "type": "bulk",
+            "database": "test",
+            "collection": "birds",
+            "operations": [
+              {
+                "type": "insert",
+                "count": 100,
+                "template": {
+                  "birdName": "$var.birdName"
+                }
+              },
+              {
+                "type": "insert",
+                "count": 100,
+                "template": {
+                  "birdName": "$var.birdName"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "delete animals",
+          "count": 1000,
+          "executor": {
+            "type": "deleteOne",
+            "database": "test",
+            "collection": "people",
+            "filter": {
+              "name": "$name"
+            }
+          }
         }
       ]
     },
@@ -117,7 +171,7 @@
     },
     {
       "type": "parallel",
-      "name": "deletes",
+      "name": "deletes post-index",
       "workloads": [
         {
           "name": "delete people",
@@ -133,7 +187,7 @@
         },
         {
           "name": "delete animals",
-          "count": 100000,
+          "count": 1000,
           "executor": {
             "type": "deleteOne",
             "database": "test",

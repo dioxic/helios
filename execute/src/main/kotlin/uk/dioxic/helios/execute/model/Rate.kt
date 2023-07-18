@@ -25,7 +25,7 @@ sealed class FixedRate: Rate() {
 }
 
 @Serializable
-object UnlimitedRate : FixedRate() {
+data object UnlimitedRate : FixedRate() {
     override fun calculateBaseDelay(): Duration = ZERO
     override fun calculateDelay(): Duration = ZERO
 }
