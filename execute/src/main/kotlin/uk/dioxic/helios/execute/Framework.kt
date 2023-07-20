@@ -177,3 +177,16 @@ inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): Ti
         is ErrorResult -> TimedErrorResult(value, mark.elapsedNow(), this)
     }
 }
+
+/**
+ * Returns a flow of dictionary values keyed on the dictionary name.
+ */
+context (ResourceRegistry)
+fun Dictionaries.asFlow(): Flow<HydratedDictionaries> =
+    map { (k, v) ->
+        v.asFlow().map { mapOf(k to it) }
+    }.reduce { acc, flow ->
+        acc.zip(flow) { t1, t2 ->
+            t1 + t2
+        }
+    }

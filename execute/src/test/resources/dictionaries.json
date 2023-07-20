@@ -1,0 +1,6 @@
+{
+  "person": { "type": "query", "ns": "test.people", "filter": { "age": { "$gt":  45 }}, "select": ["_id", "name", "age"] },
+  "tools": { "type": "sample", "ns": "test.animals", "size":  1000, "select": ["_id", "name"] },
+  "cars": { "type": "stream", "template": { "carName": "$name", "brand": { "$choose": { "from": ["BMW","Jaguar"]} } } },
+  "music": { "type": "constant", "template": { "ids": {"$array": { "of": "$objectId", "number": 3 } } } }
+}
