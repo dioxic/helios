@@ -10,5 +10,6 @@
             <AppenderRef ref="Console" />
         </Root>
         <Logger name="uk.dioxic.helios" level="DEBUG"/>
+        <Logger name="org.mongodb" level="WARN"/>
     </Loggers>
 </Configuration>
