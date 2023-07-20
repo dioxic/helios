@@ -15,6 +15,7 @@ tasks.withType<KotlinCompilationTask<*>> {
 dependencies {
     implementation(project(":generate"))
     ksp(libs.arrow.optics.ksp.plugin)
+    implementation(libs.okio)
     implementation(libs.bson)
     implementation(libs.mongodb.sync)
     implementation(libs.commons.math)

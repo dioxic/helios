@@ -17,8 +17,9 @@ kotlinCoroutines = "1.7.2"
 kotlinDatetime = "0.4.0"
 kotlinPoet = "1.13.2"
 kotlinSerialization = "1.5.1"
-kotlinBsonSerialization = "0.0.1"
+kotlinBsonSerialization = "0.0.2"
 ksp = "1.9.0-1.0.11"
+okio = "3.4.0"
 log4j = "2.20.0"
 mockk = "1.13.5"
 mongodb = "4.10.2"
@@ -66,6 +67,7 @@ log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
 log4j-kotlin = { module = "org.apache.logging.log4j:log4j-api-kotlin", version = "1.2.0" }
 log4j-slf4j = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 #mongodb-async = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 mongodb-sync = { module = "org.mongodb:mongodb-driver-sync", version.ref = "mongodb" }
