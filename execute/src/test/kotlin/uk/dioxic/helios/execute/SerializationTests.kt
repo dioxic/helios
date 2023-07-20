@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.resource.resourceAsString
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -26,7 +27,6 @@ import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.serialization.TransactionOptionsSerializer
 import uk.dioxic.helios.execute.serialization.UpdateOptionsSerializer
 import uk.dioxic.helios.execute.serialization.WriteConcernSerializer
-import uk.dioxic.helios.execute.test.readResource
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.buildTemplate
 import java.util.concurrent.TimeUnit
@@ -150,6 +150,33 @@ class SerializationTests : FunSpec({
         test("serialize") {
             Bson.encodeToString(dc).should {
                 it shouldBeJson json
+            }
+        }
+    }
+
+    context("Store") {
+        context("Path Store") {
+            val dc = DataClassWithStore(Store.YES)
+            val json = """
+                { "store": true }
+            """.trimIndent()
+            test("serialize") {
+                Bson.encodeToString(dc) shouldBeJson json
+            }
+            test("deserialize"){
+                Bson.decodeFromString<DataClassWithStore>(json) shouldBe dc
+            }
+        }
+        context("Boolean Store") {
+            val dc = DataClassWithStore(PathStore("/myPath/file.json"))
+            val json = """
+                { "store": "/myPath/file.json" }
+            """.trimIndent()
+            test("serialize") {
+                Bson.encodeToString(dc) shouldBeJson json
+            }
+            test("deserialize"){
+                Bson.decodeFromString<DataClassWithStore>(json) shouldBe dc
             }
         }
     }
@@ -396,7 +423,7 @@ class SerializationTests : FunSpec({
         }
 
         test("decoding invalid rate throws exception") {
-            val str = readResource("/benchmarkInvalid.json")
+            val str = resourceAsString("/benchmarkInvalid.json")
 
             shouldThrow<IllegalArgumentException> {
                 println(bson.decodeFromString<Benchmark>(str))
