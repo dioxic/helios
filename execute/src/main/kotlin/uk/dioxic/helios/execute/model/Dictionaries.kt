@@ -17,8 +17,6 @@ typealias Dictionaries = Map<String, Dictionary>
 typealias HydratedDictionary = Map<String, Any?>
 typealias HydratedDictionaries = Map<String, HydratedDictionary>
 
-const val defaultDictionaryExtension = "json"
-
 @Serializable
 sealed interface Dictionary {
     val store: Store

@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.bson.Bson
 import okio.FileSystem
 import okio.Path
-import okio.Path.Companion.toPath
 import okio.buffer
 import org.bson.Document
 import uk.dioxic.helios.execute.model.*
@@ -198,21 +197,25 @@ fun Dictionaries.asFlow(fileSystem: FileSystem = FileSystem.SYSTEM): Flow<Hydrat
         }
     }
 
+/**
+ * If the dictionary has storage enabled and a store file exists, read from the file.
+ * Otherwise, use the default flow for the dictionary.
+ *
+ * @param key the dictionary key
+ * @param fileSystem the Okio file system to use
+ * @return a hydrated flow of dictionary values
+ */
 context (ResourceRegistry)
-fun Dictionary.asResourcedFlow(key: String, fileSystem: FileSystem = FileSystem.SYSTEM): Flow<HydratedDictionary> =
-    with(store) {
-        when (this) {
-            is PathStore -> path.toPath().asFlow(fileSystem)
-            is BooleanStore -> {
-                val okioPath = "$key.$defaultDictionaryExtension".toPath()
-                if (persist && fileSystem.exists(okioPath)) {
-                    okioPath.asFlow(fileSystem)
-                } else {
-                    asFlow()
-                }
-            }
-        }
+fun Dictionary.asResourcedFlow(key: String, fileSystem: FileSystem = FileSystem.SYSTEM): Flow<HydratedDictionary> {
+    val okioPath = store.getOkioPath(key)
+
+    return if (okioPath != null && fileSystem.exists(okioPath)) {
+        okioPath.asFlow(fileSystem)
     }
+    else {
+        asFlow()
+    }
+}
 
 /**
  * Returns an infinite flow of documents from a file.

@@ -205,7 +205,7 @@ class DictionaryTests : FunSpec({
 
         test("Store.YES and file exists") {
             val fakeFs = fakeFile(
-                filename = "animal.$defaultDictionaryExtension",
+                filename = "animal.$defaultStoreExtension",
                 contents = listOf(
                     Document("species", "Badger"),
                     Document("species", "Giraffe"),
