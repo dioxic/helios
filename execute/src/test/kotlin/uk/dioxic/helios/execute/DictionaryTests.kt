@@ -11,7 +11,6 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.bson.Bson
@@ -25,6 +24,7 @@ import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.buildResourceRegistry
 import uk.dioxic.helios.execute.test.mockAggregateIterable
 import uk.dioxic.helios.execute.test.mockFindIterable
+import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
 import uk.dioxic.helios.generate.operators.ArrayOperator
 import uk.dioxic.helios.generate.operators.ChooseOperator
@@ -187,7 +187,21 @@ class DictionaryTests : FunSpec({
         }
     }
 
-    context("Stores") {
+    context("File Sink") {
+        val fakeFs = FakeFileSystem()
+
+        val dictionary = StreamDictionary(
+            template = buildTemplate {
+                putOperator<NameOperator>("name")
+            },
+            store = Store.YES
+        )
+        with(ResourceRegistry.EMPTY) {
+            dictionary.asFlow()
+        }
+    }
+
+    context("File Source") {
         fun fakeFile(filename: String, contents: List<Document>): FakeFileSystem {
             val fakeFs = FakeFileSystem()
             val root = "/".toPath()
@@ -212,15 +226,13 @@ class DictionaryTests : FunSpec({
                     Document("species", "Turtle"),
                 )
             )
-            val dictionary = QueryDictionary(
-                namespace = MongoNamespace("test", "animal"),
+            val dictionary = StreamDictionary(
+                template = Template.EMPTY,
                 store = Store.YES
             )
             with(ResourceRegistry.EMPTY) {
                 dictionary.asResourcedFlow("animal", fakeFs).take(10)
-                    .onEach {
-                        println(it)
-                    }.toList().should { values ->
+                    .toList().should { values ->
                         values.shouldHaveSize(10)
                         values.forAll {
                             it.shouldContainKeys("species")
@@ -237,15 +249,13 @@ class DictionaryTests : FunSpec({
                     Document("species", "Turtle"),
                 )
             )
-            val dictionary = QueryDictionary(
-                namespace = MongoNamespace("test", "animal"),
+            val dictionary = StreamDictionary(
+                template = Template.EMPTY,
                 store = PathStore("custom.example")
             )
             with(ResourceRegistry.EMPTY) {
                 dictionary.asResourcedFlow("animal", fakeFs).take(10)
-                    .onEach {
-                        println(it)
-                    }.toList().should { values ->
+                   .toList().should { values ->
                         values.shouldHaveSize(10)
                         values.forAll {
                             it.shouldContainKeys("species")
