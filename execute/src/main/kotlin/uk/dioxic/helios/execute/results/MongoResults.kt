@@ -1,6 +1,7 @@
 package uk.dioxic.helios.execute.results
 
 import com.mongodb.bulk.BulkWriteResult
+import com.mongodb.client.FindIterable
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.client.result.InsertManyResult
 import com.mongodb.client.result.InsertOneResult
@@ -31,3 +32,6 @@ fun BulkWriteResult.standardize() = WriteResult(
     matchedCount = matchedCount.toLong(),
     deletedCount = deletedCount.toLong(),
 )
+
+fun FindIterable<*>.standardize() =
+    ReadResult(count())

@@ -5,9 +5,9 @@ package uk.dioxic.helios.execute.model
 import arrow.fx.coroutines.resourceScope
 import com.mongodb.TransactionOptions
 import com.mongodb.client.ClientSession
-import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
+import com.mongodb.client.model.Aggregates.project
 import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.client.model.UpdateOptions
@@ -15,6 +15,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import org.bson.RawBsonDocument
 import uk.dioxic.helios.execute.mongodb.withTransaction
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.mongoSession
@@ -307,6 +308,36 @@ class UpdateManyExecutor(
             options
         ).standardize()
 
+}
+
+@Serializable
+class FindExecutor(
+    override val database: String,
+    override val collection: String,
+    val filter: Template,
+    val skip: Int? = null,
+    val limit: Int? = null,
+    val sort: Template? = null,
+    val project: Template? = null,
+) : CollectionExecutor(), SingleVariableExecutor {
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(session: ClientSession): ExecutionResult =
+        getCollection<RawBsonDocument>().find(session, filter).apply {
+            if (project != null) project(project)
+            if (limit != null) limit(limit)
+            if (sort != null) sort(sort)
+            if (skip != null) skip(skip)
+        }.standardize()
+
+    context(ExecutionContext, ResourceRegistry)
+    override suspend fun execute(): ExecutionResult =
+        getCollection<RawBsonDocument>().find(filter).apply {
+            if (project != null) project(project)
+            if (limit != null) limit(limit)
+            if (sort != null) sort(sort)
+            if (skip != null) skip(skip)
+        }.standardize()
 }
 
 @Serializable

@@ -19,9 +19,13 @@ import io.mockk.every
 import io.mockk.mockk
 import org.bson.BsonString
 import org.bson.Document
+import org.bson.RawBsonDocument
+import org.bson.conversions.Bson
 import uk.dioxic.helios.execute.model.*
-import uk.dioxic.helios.execute.resources.ResourceRegistry
+import uk.dioxic.helios.execute.resources.buildResourceRegistry
 import uk.dioxic.helios.execute.results.CommandResult
+import uk.dioxic.helios.execute.results.ReadResult
+import uk.dioxic.helios.execute.test.mockFindIterable
 import uk.dioxic.helios.generate.*
 import uk.dioxic.helios.generate.operators.NameOperator
 import uk.dioxic.helios.generate.operators.VarOperator
@@ -56,6 +60,41 @@ class ExecutorTests : FunSpec({
             it.failureCount shouldBe 0
             it.successCount shouldBe 1
             it.document.shouldNotBeNull()
+        }
+    }
+
+    test("find executor") {
+        val client = mockk<MongoClient> {
+            every { getDatabase(any()) } returns mockk {
+                every { getCollection(any(), any<Class<RawBsonDocument>>()) } returns mockk {
+                    every { find(any<Bson>()) } returns mockFindIterable(
+                        RawBsonDocument.parse("{}"),
+                        RawBsonDocument.parse("{}"),
+                        RawBsonDocument.parse("{}")
+                    )
+                }
+            }
+        }
+
+        val registry = buildResourceRegistry {
+            mongoClient = client
+        }
+        val ctx = defaultExecutionContext.copy(
+            executor = FindExecutor(
+                database = "test",
+                collection = "test",
+                filter = Template.EMPTY
+            )
+        )
+
+        val result = with(registry) {
+            with(ctx) {
+                executor.execute()
+            }
+        }
+
+        result.shouldBeInstanceOf<ReadResult>().should {
+            it.docsReturned shouldBe 3
         }
     }
 
@@ -100,7 +139,7 @@ class ExecutorTests : FunSpec({
         }
 
         documents.shouldHaveSize(1)
-        documents.forAll {encodeCtxList ->
+        documents.forAll { encodeCtxList ->
             encodeCtxList.shouldHaveSize(100)
             encodeCtxList.map { it.operatorContext }.distinct().shouldHaveSize(100)
         }
@@ -109,8 +148,10 @@ class ExecutorTests : FunSpec({
 
     context("bulk") {
 
-        suspend fun getWriteModels(variables: Template, operations: List<WriteOperation>)
-                : List<WriteModel<EncodeContext>> {
+        suspend fun getWriteModels(
+            variables: Template,
+            operations: List<WriteOperation>
+        ): List<WriteModel<EncodeContext>> {
             val requests = mutableListOf<List<WriteModel<EncodeContext>>>()
             val client = mockk<MongoClient> {
                 every { getDatabase(any()) } returns mockk {
