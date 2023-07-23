@@ -42,8 +42,11 @@ class ExecutorTests : FunSpec({
                 }
             )
         )
+        val registry = buildResourceRegistry {
+            mongoClient = client
+        }
 
-        val result = with(ResourceRegistry(client)) {
+        val result = with(registry) {
             with(ctx) {
                 executor.execute()
             }
@@ -86,8 +89,11 @@ class ExecutorTests : FunSpec({
                 StateContext(it.toLong(), variables = lazy { variables.hydrateAndFlatten() })
             })
         }
+        val registry = buildResourceRegistry {
+            mongoClient = client
+        }
 
-        with(ResourceRegistry(client)) {
+        with(registry) {
             with(ctx) {
                 executor.execute()
             }
@@ -129,8 +135,11 @@ class ExecutorTests : FunSpec({
                     StateContext(it.toLong(), variables = lazy { variables.hydrateAndFlatten() })
                 })
             }
+            val registry = buildResourceRegistry {
+                mongoClient = client
+            }
 
-            with(ResourceRegistry(client)) {
+            with(registry) {
                 with(ctx) {
                     executor.execute()
                 }

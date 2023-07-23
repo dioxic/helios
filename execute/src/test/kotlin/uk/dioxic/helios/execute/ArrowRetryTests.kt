@@ -40,7 +40,7 @@ class ArrowRetryTests : FunSpec({
 
         val res = schedule.retry {
             with(defaultExecutionContext) {
-                with(ResourceRegistry()) {
+                with(ResourceRegistry.EMPTY) {
                     executor.execute()
                 }
             }
@@ -71,7 +71,7 @@ class ArrowRetryTests : FunSpec({
         shouldThrowExactly<MongoException> {
             schedule.retry {
                 with(defaultExecutionContext) {
-                    with(ResourceRegistry()) {
+                    with(ResourceRegistry.EMPTY) {
                         executor.execute()
                     }
                 }
@@ -101,7 +101,7 @@ class ArrowRetryTests : FunSpec({
         shouldThrowExactly<RuntimeException> {
             schedule.retry {
                 with(defaultExecutionContext) {
-                    with(ResourceRegistry()) {
+                    with(ResourceRegistry.EMPTY) {
                         executor.execute()
                     }
                 }
@@ -130,7 +130,7 @@ class ArrowRetryTests : FunSpec({
 
         schedule.retry {
             with(defaultExecutionContext) {
-                with(ResourceRegistry()) {
+                with(ResourceRegistry.EMPTY) {
                     executor.execute()
                 }
             }

@@ -18,11 +18,12 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.bson.BsonObjectId
 import uk.dioxic.helios.execute.model.TransactionExecutor
-import uk.dioxic.helios.execute.resources.ResourceRegistry
+import uk.dioxic.helios.execute.resources.buildResourceRegistry
 import uk.dioxic.helios.execute.results.TransactionResult
 import uk.dioxic.helios.execute.results.WriteResult
 import uk.dioxic.helios.generate.Template
@@ -49,6 +50,11 @@ class TransactionTests : FunSpec({
         every { getDatabase(any()).getCollection(any(), any<Class<Template>>()) } returns collection
         every { startSession() } returns session
     }
+    val registry = runBlocking {
+        buildResourceRegistry {
+            mongoClient = client
+        }
+    }
 
     afterTest {
         clearMocks(session, collection)
@@ -60,7 +66,6 @@ class TransactionTests : FunSpec({
         } returns InsertOneResult.acknowledged(BsonObjectId())
 
         every { session.hasActiveTransaction() } returns true
-        val registry = ResourceRegistry(client)
 
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),
@@ -91,7 +96,6 @@ class TransactionTests : FunSpec({
         } throws mongoTransientTxnEx
 
         every { session.hasActiveTransaction() } returns true
-        val registry = ResourceRegistry(client)
 
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),
@@ -125,8 +129,6 @@ class TransactionTests : FunSpec({
         every { session.hasActiveTransaction() } returns true
         every { session.commitTransaction() } throws mongoUnknownTxnCommitResultEx
 
-        val registry = ResourceRegistry(client)
-
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),
             options = TransactionOptions.builder().build(),
@@ -153,8 +155,6 @@ class TransactionTests : FunSpec({
         } throws RuntimeException()
 
         every { session.hasActiveTransaction() } returns true
-
-        val registry = ResourceRegistry(client)
 
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),
@@ -183,8 +183,6 @@ class TransactionTests : FunSpec({
 
         every { session.hasActiveTransaction() } returns true
 
-        val registry = ResourceRegistry(client)
-
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),
             options = TransactionOptions.builder().build(),
@@ -210,8 +208,6 @@ class TransactionTests : FunSpec({
 
         every { session.hasActiveTransaction() } returns true
         every { session.commitTransaction() } throws mongoUnknownTxnCommitResultEx andThen Unit
-
-        val registry = ResourceRegistry(client)
 
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),
@@ -239,8 +235,6 @@ class TransactionTests : FunSpec({
         every { session.hasActiveTransaction() } returns true
         every { session.commitTransaction() } throws mongoTransientTxnEx andThen Unit
 
-        val registry = ResourceRegistry(client)
-
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),
             options = TransactionOptions.builder().build(),
@@ -266,8 +260,6 @@ class TransactionTests : FunSpec({
 
         every { session.hasActiveTransaction() } returns true
         every { session.commitTransaction() } throws mongoExecutionTimeoutEx
-
-        val registry = ResourceRegistry(client)
 
         val txExecutor = TransactionExecutor(
             executors = listOf(defaultMongoExecutor),

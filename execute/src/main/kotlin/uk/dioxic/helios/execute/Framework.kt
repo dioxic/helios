@@ -20,7 +20,7 @@ import kotlin.time.measureTime
  */
 @OptIn(FlowPreview::class)
 fun Benchmark.execute(
-    registry: ResourceRegistry = ResourceRegistry(),
+    registry: ResourceRegistry = ResourceRegistry.EMPTY,
     concurrency: Int = 4,
     interval: Duration = 1.seconds
 ): Flow<FrameworkMessage> = flow {

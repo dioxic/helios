@@ -61,7 +61,7 @@ sealed class CollectionExecutor : DatabaseExecutor(), MongoSessionExecutor {
 
     context(ResourceRegistry)
     inline fun <reified TDocument> getCollection(): MongoCollection<TDocument> =
-        getResource<MongoClient>().getDatabase(database).getCollection(collection, TDocument::class.java)
+        mongoClient.getDatabase(database).getCollection(collection, TDocument::class.java)
 
 }
 
@@ -70,7 +70,7 @@ sealed class DatabaseExecutor : MongoSessionExecutor {
     abstract val database: String
 
     context(ResourceRegistry)
-    fun getDatabase(): MongoDatabase = getResource<MongoClient>().getDatabase(database)
+    fun getDatabase(): MongoDatabase = mongoClient.getDatabase(database)
 }
 
 @Serializable
@@ -350,7 +350,7 @@ class TransactionExecutor(
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(): ExecutionResult =
         resourceScope {
-            val session = mongoSession(getResource<MongoClient>())
+            val session = mongoSession(mongoClient)
 //            val txnBody = TransactionBody {
 //                runBlocking {
 //                    TransactionResult(executors.map { it.execute(session) })

@@ -1,7 +1,6 @@
 package uk.dioxic.helios.execute.model
 
 import com.mongodb.MongoNamespace
-import com.mongodb.client.MongoClient
 import com.mongodb.client.model.Aggregates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -24,7 +23,6 @@ sealed interface Dictionary {
 
     context (ResourceRegistry)
     fun asFlow(): Flow<HydratedDictionary>
-
 }
 
 @SerialName("constant")
@@ -41,7 +39,6 @@ data class ConstantDictionary(
             emit(hydratedMap)
         }
     }
-
 }
 
 @SerialName("stream")
@@ -71,7 +68,7 @@ data class SampleDictionary(
 
     context (ResourceRegistry)
     override fun asFlow() = flow {
-        val collection = getResource<MongoClient>()
+        val collection = mongoClient
             .getDatabase(namespace.databaseName)
             .getCollection(namespace.collectionName)
 
@@ -107,7 +104,7 @@ data class QueryDictionary(
 
     context (ResourceRegistry)
     override fun asFlow() = flow {
-        val collection = getResource<MongoClient>()
+        val collection = mongoClient
             .getDatabase(namespace.databaseName)
             .getCollection(namespace.collectionName)
 
