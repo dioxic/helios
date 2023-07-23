@@ -3,11 +3,18 @@ package uk.dioxic.helios.execute
 import arrow.fx.coroutines.parMapUnordered
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.bson.Bson
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
+import okio.buffer
+import org.bson.Document
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.extensions.nextElementIndex
+import uk.dioxic.helios.generate.serialization.DocumentSerializer
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -182,11 +189,50 @@ inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): Ti
  * Returns a flow of dictionary values keyed on the dictionary name.
  */
 context (ResourceRegistry)
-fun Dictionaries.asFlow(): Flow<HydratedDictionaries> =
+fun Dictionaries.asFlow(fileSystem: FileSystem = FileSystem.SYSTEM): Flow<HydratedDictionaries> =
     map { (k, v) ->
-        v.asFlow().map { mapOf(k to it) }
+        v.asResourcedFlow(k, fileSystem).map { mapOf(k to it) }
     }.reduce { acc, flow ->
         acc.zip(flow) { t1, t2 ->
             t1 + t2
         }
     }
+
+context (ResourceRegistry)
+fun Dictionary.asResourcedFlow(key: String, fileSystem: FileSystem = FileSystem.SYSTEM): Flow<HydratedDictionary> =
+    with(store) {
+        when (this) {
+            is PathStore -> path.toPath().asFlow(fileSystem)
+            is BooleanStore -> {
+                val okioPath = "$key.$defaultDictionaryExtension".toPath()
+                if (persist && fileSystem.exists(okioPath)) {
+                    okioPath.asFlow(fileSystem)
+                } else {
+                    asFlow()
+                }
+            }
+        }
+    }
+
+/**
+ * Returns an infinite flow of documents from a file.
+ *
+ * Once all lines have been processed, the file is reset to the beginning.
+ * @param fileSystem the [FileSystem] to use
+ * @return flow of [Document]
+ */
+fun Path.asFlow(fileSystem: FileSystem = FileSystem.SYSTEM): Flow<Document> = flow {
+    fileSystem.openReadOnly(this@asFlow).use { handle ->
+        val source = handle.source().buffer()
+
+        var count = 0L
+        do {
+            while (true) {
+                val line = source.readUtf8Line() ?: break
+                emit(Bson.decodeFromString(DocumentSerializer, line))
+                count++
+            }
+            handle.reposition(source, 0)
+        } while (count > 0)
+    }
+}

@@ -17,6 +17,8 @@ typealias Dictionaries = Map<String, Dictionary>
 typealias HydratedDictionary = Map<String, Any?>
 typealias HydratedDictionaries = Map<String, HydratedDictionary>
 
+const val defaultDictionaryExtension = "json"
+
 @Serializable
 sealed interface Dictionary {
     val store: Store
@@ -61,7 +63,7 @@ data class StreamDictionary(
 data class SampleDictionary(
     @SerialName("ns")
     @Serializable(MongoNamespaceSerializer::class) val namespace: MongoNamespace,
-    val select: List<String>?,
+    val select: List<String>? = null,
     val size: Int,
     override val store: Store = Store.NO,
 ) : Dictionary {
