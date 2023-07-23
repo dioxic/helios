@@ -91,7 +91,7 @@ class OperatorTests : FunSpec({
 
             every {
                 with(any<OperatorContext>()) { consts.hydrate() }
-            } returns emptyMap<String, Any?>()
+            } returns emptyMap()
 
 
             buildBenchmark(constants = consts) {
