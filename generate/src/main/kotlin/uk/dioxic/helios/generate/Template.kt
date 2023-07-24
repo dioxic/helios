@@ -4,9 +4,9 @@ import kotlinx.serialization.Serializable
 import org.bson.BsonDocument
 import org.bson.BsonValue
 import org.bson.Document
-import uk.dioxic.helios.generate.serialization.TemplateSerializer
+import uk.dioxic.helios.generate.serialization.TemplateDefinitionSerializer
 
-@Serializable(TemplateSerializer::class)
+@Serializable(TemplateDefinitionSerializer::class)
 class Template(execution: Document, val definition: BsonValue? = null): Document(execution) {
 
     companion object {

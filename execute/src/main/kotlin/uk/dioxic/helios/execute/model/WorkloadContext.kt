@@ -9,6 +9,5 @@ data class WorkloadContext(
     val rate: Rate,
     val executionId: Long = 0,
 ) {
-
     companion object
 }

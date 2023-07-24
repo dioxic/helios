@@ -77,7 +77,8 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
         val amendedRate = tps?.div(amendedBatchSize)?.let { TpsRate(it) } ?: UnlimitedRate
 
         val benchmark = buildBenchmark {
-            sequentialStage("main") {
+            sequentialStage {
+                name = "main"
                 if (drop) {
                     rateWorkload(
                         name = "drop ${namespaceOptions.collection}",

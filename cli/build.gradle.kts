@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":execute"))
     implementation(libs.arrow.fx.coroutines)
     implementation(libs.bson)
+    implementation(libs.okio.core)
     implementation(libs.mongodb.sync)
     implementation(libs.bundles.logging)
     implementation(libs.kotlin.coroutines.core)

@@ -366,16 +366,17 @@ class SerializationTests : FunSpec({
                         executor = defaultExecutor,
                     )
                 }
-                parallelStage(timeout = 5.milliseconds) {
-                    rateWorkload(
+                parallelStage {
+                    timeout = 5.milliseconds
+                    addRateWorkload(
                         executor = defaultExecutor,
                         rate = TpsRate(tps = 500),
                     )
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                         rate = UnlimitedRate
                     )
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                         rate = RampedRate(
                             from = PeriodRate(period = 1.seconds),
@@ -383,7 +384,7 @@ class SerializationTests : FunSpec({
                             rampDuration = 5.minutes
                         )
                     )
-                    weightedWorkload(
+                    addWeightedWorkload(
                         executor = defaultExecutor,
                         weight = 10
                     )

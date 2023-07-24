@@ -10,12 +10,14 @@ fun Template.hydrateAndFlatten() =
     }
 
 context (OperatorContext)
-fun Map<String, *>.hydrate(): Map<String, Any?> =
-    hydrate(this) as Map<String, Any?>
+fun Map<String, *>.hydrate(): Map<String, Any?> {
+//    println("hydrate: $this")
+    return hydrate(this) as Map<String, Any?>
+}
 
-context (OperatorContext)
-fun Template.hydrate(): Map<String, Any?> =
-    hydrate(this) as Map<String, Any?>
+//context (OperatorContext)
+//fun Template.hydrate(): Map<String, Any?> =
+//    hydrate(this) as Map<String, Any?>
 
 context (OperatorContext)
 fun hydrate(value: Any?): Any? =

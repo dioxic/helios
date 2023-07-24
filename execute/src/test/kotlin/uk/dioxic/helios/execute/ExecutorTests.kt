@@ -123,9 +123,9 @@ class ExecutorTests : FunSpec({
         )
         val ctx = defaultExecutionContext.copy {
             ExecutionContext.executor.set(executor)
-            ExecutionContext.workload.rateWorkload.variablesDefinition.set(variables)
+            ExecutionContext.workload.rateWorkload.variables.set(variables)
             ExecutionContext.stateContext.set(List(executor.variablesRequired) {
-                StateContext(it.toLong(), variables = lazy { variables.hydrateAndFlatten() })
+                StateContext(it.toLong(), variables = variables.hydrateAndFlatten() )
             })
         }
         val registry = buildResourceRegistry {
@@ -171,9 +171,9 @@ class ExecutorTests : FunSpec({
 
             val ctx = defaultExecutionContext.copy {
                 ExecutionContext.executor.set(executor)
-                ExecutionContext.workload.rateWorkload.variablesDefinition.set(variables)
+                ExecutionContext.workload.rateWorkload.variables.set(variables)
                 ExecutionContext.stateContext.set(List(executor.variablesRequired) {
-                    StateContext(it.toLong(), variables = lazy { variables.hydrateAndFlatten() })
+                    StateContext(it.toLong(), variables = variables.hydrateAndFlatten())
                 })
             }
             val registry = buildResourceRegistry {
@@ -209,7 +209,7 @@ class ExecutorTests : FunSpec({
                     .map { it.document.operatorContext }
 
                 contexts.onEach {
-                    println(it.variables.value)
+                    println(it.variables)
                 }.distinct().count() shouldBe 10
             }
 

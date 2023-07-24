@@ -5,7 +5,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.bson.Bson
 import okio.FileSystem
-import okio.Path
 import okio.buffer
 import org.bson.Document
 import uk.dioxic.helios.execute.model.*
@@ -13,6 +12,8 @@ import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.extensions.nextElementIndex
+import uk.dioxic.helios.generate.flatten
+import uk.dioxic.helios.generate.hydrate
 import uk.dioxic.helios.generate.serialization.DocumentSerializer
 import kotlin.random.Random
 import kotlin.time.Duration
@@ -20,6 +21,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlin.time.measureTime
+import okio.Path as OkioPath
 
 /**
  * @param interval the message batching/summarization interval (0 to disable batching)
@@ -50,34 +52,37 @@ fun Benchmark.execute(
     }
 }.flowOn(Dispatchers.Default)
 
+//context(ResourceRegistry)
+//fun produceStateFlow(
+//    benchmark: Benchmark,
+//    stage: Stage
+//): Flow<StateContext> {
+//    var count = 0L
+//    return benchmark.dictionaries.asFlow().zip(stage.dictionaries.asFlow()) { b, s ->
+//        with(StateContext(dictionaries = b + s)) {
+//            copy(
+//                variables = (benchmark.variables + stage.variables).hydrate().flatten(),
+//                count = ++count
+//            )
+//        }
+//    }.buffer(100)
+//}
+
+context(ResourceRegistry)
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 fun produceExecutions(
     benchmark: Benchmark,
     stage: Stage
 ): Flow<ExecutionContext> {
-    val stateFlow: Flow<StateContext> = flow {
-        val constants = lazy { benchmark.constants.value + stage.constants.value }
-        var count = 0L
-        while (true) {
-            emit(
-                StateContext(
-                    variables = lazy { benchmark.variables + stage.variables },
-                    constants = constants,
-                    count = ++count
-                )
+    var count = 0L
+    val stateFlow = benchmark.dictionaries.asFlow().zip(stage.dictionaries.asFlow()) { b, s ->
+        with(StateContext(dictionaries = b + s)) {
+            copy(
+                variables = (benchmark.variables + stage.variables).hydrate().flatten(),
+                count = ++count
             )
         }
-    }.let {
-        if (stage.sync) {
-            it.buffer(100).shareIn(
-                scope = GlobalScope,
-                started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
-                replay = 0
-            )
-        } else {
-            it
-        }
-    }
+    }//.buffer(100)
 
     return when (stage) {
         is SequentialStage -> {
@@ -87,11 +92,16 @@ fun produceExecutions(
         }
 
         is ParallelStage -> buildList {
+            val sharedFlow = stateFlow.shareIn(
+                scope = GlobalScope,
+                started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
+                replay = 0
+            )
             val rateWorkloads = stage.workloads.filterIsInstance<RateWorkload>()
             val weightedWorkloads = stage.workloads.filterIsInstance<WeightedWorkload>()
 
-            addAll(rateWorkloads.map { it.toCtx().zip(stateFlow) })
-            add(weightedWorkloads.toCtx(stage.weightedWorkloadRate).zip(stateFlow))
+            addAll(rateWorkloads.map { it.toCtx().zip(sharedFlow) })
+            add(weightedWorkloads.toCtx(stage.weightedWorkloadRate).zip(sharedFlow))
         }.merge()
     }.flowOn(Dispatchers.Default)
 }
@@ -144,11 +154,8 @@ fun Flow<WorkloadContext>.zip(stateFlow: Flow<StateContext>): Flow<ExecutionCont
             .asFlow()
     }.zip(stateFlow) { wCtx, sCtx ->
         wCtx to sCtx.copy(
-            constants = lazy(LazyThreadSafetyMode.NONE) {
-                sCtx.constants.value + wCtx.workload.constants.value
-            },
-            variables = lazy(LazyThreadSafetyMode.NONE) {
-                sCtx.variables.value + wCtx.workload.variables
+            variables = with(sCtx) {
+                (sCtx.variables + wCtx.workload.variables).hydrate().flatten()
             },
         )
     }.groupBy({ it.workload to it.executionId }) { wCtx, sCtxList ->
@@ -191,9 +198,13 @@ context (ResourceRegistry)
 fun Dictionaries.asFlow(fileSystem: FileSystem = FileSystem.SYSTEM): Flow<HydratedDictionaries> =
     map { (k, v) ->
         v.asResourcedFlow(k, fileSystem).map { mapOf(k to it) }
-    }.reduce { acc, flow ->
+    }.reduceOrNull { acc, flow ->
         acc.zip(flow) { t1, t2 ->
             t1 + t2
+        }
+    } ?: flow {
+        while (true) {
+            emit(emptyMap())
         }
     }
 
@@ -211,8 +222,7 @@ fun Dictionary.asResourcedFlow(key: String, fileSystem: FileSystem = FileSystem.
 
     return if (okioPath != null && fileSystem.exists(okioPath)) {
         okioPath.asFlow(fileSystem)
-    }
-    else {
+    } else {
         asFlow()
     }
 }
@@ -224,7 +234,7 @@ fun Dictionary.asResourcedFlow(key: String, fileSystem: FileSystem = FileSystem.
  * @param fileSystem the [FileSystem] to use
  * @return flow of [Document]
  */
-fun Path.asFlow(fileSystem: FileSystem = FileSystem.SYSTEM): Flow<Document> = flow {
+fun OkioPath.asFlow(fileSystem: FileSystem = FileSystem.SYSTEM): Flow<Document> = flow {
     fileSystem.openReadOnly(this@asFlow).use { handle ->
         val source = handle.source().buffer()
 

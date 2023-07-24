@@ -23,6 +23,8 @@ sealed interface Dictionary {
 
     context (ResourceRegistry)
     fun asFlow(): Flow<HydratedDictionary>
+
+//    fun persistFlow()
 }
 
 @SerialName("constant")

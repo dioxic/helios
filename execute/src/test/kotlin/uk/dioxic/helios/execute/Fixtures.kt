@@ -44,11 +44,7 @@ val defaultBenchmark = Benchmark(
     stages = listOf(defaultStage)
 )
 
-val defaultStateContext = StateContext(
-    variables = lazy { emptyMap() },
-    constants = lazy { emptyMap() },
-    count = -1
-)
+val defaultStateContext = StateContext()
 
 val defaultExecutionContext = ExecutionContext(
     workload = defaultWorkload,

@@ -51,10 +51,10 @@ class ReportFormattingTest : FunSpec({
     }
     val benchmark = buildBenchmark {
         parallelStage {
-            rateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(15))
-            rateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(50))
-            rateWorkload(executor = errorExecutor, count = 100, rate = TpsRate(30))
-            rateWorkload(executor = defaultMongoExecutor, count = 100, rate = TpsRate(60))
+            addRateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(15))
+            addRateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(50))
+            addRateWorkload(executor = errorExecutor, count = 100, rate = TpsRate(30))
+            addRateWorkload(executor = defaultMongoExecutor, count = 100, rate = TpsRate(60))
         }
         sequentialStage {
             rateWorkload(executor = defaultExecutor)
@@ -84,8 +84,8 @@ class ReportFormattingTest : FunSpec({
         test("print unsummarized workloads").config(enabled = IS_NOT_GH_ACTION) {
             buildBenchmark {
                 parallelStage {
-                    rateWorkload(executor = defaultExecutor, count = 20, rate = TpsRate(2))
-                    rateWorkload(executor = defaultMongoExecutor, count = 5, rate = TpsRate(3))
+                    addRateWorkload(executor = defaultExecutor, count = 20, rate = TpsRate(2))
+                    addRateWorkload(executor = defaultMongoExecutor, count = 5, rate = TpsRate(3))
                 }
             }.execute(registry = registry, interval = Duration.ZERO)
                 .buffer(100)
