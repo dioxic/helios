@@ -265,7 +265,7 @@ class SerializationTests : FunSpec({
         test("can handle 64-bit integer") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                         count = Long.MAX_VALUE
                     )
@@ -281,7 +281,7 @@ class SerializationTests : FunSpec({
         test("command executor") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = CommandExecutor("myDB", buildTemplate { put("buildInfo", 1) })
                     )
                 }
@@ -295,7 +295,7 @@ class SerializationTests : FunSpec({
         test("insertOne executor") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = InsertOneExecutor(
                             database = "test",
                             collection = "people",
@@ -362,7 +362,7 @@ class SerializationTests : FunSpec({
         test("basic") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                     )
                 }
@@ -402,7 +402,7 @@ class SerializationTests : FunSpec({
         test("template is deserialized correctly") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultMongoExecutor,
                         count = Long.MAX_VALUE
                     )

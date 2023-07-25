@@ -80,7 +80,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
             sequentialStage {
                 name = "main"
                 if (drop) {
-                    rateWorkload(
+                    addRateWorkload(
                         name = "drop ${namespaceOptions.collection}",
                         count = 1,
                         executor = CommandExecutor(
@@ -91,7 +91,7 @@ class Load : CliktCommand(help = "Load data directly into MongoDB") {
                         )
                     )
                 }
-                rateWorkload(
+                addRateWorkload(
                     name = if (amendedBatchSize == 1) "insertOne" else "insertMany",
                     count = number / amendedBatchSize,
                     rate = amendedRate,

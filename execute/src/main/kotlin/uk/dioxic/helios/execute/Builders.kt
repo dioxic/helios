@@ -6,12 +6,15 @@ import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.generate.Template
 import kotlin.time.Duration
 
+@DslMarker
+annotation class BenchmarkMarker
+
 fun buildBenchmark(
     name: String = "benchmark",
-    init: BenchmarkBuilder.() -> Unit
+    block: BenchmarkBuilder.() -> Unit
 ): Benchmark {
     val builder = BenchmarkBuilder(name)
-    builder.init()
+    builder.block()
     return builder.build()
 }
 
@@ -27,6 +30,7 @@ fun buildParallelStage(init: ParallelStageBuilder.() -> Unit): ParallelStage {
     return builder.build()
 }
 
+@BenchmarkMarker
 class BenchmarkBuilder(
     var name: String,
 ) {
@@ -34,15 +38,15 @@ class BenchmarkBuilder(
     var variables: Template = Template.EMPTY
     private val stages = mutableListOf<Stage>()
 
-    fun sequentialStage(init: SequentialStageBuilder.() -> Unit) {
+    fun sequentialStage(block: SequentialStageBuilder.() -> Unit) {
         val builder = SequentialStageBuilder("stage${stages.size}")
-        builder.init()
+        builder.block()
         stages.add(builder.build())
     }
 
-    fun parallelStage(init: ParallelStageBuilder.() -> Unit) {
+    fun parallelStage(block: ParallelStageBuilder.() -> Unit) {
         val builder = ParallelStageBuilder("stage${stages.size}")
-        builder.init()
+        builder.block()
         stages.add(builder.build())
     }
 
@@ -54,13 +58,14 @@ class BenchmarkBuilder(
     )
 }
 
+@BenchmarkMarker
 class SequentialStageBuilder(var name: String) {
     var sync: Boolean = false
     var dictionaries: Dictionaries = emptyMap()
     var variables: Template = Template.EMPTY
     private val workloads = mutableListOf<RateWorkload>()
 
-    fun rateWorkload(
+    fun addRateWorkload(
         name: String? = null,
         executor: Executor,
         count: Long = 1,
@@ -87,6 +92,7 @@ class SequentialStageBuilder(var name: String) {
     )
 }
 
+@BenchmarkMarker
 class ParallelStageBuilder(var name: String) {
     var sync: Boolean = false
     var timeout: Duration = Duration.INFINITE
@@ -113,8 +119,8 @@ class ParallelStageBuilder(var name: String) {
     }
 
     fun addWeightedWorkload(
-        executor: Executor,
         name: String? = null,
+        executor: Executor,
         weight: Int = 1,
         variables: Template = Template.EMPTY,
         count: Long = 1,

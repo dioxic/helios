@@ -57,10 +57,10 @@ class ReportFormattingTest : FunSpec({
             addRateWorkload(executor = defaultMongoExecutor, count = 100, rate = TpsRate(60))
         }
         sequentialStage {
-            rateWorkload(executor = defaultExecutor)
-            rateWorkload(executor = errorExecutor, count = 50, rate = TpsRate(80))
-            rateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(100))
-            rateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(50))
+            addRateWorkload(executor = defaultExecutor)
+            addRateWorkload(executor = errorExecutor, count = 50, rate = TpsRate(80))
+            addRateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(100))
+            addRateWorkload(executor = defaultExecutor, count = 100, rate = TpsRate(50))
         }
     }
     val registry = runBlocking {

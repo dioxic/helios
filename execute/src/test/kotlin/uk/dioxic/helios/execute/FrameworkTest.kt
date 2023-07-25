@@ -53,8 +53,8 @@ class FrameworkTest : FunSpec({
         test("sequential stage has correct execution count") {
             buildBenchmark {
                 sequentialStage {
-                    rateWorkload(executor = executor, count = 5)
-                    rateWorkload(executor = executor, count = 5)
+                    addRateWorkload(executor = executor, count = 5)
+                    addRateWorkload(executor = executor, count = 5)
                 }
             }.execute().count()
 
@@ -106,7 +106,7 @@ class FrameworkTest : FunSpec({
         val duration = measureTime {
             buildBenchmark {
                 sequentialStage {
-                    rateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
+                    addRateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
                 }
             }.execute().count()
         }
@@ -211,8 +211,8 @@ class FrameworkTest : FunSpec({
 
         buildBenchmark {
             sequentialStage {
-                rateWorkload(executor = executor, count = 100, rate = TpsRate(100))
-                rateWorkload(executor = executor, count = 100, rate = TpsRate(100))
+                addRateWorkload(executor = executor, count = 100, rate = TpsRate(100))
+                addRateWorkload(executor = executor, count = 100, rate = TpsRate(100))
             }
         }.execute().collect {
             println(it)
