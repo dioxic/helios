@@ -1,6 +1,10 @@
 package uk.dioxic.helios.execute
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.inspectors.forAll
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeBetween
+import io.kotest.matchers.maps.shouldContainKeys
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -11,24 +15,26 @@ import org.bson.types.ObjectId
 import uk.dioxic.helios.execute.model.Benchmark
 import uk.dioxic.helios.execute.model.MessageExecutor
 import uk.dioxic.helios.execute.model.PeriodRate
+import uk.dioxic.helios.execute.model.StreamDictionary
 import uk.dioxic.helios.execute.results.TimedMessageResult
+import uk.dioxic.helios.execute.test.mapMessageResults
 import uk.dioxic.helios.generate.buildTemplate
-import uk.dioxic.helios.generate.operators.ObjectIdOperator
-import uk.dioxic.helios.generate.operators.VarOperator
+import uk.dioxic.helios.generate.operators.*
 import uk.dioxic.helios.generate.putKeyedOperator
 import uk.dioxic.helios.generate.putOperator
+import uk.dioxic.helios.generate.putOperatorObject
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 
 class VariableTests : FunSpec({
 
-    val variables = buildTemplate {
+    val defaultVariables = buildTemplate {
         putOperator<ObjectIdOperator>("oid")
     }
-    val template = buildTemplate {
+    val defaultTemplate = buildTemplate {
         putKeyedOperator<VarOperator>("myId", "oid")
     }
-    val executor = MessageExecutor(template)
+    val defaultExecutor = MessageExecutor(defaultTemplate)
 
     suspend fun Benchmark.verify(distinctCount: Int) {
         execute(
@@ -46,26 +52,26 @@ class VariableTests : FunSpec({
             }
     }
 
-    test("benchmark variables linked") {
+    test("benchmark variables are linked") {
         buildBenchmark {
-            this.variables = variables
+            variables = defaultVariables
             parallelStage {
                 sync = true
-                addRateWorkload(executor = executor, count = 4, rate = PeriodRate(100.milliseconds))
-                addRateWorkload(executor = executor, count = 8)
-                addRateWorkload(executor = executor, count = 4)
+                addRateWorkload(executor = defaultExecutor, count = 4, rate = PeriodRate(100.milliseconds))
+                addRateWorkload(executor = defaultExecutor, count = 8)
+                addRateWorkload(executor = defaultExecutor, count = 4)
             }
         }.verify(8)
     }
 
-    test("stage variables linked") {
+    test("stage variables are linked") {
         buildBenchmark {
             parallelStage {
-                this.variables = variables
+                variables = defaultVariables
                 sync = true
-                addRateWorkload(executor = executor, count = 2, rate = PeriodRate(300.milliseconds))
-                addRateWorkload(executor = executor, count = 5, rate = PeriodRate(100.milliseconds))
-                addRateWorkload(executor = executor, count = 1)
+                addRateWorkload(executor = defaultExecutor, count = 2, rate = PeriodRate(300.milliseconds))
+                addRateWorkload(executor = defaultExecutor, count = 5, rate = PeriodRate(100.milliseconds))
+                addRateWorkload(executor = defaultExecutor, count = 1)
             }
         }.verify(5)
     }
@@ -73,11 +79,42 @@ class VariableTests : FunSpec({
     test("workload variables are unlinked") {
         buildBenchmark {
             parallelStage {
-                addRateWorkload(variables = variables, executor = executor, count = 4)
-                addRateWorkload(variables = variables, executor = executor, count = 2)
-                addRateWorkload(variables = variables, executor = executor, count = 4)
+                addRateWorkload(variables = defaultVariables, executor = defaultExecutor, count = 4)
+                addRateWorkload(variables = defaultVariables, executor = defaultExecutor, count = 2)
+                addRateWorkload(variables = defaultVariables, executor = defaultExecutor, count = 4)
             }
         }.verify(10)
+    }
+
+    test("variables can access dictionaries") {
+        buildBenchmark {
+            sequentialStage {
+                dictionaries = mapOf(
+                    "person" to StreamDictionary(buildTemplate {
+                        putOperator<NameOperator>("name")
+                        putOperatorObject<IntOperator>("age") {
+                            put("max", 5)
+                        }
+                    })
+                )
+                variables = buildTemplate {
+                    putKeyedOperator<DictionaryOperator>("varPerson", "person")
+                }
+                addRateWorkload(
+                    count = 5,
+                    executor = MessageExecutor(buildTemplate {
+                        putKeyedOperator<VarOperator>("myName", "varPerson.name")
+                        putKeyedOperator<VarOperator>("myAge", "varPerson.age")
+                    })
+                )
+            }
+        }.execute(interval = ZERO).mapMessageResults().toList().should { results ->
+            results shouldHaveSize 5
+            results.map { it.doc }.forAll { doc ->
+                doc.shouldContainKeys("myName", "myAge")
+                doc["myAge"].shouldBeInstanceOf<Int>().shouldBeBetween(0, 5)
+            }
+        }
     }
 
 })
