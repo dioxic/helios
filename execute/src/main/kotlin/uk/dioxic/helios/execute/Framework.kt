@@ -82,7 +82,7 @@ fun produceExecutions(
                 count = ++count
             )
         }
-    }//.buffer(100)
+    }.buffer(100)
 
     return when (stage) {
         is SequentialStage -> {
