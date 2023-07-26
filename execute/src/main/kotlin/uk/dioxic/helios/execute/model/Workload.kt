@@ -12,6 +12,7 @@ import kotlin.time.Duration
     val executor: Executor
     val count: Long
     val variables: Template
+    val disable: Boolean
 
     companion object
 }
@@ -22,6 +23,7 @@ import kotlin.time.Duration
     override val variables: Template = Template.EMPTY,
     override val executor: Executor,
     override val count: Long = 1,
+    override val disable: Boolean = false,
     val rate: Rate = UnlimitedRate,
     val startDelay: Duration = Duration.ZERO,
 ) : Workload {
@@ -34,6 +36,7 @@ import kotlin.time.Duration
     override val variables: Template = Template.EMPTY,
     override val executor: Executor,
     override val count: Long = 1,
+    override val disable: Boolean = false,
     val weight: Int,
 ) : Workload {
     companion object

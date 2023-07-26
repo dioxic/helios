@@ -33,7 +33,7 @@ fun Benchmark.execute(
     interval: Duration = 1.seconds
 ): Flow<FrameworkMessage> = flow {
     with(registry) {
-        stages.forEach { stage ->
+        stages.filterNot { it.disable }.forEach { stage ->
             emit(StageStartMessage(stage))
             val duration = measureTime {
                 withTimeoutOrNull(stage.timeout) {
@@ -86,7 +86,7 @@ fun produceExecutions(
 
     return when (stage) {
         is SequentialStage -> {
-            stage.workloads.asFlow().flatMapConcat { workload ->
+            stage.workloads.filterNot { it.disable }.asFlow().flatMapConcat { workload ->
                 workload.toCtx().zip(stateFlow)
             }
         }
@@ -97,8 +97,9 @@ fun produceExecutions(
                 started = SharingStarted.StartWhenSubscribedAtLeast(stage.subscriberCount()),
                 replay = 0
             )
-            val rateWorkloads = stage.workloads.filterIsInstance<RateWorkload>()
-            val weightedWorkloads = stage.workloads.filterIsInstance<WeightedWorkload>()
+            val enabledWorkloads = stage.workloads.filterNot { it.disable }
+            val rateWorkloads = enabledWorkloads.filterIsInstance<RateWorkload>()
+            val weightedWorkloads = enabledWorkloads.filterIsInstance<WeightedWorkload>()
 
             addAll(rateWorkloads.map { it.toCtx().zip(sharedFlow) })
             add(weightedWorkloads.toCtx(stage.weightedWorkloadRate).zip(sharedFlow))

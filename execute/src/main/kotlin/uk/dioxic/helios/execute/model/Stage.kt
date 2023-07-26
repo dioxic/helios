@@ -15,6 +15,7 @@ sealed interface Stage : Named {
     val timeout: Duration
     val variables: Template
     val dictionaries: Dictionaries
+    val disable: Boolean
 
     companion object
 }
@@ -29,6 +30,7 @@ data class SequentialStage(
     override val timeout: Duration = Duration.INFINITE,
     override val variables: Template = Template.EMPTY,
     override val dictionaries: Dictionaries = emptyMap(),
+    override val disable: Boolean = false,
 ) : Stage {
     companion object
 }
@@ -43,6 +45,7 @@ data class ParallelStage(
     override val timeout: Duration = Duration.INFINITE,
     override val variables: Template = Template.EMPTY,
     override val dictionaries: Dictionaries = emptyMap(),
+    override val disable: Boolean = false,
     val weightedWorkloadRate: Rate = UnlimitedRate,
 ) : Stage {
     companion object
