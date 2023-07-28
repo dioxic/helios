@@ -94,8 +94,8 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                                 val outMsg = "\n${fRes.context.workload.name} completed in ${fRes.duration}"
                                 when (fRes) {
                                     is TimedMessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
-                                    is TimedCommandResult -> emit ("$outMsg [res:${fRes.value.document}")
-                                    is TimedErrorResult -> emit( "$outMsg [err: ${fRes.value.error.message}")
+                                    is TimedCommandResult -> emit("$outMsg [res:${fRes.value.document}")
+                                    is TimedErrorResult -> emit("$outMsg [err: ${fRes.value.error.message}")
                                     else -> emit(outMsg)
                                 }
                             } else {
@@ -208,16 +208,13 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
             .toFlatMap(json)
             .mapValues { (_, v) -> v.stringify() }
 
-    context(Duration)
     private fun SummarizedResult.toResultMap(stageName: String = ""): ResultMap =
         toOutputResult(stageName)
             .toFlatMap(json)
             .mapValues { (_, v) -> v.stringify() }
 
     private fun SummarizedResultsBatch.toResultMapList(stageName: String = ""): List<ResultMap> =
-        with(batchDuration) {
-            results.map { it.toResultMap(stageName) }
-        }
+        results.map { it.toResultMap(stageName) }
 
     private fun BsonValue.stringify() =
         when (this) {

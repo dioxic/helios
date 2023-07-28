@@ -4,19 +4,19 @@ import uk.dioxic.helios.execute.model.ExecutionContext
 import kotlin.time.Duration
 
 class ResultAccumulator {
-    var insertedCount: Long = 0
-    var matchedCount: Long = 0
-    var modifiedCount: Long = 0
-    var deletedCount: Long = 0
-    var upsertedCount: Long = 0
-    var docsReturned: Int = 0
-    var successCount: Int = 0
-    var failureCount: Int = 0
-    var operationCount: Int = 0
-    var elapsedTime: Duration = Duration.ZERO
-    var durations: MutableList<Duration> = mutableListOf()
-    var errors: MutableList<Throwable> = mutableListOf()
-    var context: ExecutionContext? = null
+    private var insertedCount: Long = 0
+    private var matchedCount: Long = 0
+    private var modifiedCount: Long = 0
+    private var deletedCount: Long = 0
+    private var upsertedCount: Long = 0
+    private var docsReturned: Int = 0
+    private var successCount: Int = 0
+    private var failureCount: Int = 0
+    private var operationCount: Int = 0
+    private var elapsedTime: Duration = Duration.ZERO
+    private var durations: MutableList<Duration> = mutableListOf()
+    private var errors: MutableList<Throwable> = mutableListOf()
+    private var context: ExecutionContext? = null
 
     fun add(timedResult: TimedResult): ResultAccumulator = apply {
         durations.add(timedResult.duration)
@@ -58,6 +58,28 @@ class ResultAccumulator {
                 successCount++
             }
         }
+    }
+
+    fun toSummarizedResult(): SummarizedResult {
+        requireNotNull(context) {
+            "execution context cannot be null"
+        }
+        return SummarizedResult(
+            insertedCount = insertedCount,
+            matchedCount = matchedCount,
+            modifiedCount = modifiedCount,
+            deletedCount = deletedCount,
+            upsertedCount = upsertedCount,
+            docsReturned = docsReturned,
+            successCount = successCount,
+            failureCount= failureCount,
+            operationCount = operationCount,
+            elapsedTime = elapsedTime,
+            latencies = durations.summarize(),
+            distinctErrors = errors.distinctBy { it::class to it.message },
+            errorCount = errors.size,
+            context = context!!,
+        )
     }
 
 }
