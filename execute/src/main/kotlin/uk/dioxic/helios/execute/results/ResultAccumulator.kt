@@ -38,8 +38,8 @@ class ResultAccumulator {
             }
 
             is CommandResult -> {
-                successCount += executionResult.successCount
-                failureCount += executionResult.failureCount
+                successCount += executionResult.success.toInt()
+                failureCount += (!executionResult.success).toInt()
             }
 
             is ReadResult -> {
@@ -76,8 +76,7 @@ class ResultAccumulator {
             operationCount = operationCount,
             elapsedTime = elapsedTime,
             latencies = durations.summarize(),
-            distinctErrors = errors.distinctBy { it::class to it.message },
-            errorCount = errors.size,
+            errors = errors,
             context = context!!,
         )
     }

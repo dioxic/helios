@@ -24,8 +24,10 @@ private typealias Columns = List<Pair<String, Int>>
 private typealias ResultMap = Map<String, String>
 
 internal data object ConsoleReportFormatter : ReportFormatter() {
-    private const val padding = 3
-    private const val printHeaderEvery = 10
+    private const val PADDING = 3
+    private const val HEADER_FREQ = 10
+    private const val ALWAYS_PRINT_CMD_DOC = false
+
     private val defaultOutputMap = OutputResult(
         workloadName = "",
         operationCount = 0,
@@ -44,10 +46,10 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
         .toMap()
 
     private fun formatHeader(columns: Columns) = buildString {
-        val lineLength = columns.sumOf { it.second + padding } - padding
+        val lineLength = columns.sumOf { it.second + PADDING } - PADDING
         appendLine()
         columns.forEachIndexed { index, (column, length) ->
-            val pad = if (index == columns.lastIndex) 0 else padding
+            val pad = if (index == columns.lastIndex) 0 else PADDING
             appendPaddedAfter(column, length + pad)
         }
         appendLine()
@@ -63,7 +65,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
     private fun formatResult(result: Map<String, String>, columns: Columns) =
         buildString {
             columns.forEachIndexed { index, (column, length) ->
-                val pad = if (index == columns.lastIndex) 0 else padding
+                val pad = if (index == columns.lastIndex) 0 else PADDING
                 appendPaddedAfter(result.getOrDefault(column), length + pad)
             }
         }
@@ -78,6 +80,13 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
         appendChar(length - before - s.length, "-")
     }
 
+    private fun ExecutionResult.isFailure() =
+        when (this) {
+            is CommandResult -> !success
+            is ErrorResult -> true
+            else -> false
+        }
+
     override fun format(results: Flow<FrameworkMessage>) = flow {
         var recentWorkloads = mutableListOf<Workload>()
         val recentResults = ArrayDeque<ResultMap>()
@@ -91,16 +100,29 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                     when (val fRes = msg.result) {
                         is TimedResult -> {
                             if (fRes.context.workload.count == 1L) {
-                                val outMsg = "\n${fRes.context.workload.name} completed in ${fRes.duration}"
+                                val outMsg = when (fRes.value.isFailure()) {
+                                    true -> "\n${fRes.context.workload.name} failed in ${fRes.duration}"
+                                    false -> "\n${fRes.context.workload.name} completed in ${fRes.duration}"
+                                }
                                 when (fRes) {
                                     is TimedMessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
-                                    is TimedCommandResult -> emit("$outMsg [res:${fRes.value.document}")
+                                    is TimedCommandResult -> {
+                                        when {
+                                            fRes.value.isFailure() && fRes.value.document != null ->
+                                                emit("$outMsg [err:${fRes.value.document}")
+                                            ALWAYS_PRINT_CMD_DOC ->
+                                                emit("$outMsg [res:${fRes.value.document}")
+                                            else ->
+                                                emit(outMsg)
+                                        }
+                                    }
+
                                     is TimedErrorResult -> emit("$outMsg [err: ${fRes.value.error.message}")
                                     else -> emit(outMsg)
                                 }
                             } else {
                                 val resultsMap = fRes.toResultMap()
-                                val headerTick = count % printHeaderEvery == 0L
+                                val headerTick = count % HEADER_FREQ == 0L
 
                                 recentResults.add(resultsMap)
 
@@ -112,7 +134,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
 
                                 emit(formatResult(resultsMap, columns))
 
-                                if (recentResults.size > printHeaderEvery) {
+                                if (recentResults.size > HEADER_FREQ) {
                                     recentResults.removeFirst()
                                 }
                                 count++
@@ -122,7 +144,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                         is SummarizedResultsBatch -> {
                             val resultsMap = fRes.toResultMapList()
                             val workloads = fRes.results.map { it.context.workload }
-                            val headerTick = count % printHeaderEvery == 0L
+                            val headerTick = count % HEADER_FREQ == 0L
                             val workloadChange =
                                 !recentWorkloads.containsAll(workloads) || workloads.size != recentWorkloads.size
 

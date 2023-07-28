@@ -55,8 +55,13 @@ private fun TimedCommandResult.toOutputResult(stageName: String) = OutputResult(
     operationCount = 1,
     progress = context.executionProgress,
     elapsed = duration,
-    successCount = value.successCount,
-    failureCount = value.failureCount,
+    successCount = value.success.toInt(),
+    failureCount = (!value.success).toInt(),
+    errorString = if (!value.success && value.document != null) {
+        value.document.toString()
+    } else {
+        ""
+    }
 )
 
 private fun TimedMessageResult.toOutputResult(stageName: String) = OutputResult(
@@ -81,7 +86,7 @@ fun SummarizedResult.toOutputResult(stageName: String) = OutputResult(
     failureCount = failureCount,
     operationCount = operationCount,
     progress = context.executionProgress,
-    errorString = distinctErrors.joinToString(", ") { it.toOutputString() },
+    errorString = errors.distinctBy { it::class to it.message }.joinToString(", ") { it.toOutputString() },
     elapsed = elapsedTime,
     latencies = latencies
 )

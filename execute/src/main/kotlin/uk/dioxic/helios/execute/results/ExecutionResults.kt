@@ -5,21 +5,19 @@ import org.bson.Document
 sealed interface ExecutionResult
 
 data class CommandResult(
-    val successCount: Int,
-    val failureCount: Int,
+    val success: Boolean,
     val document: Document? = null,
 ) : ExecutionResult {
     companion object {
         operator fun invoke(document: Document): CommandResult =
             CommandResult(
-                successCount = document.isSuccess.toInt(),
-                failureCount = (!document.isSuccess).toInt(),
+                success = document.isSuccess,
                 document = document
             )
     }
 }
 
-val Document.isSuccess: Boolean
+private val Document.isSuccess: Boolean
     get() = get("ok")?.let {
         when (it) {
             is Number -> (it.toInt() == 1)

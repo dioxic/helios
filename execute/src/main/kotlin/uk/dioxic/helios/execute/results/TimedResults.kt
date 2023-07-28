@@ -1,10 +1,7 @@
-@file:OptIn(ExperimentalTime::class)
-
 package uk.dioxic.helios.execute.results
 
 import uk.dioxic.helios.execute.model.ExecutionContext
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
 
 sealed interface TimedResult: FrameworkResult {
     val value: ExecutionResult
