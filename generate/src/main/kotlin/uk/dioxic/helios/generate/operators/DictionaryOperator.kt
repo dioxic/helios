@@ -7,5 +7,5 @@ import uk.dioxic.helios.generate.annotations.Alias
 class DictionaryOperator(override val key: String) : KeyedOperator<Any>() {
 
     context(OperatorContext)
-    override fun invoke(): Any = dictionaries[key] ?: error("constant [$key] not found")
+    override fun invoke(): Any = dictionaries[key] ?: error("dictionary [$key] not found")
 }
