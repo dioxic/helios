@@ -76,7 +76,7 @@ fun produceExecutions(
 ): Flow<ExecutionContext> {
     var count = 0L
     val stateFlow = benchmark.dictionaries.asFlow().zip(stage.dictionaries.asFlow()) { b, s ->
-        with(StateContext(dictionaries = b + s)) {
+        with(StateContext(dictionaries = (b + s).flatten())) {
             copy(
                 variables = (benchmark.variables + stage.variables).hydrate().flatten(),
                 count = ++count
