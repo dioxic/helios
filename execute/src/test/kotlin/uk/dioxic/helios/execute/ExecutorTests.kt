@@ -57,8 +57,7 @@ class ExecutorTests : FunSpec({
         }
 
         result.shouldBeInstanceOf<CommandResult>().should {
-            it.failureCount shouldBe 0
-            it.successCount shouldBe 1
+            it.success shouldBe true
             it.document.shouldNotBeNull()
         }
     }
