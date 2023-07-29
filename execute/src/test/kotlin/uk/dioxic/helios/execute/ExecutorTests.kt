@@ -1,7 +1,8 @@
 package uk.dioxic.helios.execute
 
 import arrow.optics.copy
-import com.mongodb.bulk.BulkWriteResult
+import com.mongodb.MongoBulkWriteException
+import com.mongodb.bulk.BulkWriteError
 import com.mongodb.client.MongoClient
 import com.mongodb.client.model.DeleteOptions
 import com.mongodb.client.model.InsertManyOptions
@@ -17,6 +18,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.every
 import io.mockk.mockk
+import org.bson.BsonDocument
 import org.bson.BsonString
 import org.bson.Document
 import org.bson.RawBsonDocument
@@ -25,14 +27,18 @@ import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.buildResourceRegistry
 import uk.dioxic.helios.execute.results.CommandResult
 import uk.dioxic.helios.execute.results.ReadResult
+import uk.dioxic.helios.execute.results.TimedExceptionResult
+import uk.dioxic.helios.execute.results.TimedResult
+import uk.dioxic.helios.execute.test.bulkWriteResult
 import uk.dioxic.helios.execute.test.mockFindIterable
+import uk.dioxic.helios.execute.test.mongoBulkWriteException
 import uk.dioxic.helios.generate.*
 import uk.dioxic.helios.generate.operators.NameOperator
 import uk.dioxic.helios.generate.operators.VarOperator
 
 class ExecutorTests : FunSpec({
 
-    test("command executor") {
+    test("command") {
         val client = mockk<MongoClient> {
             every { getDatabase(any()) } returns mockk {
                 every { runCommand(any()) } returns Document("ok", 1.0)
@@ -62,7 +68,7 @@ class ExecutorTests : FunSpec({
         }
     }
 
-    test("find executor") {
+    test("find") {
         val client = mockk<MongoClient> {
             every { getDatabase(any()) } returns mockk {
                 every { getCollection(any(), any<Class<RawBsonDocument>>()) } returns mockk {
@@ -97,7 +103,7 @@ class ExecutorTests : FunSpec({
         }
     }
 
-    test("insertMany executor") {
+    test("insertMany") {
         val variables = buildTemplate {
             putOperator<NameOperator>("vName")
         }
@@ -124,7 +130,7 @@ class ExecutorTests : FunSpec({
             ExecutionContext.executor.set(executor)
             ExecutionContext.workload.rateWorkload.variables.set(variables)
             ExecutionContext.stateContext.set(List(executor.variablesRequired) {
-                StateContext(it.toLong(), variables = variables.hydrateAndFlatten() )
+                StateContext(it.toLong(), variables = variables.hydrateAndFlatten())
             })
         }
         val registry = buildResourceRegistry {
@@ -147,21 +153,11 @@ class ExecutorTests : FunSpec({
 
     context("bulk") {
 
-        suspend fun getWriteModels(
-            variables: Template,
-            operations: List<WriteOperation>
-        ): List<WriteModel<EncodeContext>> {
-            val requests = mutableListOf<List<WriteModel<EncodeContext>>>()
-            val client = mockk<MongoClient> {
-                every { getDatabase(any()) } returns mockk {
-                    every { getCollection(any(), any<Class<EncodeContext>>()) } returns mockk {
-                        every { bulkWrite(capture(requests)) } returns BulkWriteResult.acknowledged(
-                            1, 1, 1, 4, emptyList(), emptyList()
-                        )
-                    }
-                }
-            }
-
+        suspend fun executeBulk(
+            client: MongoClient,
+            operations: List<WriteOperation>,
+            variables: Template = Template.EMPTY
+        ): TimedResult {
             val executor = BulkWriteExecutor(
                 database = "myDB",
                 collection = "myCollection",
@@ -179,16 +175,26 @@ class ExecutorTests : FunSpec({
                 mongoClient = client
             }
 
-            with(registry) {
-                with(ctx) {
-                    executor.execute()
-                }
+            return with(registry) {
+                ctx.invoke()
             }
-
-            return requests.first()
         }
 
         test("write models have correct different contexts") {
+            val requests = mutableListOf<List<WriteModel<EncodeContext>>>()
+            val client = mockk<MongoClient> {
+                every { getDatabase(any()) } returns mockk {
+                    every { getCollection(any(), any<Class<EncodeContext>>()) } returns mockk {
+                        every { bulkWrite(capture(requests)) } returns bulkWriteResult(
+                            insertCount = 1,
+                            matchedCount = 1,
+                            deletedCount = 1,
+                            modifiedCount = 1
+                        )
+                    }
+                }
+            }
+
             val variables = buildTemplate {
                 putOperator<NameOperator>("vName")
             }
@@ -201,7 +207,9 @@ class ExecutorTests : FunSpec({
                 DeleteManyOperation(10, template, DeleteOptions())
             )
 
-            getWriteModels(variables, operations).should { writeModels ->
+            executeBulk(client, operations, variables)
+
+            requests.first().should { writeModels ->
                 writeModels.shouldHaveSize(30)
                 val contexts = writeModels
                     .filterIsInstance<InsertOneModel<EncodeContext>>()
@@ -212,6 +220,43 @@ class ExecutorTests : FunSpec({
                 }.distinct().count() shouldBe 10
             }
 
+        }
+
+        test("bulk write exception") {
+            val client = mockk<MongoClient> {
+                every { getDatabase(any()) } returns mockk {
+                    every { getCollection(any(), any<Class<EncodeContext>>()) } returns mockk {
+                        every { bulkWrite(any()) } throws mongoBulkWriteException(
+                            bulkWriteResult(1, 2, 3, 4, 5),
+                            listOf(BulkWriteError(11000, "duplicate key ex", BsonDocument(), 0))
+                        )
+                    }
+                }
+            }
+
+            val template = buildTemplate {
+                putKeyedOperator<VarOperator>("name", "vName")
+            }
+            val operations = listOf(
+                InsertOneOperation(10, template),
+                DeleteOneOperation(10, template, DeleteOptions()),
+                DeleteManyOperation(10, template, DeleteOptions())
+            )
+
+            executeBulk(client, operations)
+                .shouldBeInstanceOf<TimedExceptionResult>()
+                .value
+                .shouldBeInstanceOf<MongoBulkWriteException>()
+                .should { errRes ->
+                    errRes.writeResult.should {
+                        it.insertedCount shouldBe 1
+                        it.matchedCount shouldBe 2
+                        it.modifiedCount shouldBe 3
+                        it.deletedCount shouldBe 4
+                        it.upserts shouldHaveSize 5
+                    }
+                    errRes.writeErrors shouldHaveSize 1
+                }
         }
     }
 
