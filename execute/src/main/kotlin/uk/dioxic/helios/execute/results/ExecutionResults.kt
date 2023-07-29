@@ -50,7 +50,3 @@ data class MessageResult(
 data class TransactionResult(
     val executionResults: List<ExecutionResult>
 ) : ExecutionResult
-
-data class ErrorResult(
-    val error: Throwable
-) : ExecutionResult

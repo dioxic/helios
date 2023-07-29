@@ -23,8 +23,30 @@ fun List<Double>.percentile(percentile: Double) =
     StatUtils.percentile(toDoubleArray(), percentile)
         .toDuration(DurationUnit.MILLISECONDS)
 
-fun List<TimedExecutionResult>.summarize() =
+fun List<TimedResult>.summarize() =
     groupBy { it.context.workload.name }
         .map { (_, v) ->
             v.fold(ResultAccumulator(), ResultAccumulator::add).toSummarizedResult()
         }.sortedBy { it.context.workload.name }
+
+fun ResultAccumulator.toSummarizedResult(): SummarizedResult {
+    requireNotNull(context) {
+        "execution context cannot be null"
+    }
+    return SummarizedResult(
+        insertedCount = insertedCount,
+        matchedCount = matchedCount,
+        modifiedCount = modifiedCount,
+        deletedCount = deletedCount,
+        upsertedCount = upsertedCount,
+        docsReturned = docsReturned,
+        successCount = successCount,
+        failureCount = failureCount,
+        operationCount = operationCount,
+        elapsedTime = elapsedTime,
+        latencies = durations.summarize(),
+        exceptions = exceptions,
+        errorCount = errorCount,
+        context = context!!,
+    )
+}

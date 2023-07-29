@@ -7,7 +7,7 @@ data class WorkloadContext(
     val workload: Workload,
     val executor: Executor = workload.executor,
     val rate: Rate,
-    val executionId: Long = 0,
+    val executionId: Long,
 ) {
     companion object
 }

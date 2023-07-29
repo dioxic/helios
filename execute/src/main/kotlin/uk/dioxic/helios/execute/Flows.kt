@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.whileSelect
 import uk.dioxic.helios.execute.results.FrameworkResult
 import uk.dioxic.helios.execute.results.SummarizedResultsBatch
-import uk.dioxic.helios.execute.results.TimedExecutionResult
+import uk.dioxic.helios.execute.results.TimedResult
 import uk.dioxic.helios.execute.results.summarize
 import kotlin.time.Duration
 import kotlin.time.TimeMark
@@ -78,12 +78,12 @@ fun <T> Flow<T>.chunkedUntilChanged(discriminator: (T) -> Any): Flow<List<T>> = 
 }
 
 @OptIn(ExperimentalCoroutinesApi::class, ObsoleteCoroutinesApi::class)
-fun Flow<TimedExecutionResult>.chunked(interval: Duration): Flow<FrameworkResult> = if (interval.isPositive()) {
+fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> = if (interval.isPositive()) {
     channelFlow {
         require(interval.isPositive()) {
             "interval must be positive, but was $interval"
         }
-        val results = ArrayList<TimedExecutionResult>()
+        val results = ArrayList<TimedResult>()
         val flowChannel = produce { collect { send(it) } }
         val tickerChannel = ticker(interval.inWholeMilliseconds)
         var lastSummaryTime: TimeMark = TimeSource.Monotonic.markNow()
@@ -129,7 +129,7 @@ fun Flow<TimedExecutionResult>.chunked(interval: Duration): Flow<FrameworkResult
     this
 }
 
-private val TimedExecutionResult.isSingleExecution
+val TimedResult.isSingleExecution
     get() = (context.workload.count == 1L)
 
 fun SharingStarted.Companion.StartWhenSubscribedAtLeast(threshold: Int): SharingStarted {

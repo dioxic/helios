@@ -35,12 +35,3 @@ fun BulkWriteResult.standardize() = WriteResult(
 
 fun FindIterable<*>.standardize() =
     ReadResult(count())
-
-fun MongoException.standardize() =
-    when (this) {
-        is MongoBulkWriteException -> this.standardize()
-        else -> ErrorResult(this)
-    }
-
-fun MongoBulkWriteException.standardize() =
-    BulkWriteErrorResult(this)

@@ -1,5 +1,6 @@
 package uk.dioxic.helios.execute.results
 
+import com.mongodb.MongoException
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import uk.dioxic.helios.execute.model.ExecutionContext
@@ -19,7 +20,8 @@ data class SummarizedResult(
     val docsReturned: Int,
     val successCount: Int,
     val failureCount: Int,
-    val errors: List<Throwable>,
+    val errorCount: Int,
+    val exceptions: List<MongoException>,
     val context: ExecutionContext,
     val latencies: SummarizedLatencies,
     val operationCount: Int,

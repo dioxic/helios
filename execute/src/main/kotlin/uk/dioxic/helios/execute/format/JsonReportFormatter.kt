@@ -9,6 +9,7 @@ import uk.dioxic.helios.execute.ProgressMessage
 import uk.dioxic.helios.execute.StageCompleteMessage
 import uk.dioxic.helios.execute.StageStartMessage
 import uk.dioxic.helios.execute.results.SummarizedResultsBatch
+import uk.dioxic.helios.execute.results.TimedExceptionResult
 import uk.dioxic.helios.execute.results.TimedExecutionResult
 
 data object JsonReportFormatter : ReportFormatter() {
@@ -25,22 +26,25 @@ data object JsonReportFormatter : ReportFormatter() {
                 is StageStartMessage -> {
                     currentStageName = msg.stage.name
                 }
+
                 is ProgressMessage -> {
                     when (val fRes = msg.result) {
                         is SummarizedResultsBatch -> {
                             fRes.results.forEach { result ->
-                                with(fRes.batchDuration) {
-                                    emit(
-                                        bson.encodeToString(result.toOutputResult(currentStageName))
-                                    )
-                                }
+                                emit(bson.encodeToString(result.toOutputResult(currentStageName)))
                             }
                         }
+
                         is TimedExecutionResult -> {
+                            emit(bson.encodeToString(fRes.toOutputResult(currentStageName)))
+                        }
+
+                        is TimedExceptionResult -> {
                             emit(bson.encodeToString(fRes.toOutputResult(currentStageName)))
                         }
                     }
                 }
+
                 is StageCompleteMessage -> {}
             }
         }

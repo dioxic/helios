@@ -1,6 +1,7 @@
 package uk.dioxic.helios.execute
 
 import arrow.fx.coroutines.parMapUnordered
+import com.mongodb.MongoException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.bson.Bson
@@ -10,7 +11,9 @@ import org.bson.Document
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.ExecutionResult
+import uk.dioxic.helios.execute.results.TimedExceptionResult
 import uk.dioxic.helios.execute.results.TimedExecutionResult
+import uk.dioxic.helios.execute.results.TimedResult
 import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.extensions.nextElementIndex
 import uk.dioxic.helios.generate.flatten
@@ -52,22 +55,6 @@ fun Benchmark.execute(
         }
     }
 }.flowOn(Dispatchers.Default)
-
-//context(ResourceRegistry)
-//fun produceStateFlow(
-//    benchmark: Benchmark,
-//    stage: Stage
-//): Flow<StateContext> {
-//    var count = 0L
-//    return benchmark.dictionaries.asFlow().zip(stage.dictionaries.asFlow()) { b, s ->
-//        with(StateContext(dictionaries = b + s)) {
-//            copy(
-//                variables = (benchmark.variables + stage.variables).hydrate().flatten(),
-//                count = ++count
-//            )
-//        }
-//    }.buffer(100)
-//}
 
 context(ResourceRegistry)
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
@@ -180,9 +167,13 @@ suspend fun ExecutionContext.delay() {
     }
 }
 
-inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): TimedExecutionResult {
+inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): TimedResult {
     val mark = TimeSource.Monotonic.markNow()
-    return TimedExecutionResult(block(), mark.elapsedNow(), this)
+    return try {
+        TimedExecutionResult(block(), mark.elapsedNow(), this)
+    } catch (e: MongoException) {
+        TimedExceptionResult(e, mark.elapsedNow(), this)
+    }
 }
 
 /**

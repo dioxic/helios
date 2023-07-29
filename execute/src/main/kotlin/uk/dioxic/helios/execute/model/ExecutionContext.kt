@@ -1,11 +1,8 @@
 package uk.dioxic.helios.execute.model
 
 import arrow.optics.optics
-import com.mongodb.MongoException
 import uk.dioxic.helios.execute.measureTimedResult
 import uk.dioxic.helios.execute.resources.ResourceRegistry
-import uk.dioxic.helios.execute.results.TimedExecutionResult
-import uk.dioxic.helios.execute.results.standardize
 import uk.dioxic.helios.generate.StateContext
 import kotlin.time.TimeSource
 import kotlin.time.TimeSource.Monotonic.ValueTimeMark
@@ -16,17 +13,13 @@ data class ExecutionContext(
     val executor: Executor = workload.executor,
     val rate: Rate,
     val stateContext: List<StateContext>,
-    val count: Long = 0,
+    val count: Long,
     val startTime: ValueTimeMark = TimeSource.Monotonic.markNow(),
-)  {
+) {
 
     context(ResourceRegistry)
-    suspend operator fun invoke(): TimedExecutionResult = measureTimedResult {
-        try {
-            executor.execute()
-        } catch (e: MongoException) {
-            e.standardize()
-        }
+    suspend operator fun invoke() = measureTimedResult {
+        executor.execute()
     }
 
     companion object {
@@ -35,6 +28,7 @@ data class ExecutionContext(
                 workload = workloadContext.workload,
                 executor = workloadContext.executor,
                 rate = workloadContext.rate,
+                count = workloadContext.executionId,
                 stateContext = stateContexts,
             )
     }

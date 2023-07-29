@@ -7,10 +7,7 @@ import kotlinx.serialization.bson.encodeToBsonDocument
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import org.bson.*
-import uk.dioxic.helios.execute.FrameworkMessage
-import uk.dioxic.helios.execute.ProgressMessage
-import uk.dioxic.helios.execute.StageCompleteMessage
-import uk.dioxic.helios.execute.StageStartMessage
+import uk.dioxic.helios.execute.*
 import uk.dioxic.helios.execute.model.Workload
 import uk.dioxic.helios.execute.results.*
 import uk.dioxic.helios.execute.serialization.DurationConsoleSerializer
@@ -62,7 +59,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
     private fun Map<String, String>.getOrDefault(key: String) =
         this.getOrDefault(key, getDefaultValue(key))
 
-    private fun formatResult(result: Map<String, String>, columns: Columns) =
+    private fun formatResultMap(result: Map<String, String>, columns: Columns) =
         buildString {
             columns.forEachIndexed { index, (column, length) ->
                 val pad = if (index == columns.lastIndex) 0 else PADDING
@@ -80,11 +77,26 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
         appendChar(length - before - s.length, "-")
     }
 
-    private fun ExecutionResult.isFailure() =
-        when (this) {
-            is CommandResult -> !success
-            is ErrorResult -> true
-            else -> false
+    private fun formatSingleExecution(timedResult: TimedResult) =
+        when (timedResult) {
+            is TimedExecutionResult -> {
+                val outMsg = "\n${timedResult.context.workload.name} completed in ${timedResult.duration}"
+                when (timedResult.value) {
+                    is MessageResult -> "$outMsg [doc: ${timedResult.value.doc}]"
+                    is CommandResult -> {
+                        when {
+                            ALWAYS_PRINT_CMD_DOC && timedResult.value.document != null ->
+                                "$outMsg [res:${timedResult.value.document}]"
+                            else ->
+                                outMsg
+                        }
+                    }
+                    else -> outMsg
+                }
+            }
+            is TimedExceptionResult -> {
+                "\n${timedResult.context.workload.name} failed in ${timedResult.duration} [err: ${timedResult.value.toOutputString()}]"
+            }
         }
 
     override fun format(results: Flow<FrameworkMessage>) = flow {
@@ -98,27 +110,9 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                 is StageStartMessage -> emit(lineBreak("Starting ${msg.stage.name} stage"))
                 is ProgressMessage -> {
                     when (val fRes = msg.result) {
-                        is TimedExecutionResult -> {
-                            if (fRes.context.workload.count == 1L) {
-                                val outMsg = when (fRes.value.isFailure()) {
-                                    true -> "\n${fRes.context.workload.name} failed in ${fRes.duration}"
-                                    false -> "\n${fRes.context.workload.name} completed in ${fRes.duration}"
-                                }
-                                when (fRes.value) {
-                                    is MessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
-                                    is CommandResult -> {
-                                        when {
-                                            fRes.value.isFailure() && fRes.value.document != null ->
-                                                emit("$outMsg [err:${fRes.value.document}]")
-                                            ALWAYS_PRINT_CMD_DOC ->
-                                                emit("$outMsg [res:${fRes.value.document}]")
-                                            else ->
-                                                emit(outMsg)
-                                        }
-                                    }
-                                    is ErrorResult -> emit("$outMsg [err: ${fRes.value.error.toOutputString()}]")
-                                    else -> emit(outMsg)
-                                }
+                        is TimedResult -> {
+                            if (fRes.isSingleExecution) {
+                                emit(formatSingleExecution(fRes))
                             } else {
                                 val resultsMap = fRes.toResultMap()
                                 val headerTick = count % HEADER_FREQ == 0L
@@ -131,7 +125,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                                     emit(formatHeader(columns))
                                 }
 
-                                emit(formatResult(resultsMap, columns))
+                                emit(formatResultMap(resultsMap, columns))
 
                                 if (recentResults.size > HEADER_FREQ) {
                                     recentResults.removeFirst()
@@ -154,7 +148,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                             }
 
                             resultsMap.forEach { result ->
-                                emit(formatResult(result, columns))
+                                emit(formatResultMap(result, columns))
                             }
                             recentWorkloads = workloads.toMutableList()
                             count++
@@ -224,7 +218,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
     private fun OutputResult.toFlatMap(bson: Bson): Map<String, BsonValue> =
         bson.encodeToBsonDocument(this).flatten(' ', true)
 
-    private fun TimedExecutionResult.toResultMap(stageName: String = ""): ResultMap =
+    private fun TimedResult.toResultMap(stageName: String = ""): ResultMap =
         toOutputResult(stageName)
             .toFlatMap(json)
             .mapValues { (_, v) -> v.stringify() }
