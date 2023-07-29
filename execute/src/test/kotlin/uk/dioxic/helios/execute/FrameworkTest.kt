@@ -15,7 +15,7 @@ import uk.dioxic.helios.execute.model.TpsRate
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.MessageResult
 import uk.dioxic.helios.execute.results.SummarizedResultsBatch
-import uk.dioxic.helios.execute.results.TimedResult
+import uk.dioxic.helios.execute.results.TimedExecutionResult
 import uk.dioxic.helios.execute.results.WriteResult
 import uk.dioxic.helios.execute.test.IS_NOT_GH_ACTION
 import kotlin.time.Duration.Companion.seconds
@@ -142,7 +142,7 @@ class FrameworkTest : FunSpec({
             }
         }.execute().collect {
             if (it is ProgressMessage) {
-                it.result.shouldBeInstanceOf<TimedResult>()
+                it.result.shouldBeInstanceOf<TimedExecutionResult>()
             }
         }
     }

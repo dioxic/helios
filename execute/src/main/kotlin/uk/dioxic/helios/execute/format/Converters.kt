@@ -3,68 +3,75 @@ package uk.dioxic.helios.execute.format
 import uk.dioxic.helios.execute.model.ExecutionContext
 import uk.dioxic.helios.execute.results.*
 
-fun TimedResult.toOutputResult(stageName: String) = when (this) {
-    is TimedWriteResult -> this.toOutputResult(stageName)
-    is TimedCommandResult -> this.toOutputResult(stageName)
-    is TimedMessageResult -> this.toOutputResult(stageName)
-    is TimedReadResult -> this.toOutputResult(stageName)
-    is TimedTransactionResult -> this.toOutputResult(stageName)
-    is TimedErrorResult -> this.toOutputResult(stageName)
-}
+fun TimedExecutionResult.toOutputResult(stageName: String): OutputResult =
+    when (value) {
+        is WriteResult -> value.toOutputResult(stageName)
+        is CommandResult -> value.toOutputResult(stageName)
+        is MessageResult -> value.toOutputResult(stageName)
+        is ReadResult -> value.toOutputResult(stageName)
+        is TransactionResult -> value.toOutputResult(stageName)
+        is ErrorResult -> value.toOutputResult(stageName)
+    }
 
-private fun TimedErrorResult.toOutputResult(stageName: String) = OutputResult(
+context(TimedExecutionResult)
+private fun ErrorResult.toOutputResult(stageName: String) = OutputResult(
     stageName = stageName,
     workloadName = context.workload.name,
     operationCount = 1,
     progress = 100,
     elapsed = duration,
     failureCount = 1,
-    errorString = value.error.toOutputString()
+    errorString = error.toOutputString()
 )
 
-private fun TimedTransactionResult.toOutputResult(stageName: String): OutputResult =
-    value.executionResults.fold(ResultAccumulator(), ResultAccumulator::add)
+context(TimedExecutionResult)
+private fun TransactionResult.toOutputResult(stageName: String): OutputResult =
+    executionResults.fold(ResultAccumulator(), ResultAccumulator::add)
         .toSummarizedResult()
         .toOutputResult(stageName)
 
-private fun TimedWriteResult.toOutputResult(stageName: String) = OutputResult(
+context(TimedExecutionResult)
+private fun WriteResult.toOutputResult(stageName: String) = OutputResult(
     stageName = stageName,
     workloadName = context.workload.name,
     operationCount = 1,
     progress = context.executionProgress,
     elapsed = duration,
-    insertedCount = value.insertedCount,
-    matchedCount = value.matchedCount,
-    modifiedCount = value.modifiedCount,
-    deletedCount = value.deletedCount,
-    upsertedCount = value.upsertedCount,
+    insertedCount = insertedCount,
+    matchedCount = matchedCount,
+    modifiedCount = modifiedCount,
+    deletedCount = deletedCount,
+    upsertedCount = upsertedCount,
 )
 
-private fun TimedReadResult.toOutputResult(stageName: String) = OutputResult(
+context(TimedExecutionResult)
+private fun ReadResult.toOutputResult(stageName: String) = OutputResult(
     stageName = stageName,
     workloadName = context.workload.name,
     operationCount = 1,
     progress = context.executionProgress,
     elapsed = duration,
-    docsReturned = value.docsReturned,
+    docsReturned = docsReturned,
 )
 
-private fun TimedCommandResult.toOutputResult(stageName: String) = OutputResult(
+context(TimedExecutionResult)
+private fun CommandResult.toOutputResult(stageName: String) = OutputResult(
     stageName = stageName,
     workloadName = context.workload.name,
     operationCount = 1,
     progress = context.executionProgress,
     elapsed = duration,
-    successCount = value.success.toInt(),
-    failureCount = (!value.success).toInt(),
-    errorString = if (!value.success && value.document != null) {
-        value.document.toString()
+    successCount = success.toInt(),
+    failureCount = (!success).toInt(),
+    errorString = if (!success && document != null) {
+        document.toString()
     } else {
         ""
     }
 )
 
-private fun TimedMessageResult.toOutputResult(stageName: String) = OutputResult(
+context(TimedExecutionResult)
+private fun MessageResult.toOutputResult(stageName: String) = OutputResult(
     stageName = stageName,
     workloadName = context.workload.name,
     operationCount = 1,

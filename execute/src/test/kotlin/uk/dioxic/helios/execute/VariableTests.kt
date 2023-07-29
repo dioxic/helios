@@ -9,14 +9,12 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 import uk.dioxic.helios.execute.model.Benchmark
 import uk.dioxic.helios.execute.model.MessageExecutor
 import uk.dioxic.helios.execute.model.PeriodRate
 import uk.dioxic.helios.execute.model.StreamDictionary
-import uk.dioxic.helios.execute.results.TimedMessageResult
 import uk.dioxic.helios.execute.test.mapMessageResults
 import uk.dioxic.helios.generate.buildTemplate
 import uk.dioxic.helios.generate.operators.*
@@ -40,12 +38,9 @@ class VariableTests : FunSpec({
         execute(
             interval = ZERO,
         ).filterIsInstance<ProgressMessage>()
-            .map { it.result }
-            .filterIsInstance<TimedMessageResult>()
-            .map { it.value }
+            .mapMessageResults()
             .toList().should { msgs ->
                 msgs.forEach {
-//                        println(it.doc)
                     it.doc["myId"].shouldBeInstanceOf<ObjectId>()
                 }
                 msgs.distinctBy { it.doc["myId"] }.count() shouldBe distinctCount

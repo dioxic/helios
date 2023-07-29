@@ -98,26 +98,25 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
                 is StageStartMessage -> emit(lineBreak("Starting ${msg.stage.name} stage"))
                 is ProgressMessage -> {
                     when (val fRes = msg.result) {
-                        is TimedResult -> {
+                        is TimedExecutionResult -> {
                             if (fRes.context.workload.count == 1L) {
                                 val outMsg = when (fRes.value.isFailure()) {
                                     true -> "\n${fRes.context.workload.name} failed in ${fRes.duration}"
                                     false -> "\n${fRes.context.workload.name} completed in ${fRes.duration}"
                                 }
-                                when (fRes) {
-                                    is TimedMessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
-                                    is TimedCommandResult -> {
+                                when (fRes.value) {
+                                    is MessageResult -> emit("$outMsg [doc: ${fRes.value.doc}]")
+                                    is CommandResult -> {
                                         when {
                                             fRes.value.isFailure() && fRes.value.document != null ->
-                                                emit("$outMsg [err:${fRes.value.document}")
+                                                emit("$outMsg [err:${fRes.value.document}]")
                                             ALWAYS_PRINT_CMD_DOC ->
-                                                emit("$outMsg [res:${fRes.value.document}")
+                                                emit("$outMsg [res:${fRes.value.document}]")
                                             else ->
                                                 emit(outMsg)
                                         }
                                     }
-
-                                    is TimedErrorResult -> emit("$outMsg [err: ${fRes.value.error.message}")
+                                    is ErrorResult -> emit("$outMsg [err: ${fRes.value.error.toOutputString()}]")
                                     else -> emit(outMsg)
                                 }
                             } else {
@@ -225,7 +224,7 @@ internal data object ConsoleReportFormatter : ReportFormatter() {
     private fun OutputResult.toFlatMap(bson: Bson): Map<String, BsonValue> =
         bson.encodeToBsonDocument(this).flatten(' ', true)
 
-    private fun TimedResult.toResultMap(stageName: String = ""): ResultMap =
+    private fun TimedExecutionResult.toResultMap(stageName: String = ""): ResultMap =
         toOutputResult(stageName)
             .toFlatMap(json)
             .mapValues { (_, v) -> v.stringify() }

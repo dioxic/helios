@@ -9,7 +9,8 @@ import okio.buffer
 import org.bson.Document
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.ResourceRegistry
-import uk.dioxic.helios.execute.results.*
+import uk.dioxic.helios.execute.results.ExecutionResult
+import uk.dioxic.helios.execute.results.TimedExecutionResult
 import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.extensions.nextElementIndex
 import uk.dioxic.helios.generate.flatten
@@ -179,17 +180,9 @@ suspend fun ExecutionContext.delay() {
     }
 }
 
-inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): TimedResult {
+inline fun ExecutionContext.measureTimedResult(block: () -> ExecutionResult): TimedExecutionResult {
     val mark = TimeSource.Monotonic.markNow()
-
-    return when (val value = block()) {
-        is WriteResult -> TimedWriteResult(value, mark.elapsedNow(), this)
-        is ReadResult -> TimedReadResult(value, mark.elapsedNow(), this)
-        is MessageResult -> TimedMessageResult(value, mark.elapsedNow(), this)
-        is CommandResult -> TimedCommandResult(value, mark.elapsedNow(), this)
-        is TransactionResult -> TimedTransactionResult(value, mark.elapsedNow(), this)
-        is ErrorResult -> TimedErrorResult(value, mark.elapsedNow(), this)
-    }
+    return TimedExecutionResult(block(), mark.elapsedNow(), this)
 }
 
 /**

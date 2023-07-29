@@ -9,7 +9,7 @@ import uk.dioxic.helios.execute.ProgressMessage
 import uk.dioxic.helios.execute.StageCompleteMessage
 import uk.dioxic.helios.execute.StageStartMessage
 import uk.dioxic.helios.execute.results.SummarizedResultsBatch
-import uk.dioxic.helios.execute.results.TimedResult
+import uk.dioxic.helios.execute.results.TimedExecutionResult
 
 data object JsonReportFormatter : ReportFormatter() {
 
@@ -36,7 +36,7 @@ data object JsonReportFormatter : ReportFormatter() {
                                 }
                             }
                         }
-                        is TimedResult -> {
+                        is TimedExecutionResult -> {
                             emit(bson.encodeToString(fRes.toOutputResult(currentStageName)))
                         }
                     }

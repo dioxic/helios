@@ -23,7 +23,7 @@ fun List<Double>.percentile(percentile: Double) =
     StatUtils.percentile(toDoubleArray(), percentile)
         .toDuration(DurationUnit.MILLISECONDS)
 
-fun List<TimedResult>.summarize() =
+fun List<TimedExecutionResult>.summarize() =
     groupBy { it.context.workload.name }
         .map { (_, v) ->
             v.fold(ResultAccumulator(), ResultAccumulator::add).toSummarizedResult()

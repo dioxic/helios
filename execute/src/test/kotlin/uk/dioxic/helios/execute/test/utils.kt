@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import uk.dioxic.helios.execute.FrameworkMessage
 import uk.dioxic.helios.execute.ProgressMessage
-import uk.dioxic.helios.execute.results.TimedMessageResult
+import uk.dioxic.helios.execute.results.MessageResult
+import uk.dioxic.helios.execute.results.TimedExecutionResult
 
 fun readResource(filename: String) =
     object {}.javaClass.getResourceAsStream(filename)?.bufferedReader()?.readText()
@@ -21,5 +22,6 @@ val IS_NOT_GH_ACTION = !IS_GH_ACTION
 fun Flow<FrameworkMessage>.mapMessageResults() =
     filterIsInstance<ProgressMessage>()
         .map { it.result }
-        .filterIsInstance<TimedMessageResult>()
+        .filterIsInstance<TimedExecutionResult>()
         .map { it.value }
+        .filterIsInstance<MessageResult>()
