@@ -49,5 +49,6 @@ val defaultStateContext = StateContext()
 val defaultExecutionContext = ExecutionContext(
     workload = defaultWorkload,
     rate = defaultWorkload.rate,
-    stateContext = listOf(defaultStateContext)
+    stateContext = listOf(defaultStateContext),
+    count = 0L
 )
