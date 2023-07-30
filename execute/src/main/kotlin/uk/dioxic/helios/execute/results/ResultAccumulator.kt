@@ -40,7 +40,7 @@ class ResultAccumulator {
     fun add(timedResult: TimedResult): ResultAccumulator = apply {
         durations.add(timedResult.duration)
         elapsedTime = maxOf(elapsedTime, timedResult.elapsedTime)
-        context = timedResult.context
+        context = maxOf(context, timedResult.context) { a, b -> compareValues(a?.count, b?.count) }
         operationCount++
         when (timedResult) {
             is TimedExecutionResult -> add(timedResult.value)
