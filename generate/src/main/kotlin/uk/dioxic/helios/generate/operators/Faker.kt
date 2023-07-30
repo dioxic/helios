@@ -23,3 +23,10 @@ class NameOperator: Operator<String> {
     context(OperatorContext)
     override fun invoke() = faker.name.name()
 }
+
+@Alias("animal")
+class AnimalOperator: Operator<String> {
+    context(OperatorContext)
+    override fun invoke() =
+        listOf("Badger", "Duck", "Giraffe", "Halibut", "Gorrila", "Gerbil", "Swan").random()
+}

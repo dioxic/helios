@@ -15,7 +15,7 @@ import uk.dioxic.helios.execute.model.TpsRate
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.results.MessageResult
 import uk.dioxic.helios.execute.results.SummarizedResultsBatch
-import uk.dioxic.helios.execute.results.TimedResult
+import uk.dioxic.helios.execute.results.TimedExecutionResult
 import uk.dioxic.helios.execute.results.WriteResult
 import uk.dioxic.helios.execute.test.IS_NOT_GH_ACTION
 import kotlin.time.Duration.Companion.seconds
@@ -53,8 +53,8 @@ class FrameworkTest : FunSpec({
         test("sequential stage has correct execution count") {
             buildBenchmark {
                 sequentialStage {
-                    rateWorkload(executor = executor, count = 5)
-                    rateWorkload(executor = executor, count = 5)
+                    addRateWorkload(executor = executor, count = 5)
+                    addRateWorkload(executor = executor, count = 5)
                 }
             }.execute().count()
 
@@ -66,8 +66,8 @@ class FrameworkTest : FunSpec({
 
             buildBenchmark {
                 parallelStage {
-                    rateWorkload(executor = executor, count = 5)
-                    rateWorkload(executor = executor, count = 5)
+                    addRateWorkload(executor = executor, count = 5)
+                    addRateWorkload(executor = executor, count = 5)
                 }
             }.execute().count()
 
@@ -77,8 +77,8 @@ class FrameworkTest : FunSpec({
         test("parallel stage with weighted workloads has correct execution count") {
             buildBenchmark {
                 parallelStage {
-                    weightedWorkload(executor = executor, count = 5)
-                    weightedWorkload(executor = executor, count = 5)
+                    addWeightedWorkload(executor = executor, count = 5)
+                    addWeightedWorkload(executor = executor, count = 5)
                 }
             }.execute().count()
 
@@ -88,9 +88,9 @@ class FrameworkTest : FunSpec({
         test("parallel stage with mixed workloads has correct execution count") {
             buildBenchmark {
                 parallelStage {
-                    weightedWorkload(executor = executor, count = 5)
-                    weightedWorkload(executor = executor, count = 5)
-                    rateWorkload(executor = executor, count = 5)
+                    addWeightedWorkload(executor = executor, count = 5)
+                    addWeightedWorkload(executor = executor, count = 5)
+                    addRateWorkload(executor = executor, count = 5)
                 }
             }.execute().count()
 
@@ -106,7 +106,7 @@ class FrameworkTest : FunSpec({
         val duration = measureTime {
             buildBenchmark {
                 sequentialStage {
-                    rateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
+                    addRateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
                 }
             }.execute().count()
         }
@@ -123,10 +123,10 @@ class FrameworkTest : FunSpec({
         val duration = measureTime {
             buildBenchmark {
                 parallelStage {
-                    rateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
-                    rateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
-                    rateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
-                    rateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
+                    addRateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
+                    addRateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
+                    addRateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
+                    addRateWorkload(executor = executor, count = count.toLong(), rate = TpsRate(tps))
                 }
             }.execute().count()
         }
@@ -138,11 +138,11 @@ class FrameworkTest : FunSpec({
     test("single executions don't get summarized") {
         buildBenchmark {
             parallelStage {
-                rateWorkload(executor = executor, count = 1)
+                addRateWorkload(executor = executor, count = 1)
             }
         }.execute().collect {
             if (it is ProgressMessage) {
-                it.result.shouldBeInstanceOf<TimedResult>()
+                it.result.shouldBeInstanceOf<TimedExecutionResult>()
             }
         }
     }
@@ -150,7 +150,7 @@ class FrameworkTest : FunSpec({
     test("multiple executions get summarized") {
         buildBenchmark {
             parallelStage {
-                rateWorkload(executor = executor, count = 100)
+                addRateWorkload(executor = executor, count = 100)
             }
         }.execute().collect {
             if (it is ProgressMessage) {
@@ -164,8 +164,9 @@ class FrameworkTest : FunSpec({
 
         withTimeout(timeout * 2) {
             buildBenchmark {
-                parallelStage(timeout = timeout) {
-                    rateWorkload(executor = executor, count = 1_000_000, rate = TpsRate(10))
+                parallelStage {
+                    this.timeout = timeout
+                    addRateWorkload(executor = executor, count = 1_000_000, rate = TpsRate(10))
                 }
             }.execute().collect {
                 if (it is ProgressMessage) {
@@ -189,7 +190,7 @@ class FrameworkTest : FunSpec({
 
         buildBenchmark {
             parallelStage {
-                rateWorkload(executor = insertOneExecutor, count = 100, rate = TpsRate(50))
+                addRateWorkload(executor = insertOneExecutor, count = 100, rate = TpsRate(50))
             }
         }.execute().collect {
             if (it is ProgressMessage) {
@@ -210,8 +211,8 @@ class FrameworkTest : FunSpec({
 
         buildBenchmark {
             sequentialStage {
-                rateWorkload(executor = executor, count = 100, rate = TpsRate(100))
-                rateWorkload(executor = executor, count = 100, rate = TpsRate(100))
+                addRateWorkload(executor = executor, count = 100, rate = TpsRate(100))
+                addRateWorkload(executor = executor, count = 100, rate = TpsRate(100))
             }
         }.execute().collect {
             println(it)

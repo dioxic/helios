@@ -8,6 +8,7 @@ import com.mongodb.TransactionOptions
 import com.mongodb.client.ClientSession
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoDatabase
+import org.bson.Document
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
@@ -51,3 +52,19 @@ suspend fun <T> ClientSession.withTransaction(
 
     return res
 }
+
+/**
+ * Convert a list of fields to a projection (fields are included).
+ *
+ * The _id is excluded by default.
+ *
+ * Example:
+ * ```
+ * ["a", "b", "c"] -> { "_id": -1, "a": 1, "b": 1, "c": 1 }
+ * ```
+ */
+fun List<String>?.toProjection(): Document? =
+    this?.fold(Document("_id", -1)) { acc, s ->
+        acc[s] = 1
+        acc
+    }

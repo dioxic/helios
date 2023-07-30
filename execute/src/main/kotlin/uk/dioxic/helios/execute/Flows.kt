@@ -129,7 +129,7 @@ fun Flow<TimedResult>.chunked(interval: Duration): Flow<FrameworkResult> = if (i
     this
 }
 
-private val TimedResult.isSingleExecution
+val TimedResult.isSingleExecution
     get() = (context.workload.count == 1L)
 
 fun SharingStarted.Companion.StartWhenSubscribedAtLeast(threshold: Int): SharingStarted {

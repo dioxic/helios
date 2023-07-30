@@ -5,11 +5,36 @@
       "_id": "$int",
       "name": "$name",
       "address": {
-        "city": { "$choose": ["London", "Belfast", "Madrid"] }
+        "city": {
+          "$choose": [
+            "London",
+            "Belfast",
+            "Madrid"
+          ]
+        }
       },
-      "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
-      "favFood": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
-      "age": { "$int":  { "min":  1, "max":  99 }}
+      "salutation": {
+        "$choose": [
+          "Mr",
+          "Mrs",
+          "Dr",
+          "Master"
+        ]
+      },
+      "favFood": {
+        "$choose": [
+          "Cabbage",
+          "Orange",
+          "Steak",
+          "Swordfish"
+        ]
+      },
+      "age": {
+        "$int": {
+          "min": 1,
+          "max": 99
+        }
+      }
     }
   },
   "stages": [
@@ -40,6 +65,22 @@
             "database": "test",
             "collection": "birds"
           }
+        },
+        {
+          "name": "drop people2 collection",
+          "executor": {
+            "type": "drop",
+            "database": "test",
+            "collection": "people2"
+          }
+        },
+        {
+          "name": "drop animals2 collection",
+          "executor": {
+            "type": "drop",
+            "database": "test",
+            "collection": "animals2"
+          }
         }
       ]
     },
@@ -48,12 +89,23 @@
       "name": "load data",
       "sync": true,
       "variables": {
-        "food": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] }
+        "food": {
+          "$choose": [
+            "Cabbage",
+            "Orange",
+            "Steak",
+            "Swordfish"
+          ]
+        }
       },
-      "constants": {
-        "date": "$objectId",
-        "number": "$int",
-        "altName": "$name"
+      "dictionaries": {
+        "stuff": {
+          "type": "constant",
+          "template": {
+            "number": "$int",
+            "altName": "$name"
+          }
+        }
       },
       "workloads": [
         {
@@ -67,7 +119,7 @@
           "rate": {
             "tps": 100
           },
-          "count": 1000
+          "count": 500
         },
         {
           "name": "animals",
@@ -77,12 +129,12 @@
             "collection": "animals",
             "size": 300,
             "template": {
-              "name": "$var.person.name",
-              "salutation": "$var.person.salutation",
-              "number": "$const.number"
+              "name": "$name",
+              "species": "$animal",
+              "number": "$dict.stuff.number"
             }
           },
-          "count": 2000,
+          "count": 200,
           "rate": {
             "tps": 800
           }
@@ -91,7 +143,7 @@
     },
     {
       "type": "sequential",
-      "name": "deletes pre-index + bulk",
+      "name": "bulk",
       "variables": {
         "birdName": "$name"
       },
@@ -120,29 +172,26 @@
               }
             ]
           }
-        },
-        {
-          "name": "delete animals",
-          "count": 1000,
-          "executor": {
-            "type": "deleteOne",
-            "database": "test",
-            "collection": "people",
-            "filter": {
-              "name": "$name"
-            }
-          }
         }
       ]
     },
     {
       "type": "sequential",
       "name": "create indexes",
-      "constants": {
-        "indexes" : [{
-          "key": { "name":  1},
-          "name": "name_idx"
-        }]
+      "dictionaries": {
+        "constants": {
+          "type": "constant",
+          "template": {
+            "indexes": [
+              {
+                "key": {
+                  "name": 1
+                },
+                "name": "name_idx"
+              }
+            ]
+          }
+        }
       },
       "workloads": [
         {
@@ -152,7 +201,7 @@
             "database": "test",
             "command": {
               "createIndexes": "people",
-              "indexes": "$const.indexes"
+              "indexes": "$dict.constants.indexes"
             }
           }
         },
@@ -163,7 +212,7 @@
             "database": "test",
             "command": {
               "createIndexes": "animals",
-              "indexes": "$const.indexes"
+              "indexes": "$dict.constants.indexes"
             }
           }
         }
@@ -171,7 +220,41 @@
     },
     {
       "type": "parallel",
+      "name": "copy collections",
+      "dictionaries": {
+        "person": { "type": "query", "ns":  "test.people"},
+        "animal": { "type": "query", "ns":  "test.animals"}
+      },
+      "workloads": [
+        {
+          "name": "copy people",
+          "count": 10,
+          "executor": {
+            "type": "insertMany",
+            "database": "test",
+            "collection": "people2",
+            "size": 100,
+            "ordered": false,
+            "template": "$dict.person"
+          }
+        },        {
+          "name": "copy animals",
+          "count": 10,
+          "executor": {
+            "type": "insertMany",
+            "database": "test",
+            "collection": "animals2",
+            "size": 100,
+            "ordered": false,
+            "template": "$dict.animal"
+          }
+        }
+      ]
+    },
+    {
+      "type": "parallel",
       "name": "deletes post-index",
+      "disable": true,
       "workloads": [
         {
           "name": "delete people",

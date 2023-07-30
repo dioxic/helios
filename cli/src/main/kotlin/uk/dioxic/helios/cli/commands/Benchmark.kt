@@ -27,8 +27,7 @@ import uk.dioxic.helios.execute.format.ReportFormat
 import uk.dioxic.helios.execute.format.ReportFormatter
 import uk.dioxic.helios.execute.format.format
 import uk.dioxic.helios.execute.format.toFormatString
-import uk.dioxic.helios.execute.resources.ResourceRegistry
-import uk.dioxic.helios.execute.resources.mongoClient
+import uk.dioxic.helios.execute.resources.buildResourceRegistry
 import kotlin.time.measureTime
 import uk.dioxic.helios.execute.model.Benchmark as ExBenchmark
 import uk.dioxic.helios.generate.codecs.DocumentCodec as HeliosDocumentCodec
@@ -60,10 +59,11 @@ class Benchmark : CliktCommand(help = "Execute Benchmark") {
 
         runBlocking {
             resourceScope {
-                val client = mongoClient(mcs)
-                val registry = ResourceRegistry(client)
+                val registry = buildResourceRegistry {
+                    createMongoClient(mcs)
+                }
 
-                if (checkConnection(client)) {
+                if (checkConnection(registry.mongoClient)) {
                     println("Starting benchmark...")
                     val duration = measureTime {
                         benchmark.execute(registry, concurrency)

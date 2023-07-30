@@ -1,120 +1,74 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package uk.dioxic.helios.execute
 
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.generate.Template
 import kotlin.time.Duration
 
+@DslMarker
+annotation class BenchmarkMarker
+
 fun buildBenchmark(
     name: String = "benchmark",
-    constants: Template = Template.EMPTY,
-    variables: Template = Template.EMPTY,
-    init: BenchmarkBuilder.() -> Unit
+    block: BenchmarkBuilder.() -> Unit
 ): Benchmark {
-    val builder = BenchmarkBuilder(name, constants, variables)
+    val builder = BenchmarkBuilder(name)
+    builder.block()
+    return builder.build()
+}
+
+fun buildSequentialStage(init: SequentialStageBuilder.() -> Unit): SequentialStage {
+    val builder = SequentialStageBuilder("sequential")
     builder.init()
     return builder.build()
 }
 
-fun buildSequentialStage(
-    name: String = "sequential",
-    sync: Boolean = false,
-    constants: Template = Template.EMPTY,
-    variables: Template = Template.EMPTY,
-    init: SequentialStageBuilder.() -> Unit
-): SequentialStage {
-    val builder = SequentialStageBuilder(
-        name = name,
-        sync = sync,
-        constants = constants,
-        variables = variables,
-    )
+fun buildParallelStage(init: ParallelStageBuilder.() -> Unit): ParallelStage {
+    val builder = ParallelStageBuilder("parallel")
     builder.init()
     return builder.build()
 }
 
-fun buildParallelStage(
-    name: String = "parallel",
-    sync: Boolean = false,
-    constants: Template = Template.EMPTY,
-    variables: Template = Template.EMPTY,
-    timeout: Duration = Duration.INFINITE,
-    init: ParallelStageBuilder.() -> Unit
-): ParallelStage {
-    val builder = ParallelStageBuilder(
-        name = name,
-        sync = sync,
-        constants = constants,
-        variables = variables,
-        timeout = timeout
-    )
-    builder.init()
-    return builder.build()
-}
-
+@BenchmarkMarker
 class BenchmarkBuilder(
-    private val name: String,
-    private val constants: Template,
-    private val variables: Template,
+    var name: String,
 ) {
+    var dictionaries: Dictionaries = emptyMap()
+    var variables: Template = Template.EMPTY
     private val stages = mutableListOf<Stage>()
 
-    fun sequentialStage(
-        name: String? = null,
-        sync: Boolean = false,
-        constants: Template = Template.EMPTY,
-        variables: Template = Template.EMPTY,
-        init: SequentialStageBuilder.() -> Unit
-    ) {
-        val builder = SequentialStageBuilder(
-            name = name ?: "stage${stages.size}",
-            sync = sync,
-            constants = constants,
-            variables = variables,
-        )
-        builder.init()
+    fun sequentialStage(block: SequentialStageBuilder.() -> Unit) {
+        val builder = SequentialStageBuilder("stage${stages.size}")
+        builder.block()
         stages.add(builder.build())
     }
 
-    fun parallelStage(
-        name: String? = null,
-        sync: Boolean = false,
-        constants: Template = Template.EMPTY,
-        variables: Template = Template.EMPTY,
-        timeout: Duration = Duration.INFINITE,
-        init: ParallelStageBuilder.() -> Unit
-    ) {
-        val builder = ParallelStageBuilder(
-            name = name ?: "stage${stages.size}",
-            sync = sync,
-            timeout = timeout,
-            constants = constants,
-            variables = variables,
-        )
-        builder.init()
+    fun parallelStage(block: ParallelStageBuilder.() -> Unit) {
+        val builder = ParallelStageBuilder("stage${stages.size}")
+        builder.block()
         stages.add(builder.build())
     }
 
     fun build() = Benchmark(
         name = name,
         stages = stages,
-        constantsDefinition = constants,
-        variablesDefinition = variables,
+        dictionaries = dictionaries,
+        variables = variables,
     )
 }
 
-class SequentialStageBuilder(
-    private val name: String,
-    private val sync: Boolean,
-    private val constants: Template,
-    private val variables: Template,
-) {
+@BenchmarkMarker
+class SequentialStageBuilder(var name: String) {
+    var sync: Boolean = false
+    var dictionaries: Dictionaries = emptyMap()
+    var variables: Template = Template.EMPTY
     private val workloads = mutableListOf<RateWorkload>()
 
-    fun rateWorkload(
+    fun addRateWorkload(
         name: String? = null,
         executor: Executor,
         count: Long = 1,
-        constants: Template = Template.EMPTY,
         variables: Template = Template.EMPTY,
         rate: Rate = UnlimitedRate,
     ) {
@@ -123,8 +77,7 @@ class SequentialStageBuilder(
                 name = name ?: "workload${workloads.size}",
                 count = count,
                 rate = rate,
-                constantsDefinition = constants,
-                variablesDefinition = variables,
+                variables = variables,
                 executor = executor
             )
         )
@@ -134,25 +87,23 @@ class SequentialStageBuilder(
         name = name,
         sync = sync,
         workloads = workloads,
-        constantsDefinition = constants,
-        variablesDefinition = variables,
+        dictionaries = dictionaries,
+        variables = variables,
     )
 }
 
-class ParallelStageBuilder(
-    private val name: String,
-    private val sync: Boolean,
-    private val timeout: Duration,
-    private val constants: Template,
-    private val variables: Template,
-) {
+@BenchmarkMarker
+class ParallelStageBuilder(var name: String) {
+    var sync: Boolean = false
+    var timeout: Duration = Duration.INFINITE
+    var dictionaries: Dictionaries = emptyMap()
+    var variables: Template = Template.EMPTY
     private val workloads = mutableListOf<Workload>()
 
-    fun rateWorkload(
+    fun addRateWorkload(
         name: String? = null,
         executor: Executor,
         count: Long = 1,
-        constants: Template = Template.EMPTY,
         variables: Template = Template.EMPTY,
         rate: Rate = UnlimitedRate,
     ) {
@@ -161,18 +112,16 @@ class ParallelStageBuilder(
                 name = name ?: "workload${workloads.size}",
                 count = count,
                 rate = rate,
-                constantsDefinition = constants,
-                variablesDefinition = variables,
+                variables = variables,
                 executor = executor
             )
         )
     }
 
-    fun weightedWorkload(
-        executor: Executor,
+    fun addWeightedWorkload(
         name: String? = null,
+        executor: Executor,
         weight: Int = 1,
-        constants: Template = Template.EMPTY,
         variables: Template = Template.EMPTY,
         count: Long = 1,
     ) {
@@ -181,8 +130,7 @@ class ParallelStageBuilder(
                 name = name ?: "workload${workloads.size}",
                 count = count,
                 weight = weight,
-                constantsDefinition = constants,
-                variablesDefinition = variables,
+                variables = variables,
                 executor = executor
             )
         )
@@ -193,7 +141,7 @@ class ParallelStageBuilder(
         sync = sync,
         timeout = timeout,
         workloads = workloads,
-        constantsDefinition = constants,
-        variablesDefinition = variables,
+        dictionaries = dictionaries,
+        variables = variables,
     )
 }

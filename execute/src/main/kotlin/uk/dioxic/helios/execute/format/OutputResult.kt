@@ -21,9 +21,10 @@ data class OutputResult (
     @SerialName("docsReturned") val docsReturned: Int = 0,
     @SerialName("successes") val successCount: Int = 0,
     @SerialName("failures") val failureCount: Int = 0,
+    @SerialName("errors") val errorCount: Int = 0,
     @SerialName("lat") val latencies: SummarizedLatencies? = null,
     @SerialName("elapsed") @Contextual val elapsed: Duration,
     @SerialName("progress") @Contextual val progress: Percent,
-    @SerialName("errors") val errorString: String = "",
+    @SerialName("errorDetail") val errorDetail: String = "",
 )
 

@@ -15,6 +15,7 @@ tasks.withType<KotlinCompilationTask<*>> {
 dependencies {
     implementation(project(":generate"))
     ksp(libs.arrow.optics.ksp.plugin)
+    implementation(libs.okio.core)
     implementation(libs.bson)
     implementation(libs.mongodb.sync)
     implementation(libs.commons.math)
@@ -29,4 +30,5 @@ dependencies {
     implementation(libs.bundles.logging)
     testImplementation(libs.kotlin.coroutines.test)
     testImplementation(libs.mockk)
+    testImplementation(libs.okio.fakefilesystem)
 }

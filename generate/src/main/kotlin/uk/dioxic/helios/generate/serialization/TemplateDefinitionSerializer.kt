@@ -15,9 +15,9 @@ import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.codecs.DocumentCodec
 import uk.dioxic.helios.generate.putRoot
 
-object TemplateSerializer : KSerializer<Template> {
+object TemplateDefinitionSerializer : KSerializer<Template> {
     override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("TemplateSerializer", PrimitiveKind.STRING)
+        PrimitiveSerialDescriptor("TemplateDefinitionSerializer", PrimitiveKind.STRING)
 
     private val documentCodec = DocumentCodec()
 

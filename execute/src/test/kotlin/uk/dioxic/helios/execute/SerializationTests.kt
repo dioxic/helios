@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.resource.resourceAsString
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -26,7 +27,6 @@ import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.serialization.TransactionOptionsSerializer
 import uk.dioxic.helios.execute.serialization.UpdateOptionsSerializer
 import uk.dioxic.helios.execute.serialization.WriteConcernSerializer
-import uk.dioxic.helios.execute.test.readResource
 import uk.dioxic.helios.generate.Operator
 import uk.dioxic.helios.generate.buildTemplate
 import java.util.concurrent.TimeUnit
@@ -154,6 +154,33 @@ class SerializationTests : FunSpec({
         }
     }
 
+    context("Store") {
+        context("Path Store") {
+            val dc = DataClassWithStore(Store.YES)
+            val json = """
+                { "store": true }
+            """.trimIndent()
+            test("serialize") {
+                Bson.encodeToString(dc) shouldBeJson json
+            }
+            test("deserialize"){
+                Bson.decodeFromString<DataClassWithStore>(json) shouldBe dc
+            }
+        }
+        context("Boolean Store") {
+            val dc = DataClassWithStore(PathStore("/myPath/file.json"))
+            val json = """
+                { "store": "/myPath/file.json" }
+            """.trimIndent()
+            test("serialize") {
+                Bson.encodeToString(dc) shouldBeJson json
+            }
+            test("deserialize"){
+                Bson.decodeFromString<DataClassWithStore>(json) shouldBe dc
+            }
+        }
+    }
+
     context("UpdateOptions") {
         val optionsStr = stringifyAndPrint(buildBsonDocument {
             put("upsert", true)
@@ -238,7 +265,7 @@ class SerializationTests : FunSpec({
         test("can handle 64-bit integer") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                         count = Long.MAX_VALUE
                     )
@@ -254,7 +281,7 @@ class SerializationTests : FunSpec({
         test("command executor") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = CommandExecutor("myDB", buildTemplate { put("buildInfo", 1) })
                     )
                 }
@@ -268,7 +295,7 @@ class SerializationTests : FunSpec({
         test("insertOne executor") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = InsertOneExecutor(
                             database = "test",
                             collection = "people",
@@ -335,20 +362,21 @@ class SerializationTests : FunSpec({
         test("basic") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                     )
                 }
-                parallelStage(timeout = 5.milliseconds) {
-                    rateWorkload(
+                parallelStage {
+                    timeout = 5.milliseconds
+                    addRateWorkload(
                         executor = defaultExecutor,
                         rate = TpsRate(tps = 500),
                     )
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                         rate = UnlimitedRate
                     )
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultExecutor,
                         rate = RampedRate(
                             from = PeriodRate(period = 1.seconds),
@@ -356,7 +384,7 @@ class SerializationTests : FunSpec({
                             rampDuration = 5.minutes
                         )
                     )
-                    weightedWorkload(
+                    addWeightedWorkload(
                         executor = defaultExecutor,
                         weight = 10
                     )
@@ -374,7 +402,7 @@ class SerializationTests : FunSpec({
         test("template is deserialized correctly") {
             val benchmark = buildBenchmark {
                 sequentialStage {
-                    rateWorkload(
+                    addRateWorkload(
                         executor = defaultMongoExecutor,
                         count = Long.MAX_VALUE
                     )
@@ -396,7 +424,7 @@ class SerializationTests : FunSpec({
         }
 
         test("decoding invalid rate throws exception") {
-            val str = readResource("/benchmarkInvalid.json")
+            val str = resourceAsString("/benchmarkInvalid.json")
 
             shouldThrow<IllegalArgumentException> {
                 println(bson.decodeFromString<Benchmark>(str))
