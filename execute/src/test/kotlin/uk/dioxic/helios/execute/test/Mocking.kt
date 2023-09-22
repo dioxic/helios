@@ -2,8 +2,10 @@ package uk.dioxic.helios.execute.test
 
 import com.mongodb.client.AggregateIterable
 import com.mongodb.client.FindIterable
+import io.kotest.assertions.any
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.collections.EmptyIterator.hasNext
 
 fun <T : Any> mockFindIterable(vararg results: T) =
     mockk<FindIterable<T>> {

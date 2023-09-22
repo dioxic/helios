@@ -33,16 +33,19 @@
     {
       "type": "parallel",
       "name": "load data",
-      "variables": {
+      "dictionaries": {
         "person": {
-          "name": "$name",
-          "address": {
-            "city": { "$choose": ["London", "Belfast", "Madrid"] }
-          },
-          "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
-          "favFood": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
-          "age": { "$int":  { "min":  1, "max":  99 }}
-        }
+            "type":  "stream",
+            "template": {
+              "name": "$name",
+              "address": {
+                "city": { "$choose": ["London", "Belfast", "Madrid"] }
+              },
+              "salutation": { "$choose":  ["Mr", "Mrs", "Dr", "Master"] },
+              "favFood": { "$choose":  ["Cabbage", "Orange", "Steak", "Swordfish"] },
+              "age": { "$int":  { "min":  1, "max":  99 }}
+            }
+          }
       },
       "constants": {
         "date": "$objectId",
@@ -56,7 +59,7 @@
             "type": "insertOne",
             "database": "test",
             "collection": "people",
-            "template": "$var.person"
+            "template": "$dict.person"
           },
           "rate": {
             "tps": 500
@@ -71,7 +74,7 @@
             "collection": "animals",
             "template": {
               "name": "badger",
-              "salutation": "$var.person.salutation",
+              "salutation": "$dict.person.salutation",
               "number": "$const.number"
             }
           },

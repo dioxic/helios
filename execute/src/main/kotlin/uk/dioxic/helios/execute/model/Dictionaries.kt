@@ -1,7 +1,7 @@
 package uk.dioxic.helios.execute.model
 
 import com.mongodb.MongoNamespace
-import com.mongodb.client.model.Aggregates
+import jdk.jfr.internal.OldObjectSample.emit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Contextual
@@ -14,15 +14,19 @@ import uk.dioxic.helios.execute.serialization.MongoNamespaceSerializer
 import uk.dioxic.helios.generate.*
 
 typealias Dictionaries = Map<String, Dictionary>
-typealias HydratedDictionary = Map<String, Any?>
-typealias HydratedDictionaries = Map<String, HydratedDictionary>
+
+class HydratedDictionary(
+    val key: String,
+    val definition: Dictionary,
+    values: Map<String,Any?>
+): Map<String, Any?> by values
 
 @Serializable
 sealed interface Dictionary {
     val store: Store
 
     context (ResourceRegistry)
-    fun asFlow(): Flow<HydratedDictionary>
+    fun asFlow(): Flow<Map<String, Any?>>
 
 //    fun persistFlow()
 }
@@ -125,3 +129,4 @@ data class QueryDictionary(
         } while (count > 0)
     }
 }
+

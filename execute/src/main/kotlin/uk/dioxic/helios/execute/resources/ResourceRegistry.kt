@@ -3,7 +3,9 @@ package uk.dioxic.helios.execute.resources
 import arrow.fx.coroutines.ResourceScope
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.MongoClient
+import okio.BufferedSink
 import okio.FileSystem
+import okio.Path
 
 //class DictionaryResource private constructor(
 //    val sink: BufferedSink?,
@@ -17,8 +19,9 @@ import okio.FileSystem
 //}
 
 interface ResourceRegistry {
-//    val dictionaryStores: Map<String, DictionaryResource>
+    //    val dictionaryStores: Map<String, DictionaryResource>
     val mongoClient: MongoClient
+    val fileSinks: Map<Path, BufferedSink>
 
     companion object {
         val EMPTY: ResourceRegistry = ResourceRegistryImpl()
@@ -29,8 +32,11 @@ private class ResourceRegistryImpl(
     mongoClient: MongoClient? = null,
 //    override val dictionaryStores: Map<String, DictionaryResource> = emptyMap()
 ) : ResourceRegistry {
-    private val _mongoClient = mongoClient
+    private val _fileSinks = mutableMapOf<Path, BufferedSink>()
+    override val fileSinks
+        get() = _fileSinks
 
+    private val _mongoClient = mongoClient
     override val mongoClient: MongoClient
         get() {
             requireNotNull(_mongoClient) {
@@ -38,6 +44,13 @@ private class ResourceRegistryImpl(
             }
             return _mongoClient
         }
+
+    fun addFileSink(path: Path, sink: BufferedSink) {
+        _fileSinks[path] = sink
+    }
+
+    fun getFileSink(path: Path) =
+        _fileSinks[path]
 }
 
 suspend fun buildResourceRegistry(

@@ -3,6 +3,7 @@ package uk.dioxic.helios.execute
 import arrow.fx.coroutines.resourceScope
 import com.mongodb.MongoNamespace
 import com.mongodb.client.MongoClient
+import io.kotest.assertions.any
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldHaveSize
@@ -16,12 +17,15 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.bson.Bson
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import org.bson.Document
 import uk.dioxic.helios.execute.model.*
 import uk.dioxic.helios.execute.resources.ResourceRegistry
 import uk.dioxic.helios.execute.resources.buildResourceRegistry
+import uk.dioxic.helios.execute.resources.fileSink
+import uk.dioxic.helios.execute.resources.fileSource
 import uk.dioxic.helios.execute.test.mockAggregateIterable
 import uk.dioxic.helios.execute.test.mockFindIterable
 import uk.dioxic.helios.generate.Template
@@ -33,6 +37,7 @@ import uk.dioxic.helios.generate.operators.ObjectIdOperator
 import uk.dioxic.helios.generate.putOperator
 import uk.dioxic.helios.generate.putOperatorObject
 import uk.dioxic.helios.generate.serialization.DocumentSerializer
+import uk.dioxic.helios.generate.serialization.GenericMapSerializer
 
 class DictionaryTests : FunSpec({
 
@@ -187,9 +192,12 @@ class DictionaryTests : FunSpec({
         }
     }
 
-    // TODO file sink test
-    xcontext("File Sink") {
-        val fakeFs = FakeFileSystem()
+    xtest("dictionaries repeat") {
+
+    }
+
+    test("File Sink") {
+        val fs = FileSystem.SYSTEM
 
         val dictionary = StreamDictionary(
             template = buildTemplate {
@@ -197,8 +205,29 @@ class DictionaryTests : FunSpec({
             },
             store = Store.YES
         )
-        with(ResourceRegistry.EMPTY) {
-            dictionary.asFlow()
+        resourceScope {
+            val ds = DictionarySink(dictionary, fileSink(fs, "c:/users/mark/downloads/mySink.json"))
+
+            with(ResourceRegistry.EMPTY) {
+                dictionary.asFlow()
+                    .take(10)
+                    .collect {
+                        println("writing stuff: $it")
+                        ds.sink.writeUtf8(Bson.encodeToString(GenericMapSerializer, it))
+                        ds.sink.writeUtf8("\n")
+                    }
+            }
+        }
+        resourceScope {
+            val src = fileSource(fs, "c:/users/mark/downloads/mySink.json")
+            var line = src.readUtf8Line()
+            buildList {
+                while (line != null) {
+                    println(line)
+                    add(line)
+                    line = src.readUtf8Line()
+                }
+            } shouldHaveSize 10
         }
     }
 
@@ -232,7 +261,7 @@ class DictionaryTests : FunSpec({
                 store = Store.YES
             )
             with(ResourceRegistry.EMPTY) {
-                dictionary.asResourcedFlow("animal", fakeFs).take(10)
+                dictionary.asPersistedFlow("animal", fakeFs).take(10)
                     .toList().should { values ->
                         values.shouldHaveSize(10)
                         values.forAll {
@@ -255,8 +284,8 @@ class DictionaryTests : FunSpec({
                 store = PathStore("custom.example")
             )
             with(ResourceRegistry.EMPTY) {
-                dictionary.asResourcedFlow("animal", fakeFs).take(10)
-                   .toList().should { values ->
+                dictionary.asPersistedFlow("animal", fakeFs).take(10)
+                    .toList().should { values ->
                         values.shouldHaveSize(10)
                         values.forAll {
                             it.shouldContainKeys("species")

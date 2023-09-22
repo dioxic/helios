@@ -3,7 +3,6 @@ package uk.dioxic.helios.execute.model
 import arrow.optics.optics
 import uk.dioxic.helios.execute.measureTimedResult
 import uk.dioxic.helios.execute.resources.ResourceRegistry
-import uk.dioxic.helios.generate.StateContext
 import kotlin.time.TimeSource
 import kotlin.time.TimeSource.Monotonic.ValueTimeMark
 

@@ -222,7 +222,7 @@
       "type": "parallel",
       "name": "copy collections",
       "dictionaries": {
-        "person": { "type": "query", "ns":  "test.people"},
+        "person": { "type": "query", "ns":  "test.people", "store":  true},
         "animal": { "type": "query", "ns":  "test.animals"}
       },
       "workloads": [
@@ -234,7 +234,7 @@
             "database": "test",
             "collection": "people2",
             "size": 100,
-            "ordered": false,
+            "ordered": true,
             "template": "$dict.person"
           }
         },        {

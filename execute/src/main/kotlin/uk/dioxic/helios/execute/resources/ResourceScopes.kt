@@ -1,16 +1,13 @@
 package uk.dioxic.helios.execute.resources
 
-import arrow.fx.coroutines.ResourceScope
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.ClientSession
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoClients
-import okio.BufferedSink
-import okio.BufferedSource
-import okio.FileSystem
+import jdk.incubator.foreign.ResourceScope
+import okio.*
 import okio.Path.Companion.toOkioPath
 import okio.Path.Companion.toPath
-import okio.buffer
 import uk.dioxic.helios.execute.mongodb.cached
 import java.io.File
 import java.io.FileInputStream
@@ -29,22 +26,31 @@ suspend fun ResourceScope.fileInputStream(f: File): FileInputStream =
     install({ f.inputStream() }) { stream, _ -> stream.close() }
 
 suspend fun ResourceScope.fileSink(fs: FileSystem, f: String): BufferedSink =
-    install({ fs.sink(f.toPath()).buffer() }) { source, _ -> source.close() }
+    fileSink(fs, f.toPath())
 
 suspend fun ResourceScope.fileSink(fs: FileSystem, f: File): BufferedSink =
-    install({ fs.sink(f.toOkioPath()).buffer() }) { source, _ -> source.close() }
+    fileSink(fs, f.toOkioPath())
+
+suspend fun ResourceScope.fileSink(fs: FileSystem, path: Path): BufferedSink =
+    install({ fs.sink(path).buffer() }) { source, _ -> source.close() }
 
 suspend fun ResourceScope.fileAppendingSink(fs: FileSystem, f: String): BufferedSink =
-    install({ fs.appendingSink(f.toPath()).buffer() }) { source, _ -> source.close() }
+    fileAppendingSink(fs, f.toPath())
 
 suspend fun ResourceScope.fileAppendingSink(fs: FileSystem, f: File): BufferedSink =
-    install({ fs.appendingSink(f.toOkioPath()).buffer() }) { source, _ -> source.close() }
+    fileAppendingSink(fs, f.toOkioPath())
+
+suspend fun ResourceScope.fileAppendingSink(fs: FileSystem, path: Path): BufferedSink =
+    install({ fs.appendingSink(path).buffer() }) { source, _ -> source.close() }
 
 suspend fun ResourceScope.fileSource(fs: FileSystem, f: String): BufferedSource =
-    install({ fs.source(f.toPath()).buffer() }) { source, _ -> source.close() }
+    fileSource(fs, f.toPath())
 
 suspend fun ResourceScope.fileSource(fs: FileSystem, f: File): BufferedSource =
-    install({ fs.source(f.toOkioPath()).buffer() }) { source, _ -> source.close() }
+    fileSource(fs, f.toOkioPath())
+
+suspend fun ResourceScope.fileSource(fs: FileSystem, path: Path): BufferedSource =
+    install({ fs.source(path).buffer() }) { source, _ -> source.close() }
 
 suspend fun ResourceScope.resource(resource: String): BufferedSource =
     install({ FileSystem.RESOURCES.source(resource.toPath()).buffer() }) { source, _ -> source.close() }

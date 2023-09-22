@@ -1,6 +1,5 @@
 package uk.dioxic.helios.execute
 
-import arrow.optics.copy
 import com.mongodb.MongoBulkWriteException
 import com.mongodb.bulk.BulkWriteError
 import com.mongodb.client.MongoClient
@@ -9,6 +8,7 @@ import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.model.InsertOneModel
 import com.mongodb.client.model.WriteModel
 import com.mongodb.client.result.InsertManyResult
+import io.kotest.assertions.any
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldHaveSize
@@ -129,7 +129,7 @@ class ExecutorTests : FunSpec({
         val ctx = defaultExecutionContext.copy {
             ExecutionContext.executor.set(executor)
             ExecutionContext.workload.rateWorkload.variables.set(variables)
-            ExecutionContext.stateContext.set(List(executor.variablesRequired) {
+            ExecutionContext.stateContext.set(List(executor.modelSize) {
                 StateContext(it.toLong(), variables = variables.hydrateAndFlatten())
             })
         }
@@ -167,7 +167,7 @@ class ExecutorTests : FunSpec({
             val ctx = defaultExecutionContext.copy {
                 ExecutionContext.executor.set(executor)
                 ExecutionContext.workload.rateWorkload.variables.set(variables)
-                ExecutionContext.stateContext.set(List(executor.variablesRequired) {
+                ExecutionContext.stateContext.set(List(executor.modelSize) {
                     StateContext(it.toLong(), variables = variables.hydrateAndFlatten())
                 })
             }

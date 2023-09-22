@@ -37,7 +37,7 @@ class FrameworkTest : FunSpec({
                 }
             }
         } returns MessageResult()
-        every { executor.variablesRequired } returns 1
+        every { executor.modelSize } returns 1
     }
 
     context("execution counts") {
@@ -186,7 +186,7 @@ class FrameworkTest : FunSpec({
                 }
             }
         } returns WriteResult(insertedCount = 20)
-        every { insertOneExecutor.variablesRequired } returns 1
+        every { insertOneExecutor.modelSize } returns 1
 
         buildBenchmark {
             parallelStage {

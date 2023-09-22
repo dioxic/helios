@@ -27,8 +27,12 @@ import kotlin.time.Duration.Companion.seconds
 
 @Serializable
 sealed interface Executor {
+
+    /**
+     * The number of execution models. For an insertMany this will be equal to 'size'.
+     */
     @Transient
-    val variablesRequired: Int
+    val modelSize: Int
 
     context(ExecutionContext, ResourceRegistry)
     suspend fun execute(): ExecutionResult
@@ -42,7 +46,7 @@ sealed interface MongoSessionExecutor : Executor {
 
 sealed interface SingleVariableExecutor : Executor {
     @Transient
-    override val variablesRequired
+    override val modelSize
         get() = 1
 
     fun Template.toEncodeContext(stateContext: List<StateContext>) =
@@ -50,7 +54,7 @@ sealed interface SingleVariableExecutor : Executor {
 }
 
 sealed interface MultiVariableExecutor : Executor {
-    fun Template.toEncodeContext(stateContexts: List<StateContext>) = List(variablesRequired) {
+    fun Template.toEncodeContext(stateContexts: List<StateContext>) = List(modelSize) {
         EncodeContext(this, stateContexts[it])
     }
 }
@@ -171,7 +175,7 @@ class InsertManyExecutor(
     private val options = InsertManyOptions().ordered(ordered)
 
     @Transient
-    override val variablesRequired = size
+    override val modelSize = size
 
     context(ExecutionContext, ResourceRegistry)
     override suspend fun execute(session: ClientSession) =
@@ -349,7 +353,7 @@ class BulkWriteExecutor(
 ) : CollectionExecutor(), MultiVariableExecutor {
 
     @Transient
-    override val variablesRequired =
+    override val modelSize =
         operations.maxOfOrNull { it.count } ?: 0
 
     context(ExecutionContext, ResourceRegistry)
@@ -375,7 +379,7 @@ class TransactionExecutor(
     val maxRetryAttempts: Int = 100,
 ) : Executor {
 
-    override val variablesRequired: Int
+    override val modelSize: Int
         get() = TODO("Not yet implemented")
 
     context(ExecutionContext, ResourceRegistry)

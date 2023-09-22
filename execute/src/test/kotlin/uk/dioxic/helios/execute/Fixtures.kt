@@ -1,7 +1,6 @@
 package uk.dioxic.helios.execute
 
 import uk.dioxic.helios.execute.model.*
-import uk.dioxic.helios.generate.StateContext
 import uk.dioxic.helios.generate.Template
 import uk.dioxic.helios.generate.buildTemplate
 import java.time.LocalDateTime
