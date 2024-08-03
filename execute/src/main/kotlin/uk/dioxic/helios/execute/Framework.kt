@@ -30,7 +30,7 @@ import okio.Path as OkioPath
 /**
  * @param interval the message batching/summarization interval (0 to disable batching)
  */
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 fun Benchmark.execute(
     registry: ResourceRegistry = ResourceRegistry.EMPTY,
     concurrency: Int = 4,
