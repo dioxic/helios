@@ -27,6 +27,7 @@ sealed class FixedRate: Rate() {
 @Serializable
 data object UnlimitedRate : FixedRate() {
     override fun calculateBaseDelay(): Duration = ZERO
+    context(ExecutionContext)
     override fun calculateDelay(): Duration = ZERO
 }
 
@@ -44,6 +45,7 @@ data class TpsRate(
 
     override fun calculateBaseDelay(): Duration = 1.seconds.div(tps)
 
+    context(ExecutionContext)
     override fun calculateDelay(): Duration =
         1.seconds.div(
             when (fuzzy) {
@@ -67,6 +69,7 @@ data class PeriodRate(
 
     override fun calculateBaseDelay(): Duration = period
 
+    context(ExecutionContext)
     override fun calculateDelay(): Duration =
         when (fuzzy) {
             0.0 -> period
